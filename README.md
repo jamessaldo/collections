@@ -7,10 +7,9 @@
     <img src="assets/logo.jpeg" alt="Logo">
   </a>
 
-  <h3 align="center">Wedigo</h3>
+  <h3 align="center">Collections</h3>
 
   <p align="center">
-   Wedigo
     <br />
     <a href="https://github.com/jamessaldo/collections"><strong>Explore my collections!</strong></a>
     <br />
