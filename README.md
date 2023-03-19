@@ -1,4 +1,4 @@
-# Wedigo
+# Collections
 
 <!-- PROJECT LOGO -->
 <div align="center">
@@ -24,7 +24,7 @@
 
 ## Table of Contents
 
-- [Wedigo](#wedigo)
+- [Collections](#collections)
   - [Table of Contents](#table-of-contents)
   - [About The Project](#about-the-project)
   - [Services](#services)
