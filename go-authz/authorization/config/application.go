@@ -22,6 +22,7 @@ type ApplicationConfiguration struct {
 	FrontEndOrigin string `mapstructure:"FRONTEND_ORIGIN"`
 	AppPort        string `mapstructure:"APP_PORT"`
 	AppEnv         string `mapstructure:"APP_ENV"`
+	AppName        string `mapstructure:"APP_NAME"`
 
 	// JWT
 	JWTTokenSecret        string        `mapstructure:"JWT_SECRET"`

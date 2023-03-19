@@ -147,7 +147,7 @@ func sendWelcomeEmail(mailer worker.WorkerInterface, user *model.User) error {
 	payload := &worker.Payload{
 		TemplateName: "welcoming-message.html",
 		To:           user.Email,
-		Subject:      "Selamat Datang di Wedigo!",
+		Subject:      fmt.Sprintf("Selamat Datang di %s!", config.AppConfig.AppName),
 		Data: map[string]interface{}{
 			"FullName": user.FullName(),
 		},

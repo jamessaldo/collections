@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "contact": {
             "name": "Jamessaldo",
-            "url": "https://github.com/jamessaldo/wedigo/issues",
+            "url": "https://github.com/jamessaldo/collections/issues",
             "email": "ghozyghlmlaff@gmail.com"
         },
         "version": "{{.Version}}"
@@ -632,8 +632,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8888",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Wedigo API",
-	Description:      "This is Wedigo API documentation.",
+	Title:            "Authorization API",
+	Description:      "This is Authorization API documentation.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

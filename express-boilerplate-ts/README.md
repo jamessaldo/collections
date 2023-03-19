@@ -9,8 +9,8 @@ This project is intended to be used with [Node.js][nodejs] 16.13.1 version.
 To clone the repository, use the following commands:
 
 ```sh
-git clone git@github.com:jamessaldo/wedigo.git
-cd wedigo/xendit-callback
+git clone git@github.com:jamessaldo/collections.git
+cd collections/xendit-callback
 yarn install
 ```
 

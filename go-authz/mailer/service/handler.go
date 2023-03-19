@@ -35,7 +35,7 @@ func SendEmail(to string, subject string, data interface{}, templateName string)
 	}
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", fmt.Sprintf("Wedigo Team <%s>", config.MailerConfig.MailerUsername))
+	m.SetHeader("From", fmt.Sprintf("%s Team <%s>", config.AppConfig.AppName, config.MailerConfig.MailerUsername))
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", result)

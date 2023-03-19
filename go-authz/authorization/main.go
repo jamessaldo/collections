@@ -14,12 +14,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// @title           Wedigo API
+// @title           Authorization API
 // @version         1.0
-// @description     This is Wedigo API documentation.
+// @description     This is Authorization API documentation.
 
 // @contact.name   Jamessaldo
-// @contact.url    https://github.com/jamessaldo/wedigo/issues
+// @contact.url    https://github.com/jamessaldo/collections/issues
 // @contact.email  ghozyghlmlaff@gmail.com
 
 // @host      localhost:8888

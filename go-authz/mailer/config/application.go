@@ -19,6 +19,7 @@ func init() {
 type ApplicationConfiguration struct {
 	AppEnv         string `mapstructure:"APP_ENV"`
 	AppPort        string `mapstructure:"APP_PORT"`
+	AppName        string `mapstructure:"APP_NAME"`
 	FrontEndOrigin string `mapstructure:"FRONTEND_ORIGIN"`
 }
 
