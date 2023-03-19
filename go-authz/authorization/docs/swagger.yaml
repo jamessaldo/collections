@@ -1,0 +1,408 @@
+basePath: /api/v1
+definitions:
+  command.UpdateUser:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      phone_number:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
+  dto.MembershipRetrievalSchema:
+    properties:
+      id:
+        type: string
+      role:
+        type: string
+      user: {}
+    type: object
+  dto.Pagination:
+    properties:
+      data: {}
+      has_next:
+        type: boolean
+      has_prev:
+        type: boolean
+      next_page:
+        type: integer
+      page:
+        type: integer
+      page_size:
+        type: integer
+      prev_page:
+        type: integer
+      total_data:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+  dto.ProfileUser:
+    properties:
+      avatar_url:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      name:
+        type: string
+      phone_number:
+        type: string
+      username:
+        type: string
+    type: object
+  dto.PublicUser:
+    properties:
+      avatar_url:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      name:
+        type: string
+      username:
+        type: string
+    type: object
+  dto.TeamRetrievalSchema:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      creator: {}
+      description:
+        type: string
+      id:
+        type: string
+      is_personal:
+        type: boolean
+      last_active_at:
+        type: string
+      memberships:
+        items:
+          $ref: '#/definitions/dto.MembershipRetrievalSchema'
+        type: array
+      name:
+        type: string
+      num_of_members:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.User:
+    properties:
+      avatarURL:
+        type: string
+      createdAt:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      lastName:
+        type: string
+      password:
+        type: string
+      phoneNumber:
+        type: string
+      provider:
+        type: string
+      updatedAt:
+        type: string
+      username:
+        type: string
+      verified:
+        type: boolean
+    type: object
+host: localhost:8888
+info:
+  contact:
+    email: ghozyghlmlaff@gmail.com
+    name: Jamessaldo
+    url: https://github.com/jamessaldo/wedigo/issues
+  description: This is Wedigo API documentation.
+  title: Wedigo API
+  version: "1.0"
+paths:
+  /invitations/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get invitation data by ID
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get invitation by ID
+      tags:
+      - Invitation
+  /teams:
+    get:
+      consumes:
+      - application/json
+      description: Get all teams data
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Team name
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Pagination'
+      summary: Get all teams
+      tags:
+      - Team
+    post:
+      consumes:
+      - application/json
+      description: Create team data
+      parameters:
+      - description: Team ID
+        in: body
+        name: team_id
+        required: true
+        schema:
+          type: string
+      - description: Team name
+        in: body
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: Is personal team
+        in: body
+        name: is_personal
+        schema:
+          type: boolean
+      - description: Team description
+        in: body
+        name: description
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.TeamRetrievalSchema'
+      summary: Create team
+      tags:
+      - Team
+  /teams/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get team data by ID
+      parameters:
+      - description: Team ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TeamRetrievalSchema'
+      summary: Get team by ID
+      tags:
+      - Team
+    put:
+      consumes:
+      - application/json
+      description: Update team data
+      parameters:
+      - description: Team ID
+        in: path
+        name: team_id
+        required: true
+        type: string
+      - description: Team name
+        in: body
+        name: name
+        schema:
+          type: string
+      - description: Team description
+        in: body
+        name: description
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TeamRetrievalSchema'
+      summary: Update team
+      tags:
+      - Team
+  /teams/{id}/invitation:
+    post:
+      consumes:
+      - application/json
+      description: Send invitation to join team
+      parameters:
+      - description: Team ID
+        in: path
+        name: team_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Send invitation
+      tags:
+      - Team
+  /teams/{id}/last-active:
+    put:
+      consumes:
+      - application/json
+      description: Update last active team date
+      parameters:
+      - description: Team ID
+        in: path
+        name: team_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Update last active team date
+      tags:
+      - Team
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users data
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PublicUser'
+      summary: Get all users
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: Update user data
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/command.UpdateUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PublicUser'
+      summary: Update user
+      tags:
+      - User
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get user data by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PublicUser'
+      summary: Get user by ID
+      tags:
+      - User
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Get current user data from context
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProfileUser'
+      summary: Get current user
+      tags:
+      - User
+swagger: "2.0"

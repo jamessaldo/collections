@@ -1,0 +1,181 @@
+endpoints:
+  - id: 311d54a2-648c-469f-b1f4-20fa341671a7
+    path: "/auth/v1/team/:id/invite-members"
+    method: POST
+    name: invite-member
+  - id: 24c15c50-2d2b-4056-9a52-c96657ad5643
+    path: "/auth/v1/team/:id"
+    method: PUT
+    name: update-team
+  - id: 58bfa3f9-46a5-4382-8261-fff8f6cc42f4
+    path: "/auth/v1/team/:id/member/:id"
+    method: DELETE
+    name: delete-member
+  - id: a72a62f2-9ed6-4130-91fc-d6d9b65fe120
+    path: "/auth/v1/team/:id/member/:id"
+    method: PUT
+    name: change-role-member
+  - id: 0d5f077f-0b02-43b9-bd24-ee710c526909
+    path: "/auth/v1/team/:id/avatar"
+    method: PUT
+    name: update-avatar-team
+  - id: 99108c7e-95de-42b3-bcf5-fc410740c186
+    path: "/auth/v1/team/:id"
+    method: GET
+    name: get-team
+  - id: 42809915-d444-4f04-ab12-b34b9aa35b3a
+    path: "/auth/v1/team/:id/application"
+    method: GET
+    name: get-applications-team
+  - id: 316680a3-4442-49ad-9ff1-1a41783a31a0
+    path: "/auth/v1/team/:id/application"
+    method: POST
+    name: create-application-team
+  - id: e6f1e5ba-6f19-4f02-8988-1c46d008e3a0
+    path: "/auth/v1/application/:id"
+    method: GET
+    name: get-application-team-detail
+  - id: 999b636e-5b78-47ad-9b53-09f52c337d9a
+    path: "/auth/v1/application/:id"
+    method: PUT
+    name: update-application-team
+  - id: 4efa7634-c9e4-463e-b0b7-c5d257636dcc
+    path: "/builder/v1/app/:id/version/:id/entity-type/:id"
+    method: PUT
+    name: update-entity-type
+  - id: be1ee2c4-c4e1-4b19-a9f5-7c82ff29231a
+    path: "/builder/v1/app/:id/version/:id/entity-type"
+    method: POST
+    name: create-entity-type
+  - id: a3153212-9825-4543-8ef1-03742ec301bc
+    path: "/builder/v1/app/:id/version/:id/entity-type/:id"
+    method: DELETE
+    name: delete-entity-type
+  - id: 26a37626-a64c-4906-a03c-3dfb2421f8c6
+    path: "/builder/v1/app/:id/version/:id/entity-type"
+    method: GET
+    name: get-entity-types
+  - id: 61f6d441-7fa6-4abd-b091-27200fa7d647
+    path: "/builder/v1/app/:id/version/:id/entity-type/:id"
+    method: GET
+    name: get-entity-type
+  - id: 3e818e43-86bf-4271-9ebf-ff1ba3976725
+    path: "/builder/v1/app/:id/version/:id/intent/:id"
+    method: PUT
+    name: update-intent
+  - id: 6ba5df1f-c15f-4b00-a8ee-93e0e166f892
+    path: "/builder/v1/app/:id/version/:id/intent"
+    method: POST
+    name: create-intent
+  - id: b43157bf-9e26-4367-8a8e-25098d56c13b
+    path: "/builder/v1/app/:id/version/:id/intent/:id"
+    method: DELETE
+    name: delete-intent
+  - id: 739d8a11-3b0b-452e-acf5-578ed8f3654a
+    path: "/builder/v1/app/:id/version/:id/intent/detect-entity-type"
+    method: POST
+    name: detect-entity-type
+  - id: 737aa42d-e281-46d2-b6fa-504b52f96d7b
+    path: "/builder/v1/app/:id/version/:id/intent"
+    method: GET
+    name: get-intents
+  - id: 1655fb99-1caa-420d-bf46-20620b3c863f
+    path: "/builder/v1/app/:id/version/:id/intent/:id"
+    method: GET
+    name: get-intent
+  - id: 6df8d01b-111c-420d-b4ab-26bece258930
+    path: "/builder/v1/app/:id/version/:id/collection/:id"
+    method: PUT
+    name: update-collection
+  - id: 749f50d4-95ff-4d7d-9406-754a9686acb6
+    path: "/builder/v1/app/:id/version/:id/collection"
+    method: POST
+    name: create-collection
+  - id: a18b0e37-b32d-4d0e-8fab-4c3a06ca80c6
+    path: "/builder/v1/app/:id/version/:id/collection/:id"
+    method: DELETE
+    name: delete-collection
+  - id: 0134dd0b-9bc4-420d-89cc-6d79e3bf3909
+    path: "/builder/v1/app/:id/version/:id/collection"
+    method: GET
+    name: get-collections
+  - id: 239c5aef-baa2-4a78-b5f6-4ebed4987158
+    path: "/builder/v1/app/:id/version/:id/collection/:id"
+    method: GET
+    name: get-collection
+  - id: 7085e3c1-c8bd-475d-80bb-c0dbcac63edb
+    path: "/builder/v1/app/:id/version/:id/webhook/:id"
+    method: PUT
+    name: update-webhook
+  - id: d3cb62b7-152f-4ab0-af3b-18ef5c7cf90d
+    path: "/builder/v1/app/:id/version/:id/webhook"
+    method: POST
+    name: create-webhook
+  - id: e7049be4-e3ce-4275-b486-27da559a63ef
+    path: "/builder/v1/app/:id/version/:id/webhook/:id"
+    method: DELETE
+    name: delete-webhook
+  - id: 85850e7c-0af1-4d62-b256-764508b92be1
+    path: "/builder/v1/app/:id/version/:id/webhook"
+    method: GET
+    name: get-webhooks
+  - id: 66141251-531f-4227-81f6-7b97835b32e4
+    path: "/builder/v1/app/:id/version/:id/webhook/:id"
+    method: GET
+    name: get-webhook
+  - id: 94559164-f1f0-463c-8f40-af0925acc72d
+    path: "/builder/v1/app/:id/version/:id/flow/:id/node/:id/transition/:id"
+    method: PUT
+    name: update-transition
+  - id: b5b5e2b2-7f87-48c6-840a-f8f68ead9a20
+    path: "/builder/v1/app/:id/version/:id/flow/:id/node/:id/transition"
+    method: POST
+    name: create-transition
+  - id: 1d96ad88-7b17-48d4-98b0-5fc8636400d6
+    path: "/builder/v1/app/:id/version/:id/flow/:id/node/:id/transition/:id"
+    method: DELETE
+    name: delete-transition
+  - id: cf3f02ab-0082-48ab-8b90-66458ff46e8c
+    path: "/builder/v1/app/:id/version/:id/flow/:id/node/:id"
+    method: PUT
+    name: update-node
+  - id: c7018bc1-0041-4e86-8c00-cc93fb19906c
+    path: "/builder/v1/app/:id/version/:id/flow/:id/node"
+    method: POST
+    name: create-node
+  - id: d8b9b573-9f42-429b-bcef-db40096b3d61
+    path: "/builder/v1/app/:id/version/:id/flow/:id/node/:id"
+    method: DELETE
+    name: delete-node
+  - id: cc4ea348-2a9a-4c0c-9bb0-767b77a6aab3
+    path: "/builder/v1/app/:id/version/:id/flow/:id"
+    method: PUT
+    name: update-flow
+  - id: 5c3b3e77-aae7-48e8-9265-da0bd3ae6f96
+    path: "/builder/v1/app/:id/version/:id/flow"
+    method: POST
+    name: create-flow
+  - id: 4aad9d03-50b5-41ca-a5f7-46a18792df2d
+    path: "/builder/v1/app/:id/version/:id/flow/:id"
+    method: DELETE
+    name: delete-flow
+  - id: d3924ac7-761e-49da-8e5c-519d60ccdd6d
+    path: "/builder/v1/app/:id/version/:id/flow/:id"
+    method: GET
+    name: get-flow
+  - id: 7f4e68cb-9ccf-4c01-adfa-7ef30735a216
+    path: "/builder/v1/app/:id/version/:id"
+    method: GET
+    name: get-version
+  - id: e411d50d-3f61-4b36-b915-ce8af12182e6
+    path: "/builder/v1/app/:id"
+    method: GET
+    name: get-app
+  - id: a76f4d6a-3dba-4d62-8dd9-a7ffda772d2e
+    path: "/builder/v1/document/"
+    method: POST
+    name: upload-document
+  - id: 8f3120a1-764f-408e-9bb9-faf0787ac47d
+    path: "/builder/v1/media/"
+    method: POST
+    name: upload-media
