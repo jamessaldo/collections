@@ -1,6 +1,8 @@
 package util
 
 import (
+	"auth/config"
+	"auth/domain/model"
 	"fmt"
 	"time"
 
@@ -12,8 +14,9 @@ func GenerateToken(ttl time.Duration, payload interface{}, secretJWTKey string) 
 
 	now := time.Now().UTC()
 	claims := token.Claims.(jwt.MapClaims)
+	fmt.Println(payload)
 
-	claims["sub"] = payload
+	claims["sub"] = payload.(*model.User).ID
 	claims["exp"] = now.Add(ttl).Unix()
 	claims["iat"] = now.Unix()
 	claims["nbf"] = now.Unix()
@@ -63,4 +66,18 @@ func ValidateToken(token string, signedJWTKey string) (interface{}, error) {
 	}
 
 	return claims["sub"], nil
+}
+
+func GenerateTokens(user *model.User) (string, string, error) {
+	token, err := GenerateToken(config.AppConfig.TokenExpiresIn, user, config.AppConfig.JWTTokenSecret)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := GenerateRefreshToken(config.AppConfig.RefreshTokenExpiresIn, user, config.AppConfig.RefreshJWTTokenSecret)
+	if err != nil {
+		return "", "", err
+	}
+
+	return token, refreshToken, nil
 }

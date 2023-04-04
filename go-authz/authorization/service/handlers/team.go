@@ -3,8 +3,8 @@ package handlers
 import (
 	"auth/controller/exception"
 	"auth/domain/command"
-	"auth/domain/dto"
 	"auth/domain/model"
+	"auth/infrastructure/worker"
 	"auth/service"
 	"errors"
 	"fmt"
@@ -14,10 +14,17 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) (*dto.TeamRetrievalSchema, error) {
+func CreateTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.CreateTeam); ok {
+		return CreateTeam(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.CreateTeam, got %T", cmd)
+}
+
+func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
 	if txErr != nil {
-		return nil, txErr
+		return txErr
 	}
 
 	defer func() {
@@ -26,15 +33,15 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) (*dto.TeamRetr
 
 	_, err := uow.Team.Get(cmd.TeamID)
 	if err == nil {
-		return nil, exception.NewConflictException("Team already exists")
+		return exception.NewConflictException("Team already exists")
 	}
 
 	ownerRole, err := uow.Role.Get(model.Owner)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, exception.NewNotFoundException(err.Error())
+			return exception.NewNotFoundException(err.Error())
 		}
-		return nil, err
+		return err
 	}
 
 	team := &model.Team{
@@ -53,26 +60,27 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) (*dto.TeamRetr
 		RoleID: ownerRole.ID,
 	}
 
-	uow.Membership.Add(membership)
+	_, err = uow.Membership.Add(membership)
+	if err != nil {
+		return err
+	}
 
 	tx.Commit()
 
-	return &dto.TeamRetrievalSchema{
-		ID:          team.ID,
-		Name:        team.Name,
-		Description: team.Description,
-		AvatarURL:   team.AvatarURL,
-		IsPersonal:  team.IsPersonal,
-		Creator:     cmd.User.PublicUser(),
-		CreatedAt:   team.CreatedAt,
-		UpdatedAt:   team.UpdatedAt,
-	}, nil
+	return nil
 }
 
-func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) (*dto.TeamRetrievalSchema, error) {
+func UpdateTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.UpdateTeam); ok {
+		return UpdateTeam(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.UpdateTeam, got %T", cmd)
+}
+
+func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
 	if txErr != nil {
-		return nil, txErr
+		return txErr
 	}
 
 	defer func() {
@@ -82,9 +90,9 @@ func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) (*dto.TeamRetr
 	team, err := uow.Team.Get(cmd.TeamID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, exception.NewNotFoundException(err.Error())
+			return exception.NewNotFoundException(err.Error())
 		}
-		return nil, err
+		return err
 	}
 
 	if cmd.Name != "" {
@@ -94,23 +102,21 @@ func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) (*dto.TeamRetr
 		team.Description = cmd.Description
 	}
 
-	team, err = uow.Team.Update(team)
+	_, err = uow.Team.Update(team)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	tx.Commit()
 
-	return &dto.TeamRetrievalSchema{
-		ID:          team.ID,
-		Name:        team.Name,
-		Description: team.Description,
-		AvatarURL:   team.AvatarURL,
-		IsPersonal:  team.IsPersonal,
-		Creator:     team.Creator.PublicUser(),
-		CreatedAt:   team.CreatedAt,
-		UpdatedAt:   team.UpdatedAt,
-	}, nil
+	return nil
+}
+
+func UpdateLastActiveTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.UpdateLastActiveTeam); ok {
+		return UpdateLastActiveTeam(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.UpdateLastActiveTeam, got %T", cmd)
 }
 
 func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActiveTeam) error {
@@ -152,6 +158,13 @@ func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActive
 	return nil
 }
 
+func DeleteTeamMemberWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.DeleteTeamMember); ok {
+		return DeleteTeamMember(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.DeleteTeamMember, got %T", cmd)
+}
+
 func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
 	if txErr != nil {
@@ -190,6 +203,13 @@ func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) er
 	tx.Commit()
 
 	return nil
+}
+
+func ChangeMemberRoleWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.ChangeMemberRole); ok {
+		return ChangeMemberRole(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.ChangeMemberRole, got %T", cmd)
 }
 
 func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) error {

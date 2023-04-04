@@ -5,7 +5,6 @@ import (
 	"auth/domain/model"
 	"auth/middleware"
 	"auth/service"
-	"auth/service/handlers"
 	"auth/view"
 	"net/http"
 
@@ -26,10 +25,10 @@ type invitationController struct{}
 
 // NewInvitationController -> returns new invitation controller
 func NewInvitationController() InvitationController {
-	return invitationController{}
+	return &invitationController{}
 }
 
-func (ctrl invitationController) Routes(route *gin.RouterGroup) {
+func (ctrl *invitationController) Routes(route *gin.RouterGroup) {
 	invitation := route.Group("/invitations")
 	invitation.POST("/verify", middleware.DeserializeUser(), ctrl.VerifyInvitation)
 	invitation.GET("/:id", ctrl.GetInvitationByID)
@@ -43,10 +42,10 @@ func (ctrl invitationController) Routes(route *gin.RouterGroup) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Team ID"
-// @Success 200 {object} dto.TeamRetrievalSchema
+// @Success 200 {string} string "OK"
 // @Router /invitations/verify [post]
-func (ctrl invitationController) VerifyInvitation(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Parse the request body into a User struct
@@ -58,15 +57,15 @@ func (ctrl invitationController) VerifyInvitation(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	err := handlers.UpdateInvitationStatus(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
 	// Return invitation data
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"invitation": "OK"}})
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
 // @Summary Get invitation by ID
@@ -78,7 +77,7 @@ func (ctrl invitationController) VerifyInvitation(ctx *gin.Context) {
 // @Param id path string true "Invitation ID"
 // @Success 200 {object} dto.InvitationRetreivalSchema
 // @Router /invitations/{id} [get]
-func (ctrl invitationController) GetInvitationByID(ctx *gin.Context) {
+func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 	uow := ctx.MustGet("uow").(*service.UnitOfWork)
 
 	// Get invitation ID from request parameter
@@ -89,7 +88,7 @@ func (ctrl invitationController) GetInvitationByID(ctx *gin.Context) {
 	invitation, err := view.Invitation(id, uow)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -106,8 +105,8 @@ func (ctrl invitationController) GetInvitationByID(ctx *gin.Context) {
 // @Param id path string true "Invitation ID"
 // @Success 200 {string} string "OK"
 // @Router /invitations/{id} [delete]
-func (ctrl invitationController) DeleteInvitation(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Get invitation ID from request parameter
@@ -119,13 +118,13 @@ func (ctrl invitationController) DeleteInvitation(ctx *gin.Context) {
 	cmd.InvitationID = id
 	cmd.User = currentUser
 
-	err := handlers.DeleteInvitation(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
 	// Return invitation data
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"invitation": "OK"}})
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }

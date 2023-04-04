@@ -8,8 +8,9 @@ import (
 
 type InviteMember struct {
 	TeamID   uuid.UUID `json:"team_id"`
-	Sender   *model.User
 	Invitees []Invitee `json:"invitees"`
+	Sender   *model.User
+	Command
 }
 
 // make a stuct that contains Email and Role, and use it in the InviteMember struct
@@ -22,15 +23,18 @@ type UpdateInvitationStatus struct {
 	InvitationID string `json:"invitation_id"`
 	Status       string `json:"status"`
 	User         *model.User
+	Command
 }
 
 type DeleteInvitation struct {
 	InvitationID string `json:"invitation_id"`
 	User         *model.User
+	Command
 }
 
 type ResendInvitation struct {
 	InvitationID string    `json:"invitation_id"`
 	TeamID       uuid.UUID `json:"team_id"`
 	Sender       *model.User
+	Command
 }

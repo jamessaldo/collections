@@ -7,9 +7,11 @@ import (
 	"auth/infrastructure/persistence"
 	"auth/infrastructure/worker"
 	"auth/service"
+	"auth/service/handlers"
 	"flag"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -27,9 +29,9 @@ import (
 
 // create an enum of the environment
 const (
-	Development = "development"
-	Production  = "production"
-	Local       = "local"
+	Production = "production"
+	// Development = "development"
+	// Local       = "local"
 )
 
 func init() {
@@ -39,6 +41,20 @@ func init() {
 		log.SetLevel(log.InfoLevel)
 	} else {
 		log.SetLevel(log.DebugLevel)
+	}
+}
+
+func Bootstrap(db *gorm.DB, mailer worker.WorkerInterface) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		uow, err := service.NewUnitOfWork(db)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		ctx.Set("uow", uow)
+		ctx.Set("mailer", mailer)
+		ctx.Set("bus", service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer))
+		ctx.Next()
 	}
 }
 
@@ -70,7 +86,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bootstrap := service.Bootstrap(db, mailer)
+	bootstrap := Bootstrap(db, mailer)
 
 	server := controller.Server{}
 	server.InitializeApp(bootstrap)

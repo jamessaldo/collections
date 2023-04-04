@@ -3,6 +3,7 @@ package util
 import (
 	"auth/config"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,7 +30,7 @@ type GoogleUserResult struct {
 	Locale        string
 }
 
-func GetGoogleOauthToken(code string) (*GoogleOauthToken, error) {
+func GetGoogleOauthToken(ctx context.Context, code string) (*GoogleOauthToken, error) {
 	const rootURl = "https://oauth2.googleapis.com/token"
 
 	values := url.Values{}
@@ -41,7 +42,7 @@ func GetGoogleOauthToken(code string) (*GoogleOauthToken, error) {
 
 	query := values.Encode()
 
-	req, err := http.NewRequest("POST", rootURl, bytes.NewBufferString(query))
+	req, err := http.NewRequestWithContext(ctx, "POST", rootURl, bytes.NewBufferString(query))
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +56,7 @@ func GetGoogleOauthToken(code string) (*GoogleOauthToken, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		fmt.Print(config.AppConfig.GoogleClientID)
@@ -81,10 +83,10 @@ func GetGoogleOauthToken(code string) (*GoogleOauthToken, error) {
 	return tokenBody, nil
 }
 
-func GetGoogleUser(access_token string, id_token string) (*GoogleUserResult, error) {
+func GetGoogleUser(ctx context.Context, access_token string, id_token string) (*GoogleUserResult, error) {
 	rootUrl := fmt.Sprintf("https://www.googleapis.com/oauth2/v2/userinfo?alt=json&access_token=%s", access_token)
 
-	req, err := http.NewRequest("GET", rootUrl, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", rootUrl, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +101,7 @@ func GetGoogleUser(access_token string, id_token string) (*GoogleUserResult, err
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.New("could not retrieve user")

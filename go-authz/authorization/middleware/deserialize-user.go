@@ -29,7 +29,7 @@ func DeserializeUser() gin.HandlerFunc {
 		} else {
 			cookie, err := ctx.Cookie("token")
 			if err != nil {
-				ctx.Error(exception.NewUnauthorizedException("token is required"))
+				_ = ctx.Error(exception.NewUnauthorizedException("token is required"))
 				ctx.Abort()
 				return
 			}
@@ -37,14 +37,14 @@ func DeserializeUser() gin.HandlerFunc {
 		}
 
 		if token == "" {
-			ctx.Error(exception.NewUnauthorizedException("token is required"))
+			_ = ctx.Error(exception.NewUnauthorizedException("token is required"))
 			ctx.Abort()
 			return
 		}
 
 		sub, err := util.ValidateToken(token, config.AppConfig.JWTTokenSecret)
 		if err != nil {
-			ctx.Error(exception.NewUnauthorizedException("token is invalid"))
+			_ = ctx.Error(exception.NewUnauthorizedException("token is invalid"))
 			ctx.Abort()
 			return
 		}
@@ -53,17 +53,17 @@ func DeserializeUser() gin.HandlerFunc {
 
 		if userErr != nil {
 			if errors.Is(userErr, gorm.ErrRecordNotFound) {
-				ctx.Error(exception.NewNotFoundException("the user belonging to this token no logger exists"))
+				_ = ctx.Error(exception.NewNotFoundException("the user belonging to this token no logger exists"))
 				ctx.Abort()
 				return
 			}
-			ctx.Error(userErr)
+			_ = ctx.Error(userErr)
 			ctx.Abort()
 			return
 		}
 
 		if !user.IsActive {
-			ctx.Error(exception.NewUnauthorizedException("the user belonging to this token has been deactivated"))
+			_ = ctx.Error(exception.NewUnauthorizedException("the user belonging to this token has been deactivated"))
 			ctx.Abort()
 			return
 		}

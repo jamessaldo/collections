@@ -2,11 +2,11 @@ package model
 
 import (
 	"auth/domain/dto"
+	"fmt"
 	"html"
 	"strings"
 	"time"
 
-	"github.com/badoux/checkmail"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -74,72 +74,28 @@ func (u *User) Prepare() {
 	u.UpdatedAt = time.Now()
 }
 
-func (u *User) Validate(action string) map[string]string {
-	var errorMessages = make(map[string]string)
-	var err error
-
-	switch strings.ToLower(action) {
-	case "update":
-		if u.Email == "" {
-			errorMessages["email_required"] = "email required"
-		}
-		if u.Email != "" {
-			if err = checkmail.ValidateFormat(u.Email); err != nil {
-				errorMessages["invalid_email"] = "email email"
-			}
-		}
-	case "login":
-		if u.Password == "" {
-			errorMessages["password_required"] = "password is required"
-		}
-		if u.Email == "" {
-			errorMessages["email_required"] = "email is required"
-		}
-		if u.Email != "" {
-			if err = checkmail.ValidateFormat(u.Email); err != nil {
-				errorMessages["invalid_email"] = "please provide a valid email"
-			}
-		}
-	case "forgotpassword":
-		if u.Email == "" {
-			errorMessages["email_required"] = "email required"
-		}
-		if u.Email != "" {
-			if err = checkmail.ValidateFormat(u.Email); err != nil {
-				errorMessages["invalid_email"] = "please provide a valid email"
-			}
-		}
-	default:
-		if u.FirstName == "" {
-			errorMessages["firstname_required"] = "first name is required"
-		}
-		if u.LastName == "" {
-			errorMessages["lastname_required"] = "last name is required"
-		}
-		if u.Password == "" {
-			errorMessages["password_required"] = "password is required"
-		}
-		if u.Password != "" && len(u.Password) < 6 {
-			errorMessages["invalid_password"] = "password should be at least 6 characters"
-		}
-		if u.Username == "" {
-			errorMessages["username_required"] = "username is required"
-		}
-		if u.Email == "" {
-			errorMessages["email_required"] = "email is required"
-		}
-		if u.Email != "" {
-			if err = checkmail.ValidateFormat(u.Email); err != nil {
-				errorMessages["invalid_email"] = "please provide a valid email"
-			}
-		}
-	}
-	return errorMessages
-}
-
 func (u *User) FullName() string {
 	fullName := u.FirstName + " " + u.LastName
 	words := strings.Fields(fullName)
 	fullName = strings.Join(words, " ")
 	return fullName
+}
+
+func (u *User) AddPersonalTeam(role *Role) *Membership {
+	team := &Team{
+		ID:          uuid.NewV4(),
+		Name:        fmt.Sprintf("%s's Personal Team", u.FullName()),
+		Description: fmt.Sprintf("%s's Personal Team will contains your personal apps.", u.FullName()),
+		IsPersonal:  true,
+		CreatorID:   u.ID,
+		Creator:     u,
+	}
+
+	return &Membership{
+		ID:     uuid.NewV4(),
+		TeamID: team.ID,
+		Team:   team,
+		UserID: u.ID,
+		RoleID: role.ID,
+	}
 }

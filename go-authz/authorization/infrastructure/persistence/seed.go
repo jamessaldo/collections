@@ -4,8 +4,8 @@ import (
 	"auth/domain/model"
 	"auth/service"
 	"fmt"
-	"io/ioutil"
 	"math"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sync"
@@ -155,7 +155,7 @@ func userSeedBatchRoutine(db *gorm.DB, user_list []model.User, counter, workerIn
 	log.Println(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
 }
 
-func userSeedRoutine(db *gorm.DB, user_data *model.User, counter, workerIndex int) {
+func _(db *gorm.DB, user_data *model.User, counter, workerIndex int) {
 	uow, err := service.NewUnitOfWork(db)
 	if err != nil {
 		log.Fatal(err)
@@ -182,7 +182,6 @@ func userSeedRoutine(db *gorm.DB, user_data *model.User, counter, workerIndex in
 }
 
 func (s Seed) AccessSeed() {
-
 	uow, err := service.NewUnitOfWork(s.db)
 	if err != nil {
 		log.Fatal(err)
@@ -198,7 +197,7 @@ func (s Seed) AccessSeed() {
 	}()
 
 	endpointPath := filepath.Join("data", "endpoints.yml")
-	endpointDatas, err := ioutil.ReadFile(endpointPath)
+	endpointDatas, err := os.ReadFile(endpointPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -210,7 +209,7 @@ func (s Seed) AccessSeed() {
 	}
 
 	rolePath := filepath.Join("data", "roles.yml")
-	roleDatas, err := ioutil.ReadFile(rolePath)
+	roleDatas, err := os.ReadFile(rolePath)
 	if err != nil {
 		log.Fatal(err)
 	}

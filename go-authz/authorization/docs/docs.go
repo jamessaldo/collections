@@ -19,6 +19,38 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/invitations/verify": {
+            "post": {
+                "description": "Get invitation data by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Get invitation by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/invitations/{id}": {
             "get": {
                 "description": "Get invitation data by ID",
@@ -32,6 +64,36 @@ const docTemplate = `{
                     "Invitation"
                 ],
                 "summary": "Get invitation by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invitation ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.InvitationRetreivalSchema"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete invitation data by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invitation"
+                ],
+                "summary": "Delete invitation by ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -143,9 +205,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TeamRetrievalSchema"
+                            "type": "string"
                         }
                     }
                 }
@@ -223,7 +285,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TeamRetrievalSchema"
+                            "type": "string"
                         }
                     }
                 }
@@ -261,6 +323,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/teams/{id}/invitation/{invitation_id}": {
+            "post": {
+                "description": "Resend invitation to join team",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Resend Invitation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Invitation ID",
+                        "name": "invitation_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/teams/{id}/last-active": {
             "put": {
                 "description": "Update last active team date",
@@ -279,6 +380,82 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Team ID",
                         "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{id}/members/{membership_id}": {
+            "put": {
+                "description": "Change team member role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Change team member role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Membership ID",
+                        "name": "membership_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete team member",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Delete team member",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Membership ID",
+                        "name": "membership_id",
                         "in": "path",
                         "required": true
                     }
@@ -363,7 +540,28 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PublicUser"
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete user data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Delete user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -440,6 +638,32 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/model.User"
+                }
+            }
+        },
+        "dto.InvitationRetreivalSchema": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "sender_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "team": {
+                    "$ref": "#/definitions/dto.TeamRetrievalSchema"
                 }
             }
         },

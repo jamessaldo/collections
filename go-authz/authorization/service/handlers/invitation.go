@@ -16,6 +16,13 @@ import (
 	"gorm.io/gorm"
 )
 
+func InviteMemberWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.InviteMember); ok {
+		return InviteMember(uow, mailer, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.InviteMember, got %T", cmd)
+}
+
 // create inviteMember function
 func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.InviteMember) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
@@ -123,6 +130,13 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 	return nil
 }
 
+func ResendInvitationWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.ResendInvitation); ok {
+		return ResendInvitation(uow, mailer, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.ResendInvitation, got %T", cmd)
+}
+
 // create ResendInvitation function
 func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.ResendInvitation) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
@@ -184,6 +198,13 @@ func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cm
 	return nil
 }
 
+func DeleteInvitationWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.DeleteInvitation); ok {
+		return DeleteInvitation(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.DeleteInvitation, got %T", cmd)
+}
+
 // create DeleteInvitation function
 func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
@@ -219,6 +240,13 @@ func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) er
 	}
 
 	return nil
+}
+
+func UpdateInvitationStatusWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.UpdateInvitationStatus); ok {
+		return UpdateInvitationStatus(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.UpdateInvitationStatus, got %T", cmd)
 }
 
 // create UpdateInvitationStatus function

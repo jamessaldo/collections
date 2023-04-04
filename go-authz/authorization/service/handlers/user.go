@@ -2,16 +2,24 @@ package handlers
 
 import (
 	"auth/domain/command"
-	"auth/domain/dto"
+	"auth/infrastructure/worker"
 	"auth/service"
+	"fmt"
 
 	"gorm.io/gorm"
 )
 
-func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) (*dto.ProfileUser, error) {
+func UpdateUserWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.UpdateUser); ok {
+		return UpdateUser(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.UpdateUser, got %T", cmd)
+}
+
+func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
 	if txErr != nil {
-		return nil, txErr
+		return txErr
 	}
 
 	defer func() {
@@ -28,14 +36,21 @@ func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) (*dto.ProfileU
 		cmd.User.PhoneNumber = cmd.PhoneNumber
 	}
 
-	user, err := uow.User.Update(cmd.User)
+	_, err := uow.User.Update(cmd.User)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	tx.Commit()
 
-	return user.ProfileUser(), nil
+	return nil
+}
+
+func DeleteUserWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.DeleteUser); ok {
+		return DeleteUser(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.DeleteUser, got %T", cmd)
 }
 
 func DeleteUser(uow *service.UnitOfWork, cmd *command.DeleteUser) error {

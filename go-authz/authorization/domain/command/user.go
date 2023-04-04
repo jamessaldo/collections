@@ -8,8 +8,10 @@ type UpdateUser struct {
 	LastName    string `json:"last_name"`
 	PhoneNumber string `json:"phone_number"`
 	User        *model.User
+	Command
 }
 
 type DeleteUser struct {
 	User *model.User
+	Command
 }

@@ -4,11 +4,26 @@ import (
 	"auth/controller/exception"
 	"auth/domain/dto"
 	"auth/service"
+	"auth/util"
 	"errors"
 
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
+
+func LoginByGoogle(email string, uow *service.UnitOfWork) (string, string, error) {
+	user, userErr := uow.User.GetByEmail(email)
+	if userErr != nil {
+		return "", "", userErr
+	}
+
+	token, refreshToken, err := util.GenerateTokens(user)
+	if err != nil {
+		return "", "", err
+	}
+
+	return token, refreshToken, nil
+}
 
 func User(id uuid.UUID, uow *service.UnitOfWork) (*dto.PublicUser, error) {
 	user, err := uow.User.Get(id)

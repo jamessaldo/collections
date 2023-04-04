@@ -3,10 +3,8 @@ package v1
 import (
 	"auth/domain/command"
 	"auth/domain/model"
-	"auth/infrastructure/worker"
 	"auth/middleware"
 	"auth/service"
-	"auth/service/handlers"
 	"auth/view"
 	"net/http"
 	"strconv"
@@ -30,10 +28,10 @@ type teamController struct{}
 
 // NewTeamController -> returns new team controller
 func NewTeamController() TeamController {
-	return teamController{}
+	return &teamController{}
 }
 
-func (ctrl teamController) Routes(route *gin.RouterGroup) {
+func (ctrl *teamController) Routes(route *gin.RouterGroup) {
 	team := route.Group("/teams")
 	team.GET("", middleware.DeserializeUser(), ctrl.GetTeams)
 	team.GET("/:id", middleware.DeserializeUser(), ctrl.GetTeamById)
@@ -55,7 +53,7 @@ func (ctrl teamController) Routes(route *gin.RouterGroup) {
 // @Param id path string true "Team ID"
 // @Success 200 {object} dto.TeamRetrievalSchema
 // @Router /teams/{id} [get]
-func (ctrl teamController) GetTeamById(ctx *gin.Context) {
+func (ctrl *teamController) GetTeamById(ctx *gin.Context) {
 	uow := ctx.MustGet("uow").(*service.UnitOfWork)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
@@ -67,7 +65,7 @@ func (ctrl teamController) GetTeamById(ctx *gin.Context) {
 	team, err := view.Team(uuid.FromStringOrNil(id), currentUser, uow)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -86,7 +84,7 @@ func (ctrl teamController) GetTeamById(ctx *gin.Context) {
 // @Param name query string false "Team name"
 // @Success 200 {object} dto.Pagination
 // @Router /teams [get]
-func (ctrl teamController) GetTeams(ctx *gin.Context) {
+func (ctrl *teamController) GetTeams(ctx *gin.Context) {
 	log.Debug("Get all teams data")
 	uow := ctx.MustGet("uow").(*service.UnitOfWork)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
@@ -94,13 +92,13 @@ func (ctrl teamController) GetTeams(ctx *gin.Context) {
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 	}
 
 	pageSize, err := strconv.Atoi(ctx.DefaultQuery("pageSize", "10"))
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 	}
 
 	name := ctx.DefaultQuery("name", "")
@@ -117,7 +115,7 @@ func (ctrl teamController) GetTeams(ctx *gin.Context) {
 	teams, err := view.Teams(uow, currentUser, name, page, pageSize)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -135,11 +133,11 @@ func (ctrl teamController) GetTeams(ctx *gin.Context) {
 // @Param name body string true "Team name"
 // @Param is_personal body bool false "Is personal team"
 // @Param description body string false "Team description"
-// @Success 201 {object} dto.TeamRetrievalSchema
+// @Success 201 {string} string "OK"
 // @Router /teams [post]
-func (ctrl teamController) CreateTeam(ctx *gin.Context) {
+func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
 	log.Debug("Create team data")
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Parse the request body into a User struct
@@ -151,15 +149,15 @@ func (ctrl teamController) CreateTeam(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	team, err := handlers.CreateTeam(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
 	// Return team data
-	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "data": gin.H{"team": team}})
+	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "message": "OK"})
 }
 
 // @Summary Update team
@@ -171,11 +169,11 @@ func (ctrl teamController) CreateTeam(ctx *gin.Context) {
 // @Param team_id path string true "Team ID"
 // @Param name body string false "Team name"
 // @Param description body string false "Team description"
-// @Success 200 {object} dto.TeamRetrievalSchema
+// @Success 200 {string} string "OK"
 // @Router /teams/{id} [put]
-func (ctrl teamController) UpdateTeam(ctx *gin.Context) {
+func (ctrl *teamController) UpdateTeam(ctx *gin.Context) {
 	log.Debug("Update team data")
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Get team ID from request parameter
@@ -192,15 +190,15 @@ func (ctrl teamController) UpdateTeam(ctx *gin.Context) {
 	cmd.TeamID = uuid.FromStringOrNil(id)
 	cmd.User = currentUser
 
-	team, err := handlers.UpdateTeam(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
 	// Return team data
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"team": team}})
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
 // @Summary Update last active team date
@@ -212,8 +210,8 @@ func (ctrl teamController) UpdateTeam(ctx *gin.Context) {
 // @Param team_id path string true "Team ID"
 // @Success 200 {string} string "OK"
 // @Router /teams/{id}/last-active [put]
-func (ctrl teamController) UpdateLastActiveTeam(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+func (ctrl *teamController) UpdateLastActiveTeam(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Get team ID from request parameter
@@ -226,10 +224,10 @@ func (ctrl teamController) UpdateLastActiveTeam(ctx *gin.Context) {
 	cmd.TeamID = uuid.FromStringOrNil(id)
 	cmd.User = currentUser
 
-	err := handlers.UpdateLastActiveTeam(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -247,8 +245,8 @@ func (ctrl teamController) UpdateLastActiveTeam(ctx *gin.Context) {
 // @Param membership_id path string true "Membership ID"
 // @Success 200 {string} string "OK"
 // @Router /teams/{id}/members/{membership_id} [delete]
-func (ctrl teamController) DeleteTeamMember(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+func (ctrl *teamController) DeleteTeamMember(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Get team ID from request parameter
@@ -265,10 +263,10 @@ func (ctrl teamController) DeleteTeamMember(ctx *gin.Context) {
 	cmd.MembershipID = uuid.FromStringOrNil(membershipID)
 	cmd.User = currentUser
 
-	err := handlers.DeleteTeamMember(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -286,8 +284,8 @@ func (ctrl teamController) DeleteTeamMember(ctx *gin.Context) {
 // @Param membership_id path string true "Membership ID"
 // @Success 200 {string} string "OK"
 // @Router /teams/{id}/members/{membership_id} [put]
-func (ctrl teamController) ChangeMemberRole(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+func (ctrl *teamController) ChangeMemberRole(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Get team ID from request parameter
@@ -309,10 +307,10 @@ func (ctrl teamController) ChangeMemberRole(ctx *gin.Context) {
 	cmd.MembershipID = uuid.FromStringOrNil(membershipID)
 	cmd.User = currentUser
 
-	err := handlers.ChangeMemberRole(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -329,10 +327,9 @@ func (ctrl teamController) ChangeMemberRole(ctx *gin.Context) {
 // @Param team_id path string true "Team ID"
 // @Success 200 {string} string "OK"
 // @Router /teams/{id}/invitation [post]
-func (ctrl teamController) SendInvitation(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+func (ctrl *teamController) SendInvitation(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
-	mailer := ctx.MustGet("mailer").(worker.WorkerInterface)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
@@ -350,10 +347,10 @@ func (ctrl teamController) SendInvitation(ctx *gin.Context) {
 
 	log.Debug(cmd.Invitees)
 
-	err := handlers.InviteMember(uow, mailer, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -371,10 +368,9 @@ func (ctrl teamController) SendInvitation(ctx *gin.Context) {
 // @Param invitation_id path string true "Invitation ID"
 // @Success 200 {string} string "OK"
 // @Router /teams/{id}/invitation/{invitation_id} [post]
-func (ctrl teamController) ResendInvitation(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+func (ctrl *teamController) ResendInvitation(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
-	mailer := ctx.MustGet("mailer").(worker.WorkerInterface)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
@@ -395,10 +391,10 @@ func (ctrl teamController) ResendInvitation(ctx *gin.Context) {
 	cmd.TeamID = uuid.FromStringOrNil(id)
 	cmd.Sender = currentUser
 
-	err := handlers.ResendInvitation(uow, mailer, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 

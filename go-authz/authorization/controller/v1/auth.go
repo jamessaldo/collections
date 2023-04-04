@@ -2,11 +2,13 @@ package v1
 
 import (
 	"auth/config"
+	"auth/controller/exception"
 	"auth/domain/command"
-	"auth/infrastructure/worker"
 	"auth/middleware"
 	"auth/service"
-	"auth/service/handlers"
+	"auth/util"
+	"auth/view"
+	"context"
 	"fmt"
 	"net/http"
 
@@ -24,19 +26,18 @@ type authController struct{}
 
 // NewAuthController -> returns new auth controller
 func NewAuthController() AuthController {
-	return authController{}
+	return &authController{}
 }
 
-func (ctrl authController) Routes(route *gin.RouterGroup) {
+func (ctrl *authController) Routes(route *gin.RouterGroup) {
 	auth := route.Group("/auth")
 	auth.GET("/logout", middleware.DeserializeUser(), ctrl.Logout)
 	auth.GET("/sessions/oauth/google", ctrl.LoginByGoogle)
 }
 
-func (ctrl authController) LoginByGoogle(ctx *gin.Context) {
+func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	uow := ctx.MustGet("uow").(*service.UnitOfWork)
-	mailer := ctx.MustGet("mailer").(worker.WorkerInterface)
-
 	code := ctx.Query("code")
 	var pathUrl string = "/"
 
@@ -44,15 +45,46 @@ func (ctrl authController) LoginByGoogle(ctx *gin.Context) {
 		pathUrl = ctx.Query("state")
 	}
 
-	cmd := command.LoginByGoogle{
-		Code:    code,
-		PathURL: pathUrl,
+	if code == "" {
+		err := exception.NewBadGatewayException("authorization code not provided")
+		log.Error(err)
+		_ = ctx.Error(err)
+		return
 	}
 
-	token, refreshToken, err := handlers.LoginByGoogle(uow, mailer, cmd)
+	tokenRes, err := util.GetGoogleOauthToken(context.Background(), code)
+	if err != nil {
+		err = exception.NewBadGatewayException(err.Error())
+		log.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+
+	googleUser, err := util.GetGoogleUser(context.Background(), tokenRes.Access_token, tokenRes.Id_token)
+	if err != nil {
+		err = exception.NewBadGatewayException(err.Error())
+		log.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+
+	cmd := command.LoginByGoogle{
+		Code:       code,
+		PathURL:    pathUrl,
+		GoogleUser: *googleUser,
+	}
+
+	err = bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+
+	token, refreshToken, err := view.LoginByGoogle(googleUser.Email, uow)
+	if err != nil {
+		log.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -61,7 +93,7 @@ func (ctrl authController) LoginByGoogle(ctx *gin.Context) {
 	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprint(config.AppConfig.FrontEndOrigin, cmd.PathURL))
 }
 
-func (a authController) Logout(ctx *gin.Context) {
+func (ctrl *authController) Logout(ctx *gin.Context) {
 	ctx.SetCookie("token", "", -1, "/", "localhost", false, true)
 	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
 }

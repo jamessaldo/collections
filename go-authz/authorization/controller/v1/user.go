@@ -5,7 +5,6 @@ import (
 	"auth/domain/model"
 	"auth/middleware"
 	"auth/service"
-	"auth/service/handlers"
 	"auth/view"
 	"net/http"
 	"strconv"
@@ -28,10 +27,10 @@ type userController struct{}
 
 // NewUserController -> returns new user controller
 func NewUserController() UserController {
-	return userController{}
+	return &userController{}
 }
 
-func (ctrl userController) Routes(route *gin.RouterGroup) {
+func (ctrl *userController) Routes(route *gin.RouterGroup) {
 	user := route.Group("/users")
 	user.GET("/me", middleware.DeserializeUser(), ctrl.GetMe)
 	user.GET("/:id", ctrl.GetUserById)
@@ -48,7 +47,7 @@ func (ctrl userController) Routes(route *gin.RouterGroup) {
 // @Produce json
 // @Success 200 {object} dto.ProfileUser
 // @Router /users/me [get]
-func (ctrl userController) GetMe(ctx *gin.Context) {
+func (ctrl *userController) GetMe(ctx *gin.Context) {
 	log.Debug("Get current user data from context")
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
@@ -64,7 +63,7 @@ func (ctrl userController) GetMe(ctx *gin.Context) {
 // @Param id path int true "User ID"
 // @Success 200 {object} dto.PublicUser
 // @Router /users/{id} [get]
-func (ctrl userController) GetUserById(ctx *gin.Context) {
+func (ctrl *userController) GetUserById(ctx *gin.Context) {
 	uow := ctx.MustGet("uow").(*service.UnitOfWork)
 
 	// Get user ID from request parameter
@@ -75,7 +74,7 @@ func (ctrl userController) GetUserById(ctx *gin.Context) {
 	user, err := view.User(uuid.FromStringOrNil(id), uow)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -93,20 +92,20 @@ func (ctrl userController) GetUserById(ctx *gin.Context) {
 // @Param pageSize query int false "Page size"
 // @Success 200 {object} dto.PublicUser
 // @Router /users [get]
-func (ctrl userController) GetUsers(ctx *gin.Context) {
+func (ctrl *userController) GetUsers(ctx *gin.Context) {
 	log.Debug("Get all users data")
 	uow := ctx.MustGet("uow").(*service.UnitOfWork)
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 	}
 
 	pageSize, err := strconv.Atoi(ctx.DefaultQuery("pageSize", "10"))
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 	}
 
 	if page < 1 {
@@ -121,7 +120,7 @@ func (ctrl userController) GetUsers(ctx *gin.Context) {
 	users, err := view.Users(uow, page, pageSize)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -137,12 +136,12 @@ func (ctrl userController) GetUsers(ctx *gin.Context) {
 // @Produce json
 // @Param id path int true "User ID"
 // @Param body body command.UpdateUser true "User data"
-// @Success 200 {object} dto.PublicUser
+// @Success 200 {string} string "OK"
 // @Router /users [put]
-func (ctrl userController) UpdateUser(ctx *gin.Context) {
+func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 	log.Debug("Update user data")
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateUser
@@ -153,15 +152,15 @@ func (ctrl userController) UpdateUser(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	user, err := handlers.UpdateUser(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 
 	// Return user data
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"user": user}})
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
 // @Summary Delete user
@@ -172,19 +171,19 @@ func (ctrl userController) UpdateUser(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {string} string "OK"
 // @Router /users [delete]
-func (ctrl userController) DeleteUser(ctx *gin.Context) {
+func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 	log.Debug("Delete user data")
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	cmd := command.DeleteUser{
 		User: currentUser,
 	}
 
-	err := handlers.DeleteUser(uow, &cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error(err)
-		ctx.Error(err)
+		_ = ctx.Error(err)
 		return
 	}
 

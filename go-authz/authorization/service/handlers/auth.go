@@ -25,46 +25,38 @@ const (
 	FacebookProvider = "Facebook"
 )
 
-func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd command.LoginByGoogle) (string, string, error) {
+func LoginByGoogleWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.LoginByGoogle); ok {
+		return LoginByGoogle(uow, mailer, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.LoginByGoogle, got %T", cmd)
+}
+
+func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.LoginByGoogle) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
 	if txErr != nil {
-		return "", "", txErr
+		return txErr
 	}
 
 	defer func() {
 		tx.Rollback()
 	}()
 
-	if cmd.Code == "" {
-		return "", "", exception.NewBadGatewayException("authorization code not provided")
-	}
-
-	tokenRes, err := util.GetGoogleOauthToken(cmd.Code)
-	if err != nil {
-		return "", "", exception.NewBadGatewayException(err.Error())
-	}
-
-	googleUser, err := util.GetGoogleUser(tokenRes.Access_token, tokenRes.Id_token)
-	if err != nil {
-		return "", "", exception.NewBadGatewayException(err.Error())
-	}
-
 	now := time.Now()
-	email := strings.ToLower(googleUser.Email)
+	email := strings.ToLower(cmd.GoogleUser.Email)
 
-	user, userErr := uow.User.GetByEmail(email)
+	_, userErr := uow.User.GetByEmail(email)
 	if userErr != nil {
-		userId := uuid.NewV4()
-		user = &model.User{
-			ID:          userId,
-			FirstName:   googleUser.GivenName,
-			LastName:    googleUser.FamilyName,
-			Email:       googleUser.Email,
+		user := &model.User{
+			ID:          uuid.NewV4(),
+			FirstName:   cmd.GoogleUser.GivenName,
+			LastName:    cmd.GoogleUser.FamilyName,
+			Email:       cmd.GoogleUser.Email,
 			Password:    "",
 			PhoneNumber: "",
-			AvatarURL:   googleUser.Picture,
+			AvatarURL:   cmd.GoogleUser.Picture,
 			Provider:    GoogleProvider,
-			Verified:    googleUser.VerifiedEmail,
+			Verified:    cmd.GoogleUser.VerifiedEmail,
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -80,67 +72,33 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd c
 
 		_, userErr = uow.User.Add(user)
 		if userErr != nil {
-			return "", "", userErr
+			return userErr
 		}
 
 		ownerRole, roleErr := uow.Role.Get(model.Owner)
 		if roleErr != nil {
 			if errors.Is(roleErr, gorm.ErrRecordNotFound) {
-				return "", "", exception.NewNotFoundException(fmt.Sprintf("Role with name %s is not exist! Detail: %s", model.Owner, roleErr.Error()))
+				return exception.NewNotFoundException(fmt.Sprintf("Role with name %s is not exist! Detail: %s", model.Owner, roleErr.Error()))
 			}
-			return "", "", roleErr
+			return roleErr
 		}
 
-		team := &model.Team{
-			ID:          uuid.NewV4(),
-			Name:        fmt.Sprintf("%s's Personal Team", user.FullName()),
-			Description: fmt.Sprintf("%s's Personal Team will contains your personal apps.", user.FullName()),
-			IsPersonal:  true,
-			CreatorID:   user.ID,
-			Creator:     user,
-		}
-
-		membership := &model.Membership{
-			ID:     uuid.NewV4(),
-			TeamID: team.ID,
-			Team:   team,
-			UserID: user.ID,
-			RoleID: ownerRole.ID,
-		}
+		membership := user.AddPersonalTeam(ownerRole)
 
 		_, err := uow.Membership.Add(membership)
 		if err != nil {
-			return "", "", err
+			return err
 		}
 
 		errSendMail := sendWelcomeEmail(mailer, user)
 		if errSendMail != nil {
-			return "", "", errSendMail
+			return errSendMail
 		}
 
 		tx.Commit()
 	}
 
-	token, refreshToken, err := generateTokens(user.ID)
-	if err != nil {
-		return "", "", err
-	}
-
-	return token, refreshToken, nil
-}
-
-func generateTokens(userId uuid.UUID) (string, string, error) {
-	token, err := util.GenerateToken(config.AppConfig.TokenExpiresIn, userId.String(), config.AppConfig.JWTTokenSecret)
-	if err != nil {
-		return "", "", err
-	}
-
-	refreshToken, err := util.GenerateRefreshToken(config.AppConfig.RefreshTokenExpiresIn, userId.String(), config.AppConfig.RefreshJWTTokenSecret)
-	if err != nil {
-		return "", "", err
-	}
-
-	return token, refreshToken, nil
+	return nil
 }
 
 func sendWelcomeEmail(mailer worker.WorkerInterface, user *model.User) error {
