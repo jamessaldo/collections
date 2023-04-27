@@ -8,11 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type UoW interface {
-	GetDB() *gorm.DB
-	Begin() (*gorm.DB, error)
-}
-
 type UnitOfWork struct {
 	db         *gorm.DB
 	ctx        context.Context

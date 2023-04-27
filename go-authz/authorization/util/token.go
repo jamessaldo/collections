@@ -6,20 +6,21 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(ttl time.Duration, payload interface{}, secretJWTKey string) (string, error) {
+func GenerateToken(ttl time.Duration, payload interface{}, secretJWTKey, jwtKid string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	now := time.Now().UTC()
 	claims := token.Claims.(jwt.MapClaims)
-	fmt.Println(payload)
 
 	claims["sub"] = payload.(*model.User).ID
 	claims["exp"] = now.Add(ttl).Unix()
 	claims["iat"] = now.Unix()
 	claims["nbf"] = now.Unix()
+
+	token.Header["kid"] = jwtKid
 
 	tokenString, err := token.SignedString([]byte(secretJWTKey))
 
@@ -69,7 +70,7 @@ func ValidateToken(token string, signedJWTKey string) (interface{}, error) {
 }
 
 func GenerateTokens(user *model.User) (string, string, error) {
-	token, err := GenerateToken(config.AppConfig.TokenExpiresIn, user, config.AppConfig.JWTTokenSecret)
+	token, err := GenerateToken(config.AppConfig.TokenExpiresIn, user, config.AppConfig.JWTTokenSecret, config.AppConfig.JWTKid)
 	if err != nil {
 		return "", "", err
 	}

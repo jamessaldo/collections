@@ -1,16 +1,21 @@
 package handlers
 
 import (
+	"auth/config"
 	"auth/controller/exception"
 	"auth/domain/command"
 	"auth/domain/model"
 	"auth/infrastructure/worker"
 	"auth/service"
+	"auth/util"
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 )
 
@@ -48,7 +53,7 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 		ID:          cmd.TeamID,
 		Name:        cmd.Name,
 		Description: cmd.Description,
-		IsPersonal:  cmd.IsPersonal,
+		IsPersonal:  false,
 		CreatorID:   cmd.User.ID,
 	}
 
@@ -262,6 +267,117 @@ func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) er
 	}
 
 	tx.Commit()
+
+	return nil
+}
+
+func UpdateTeamAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.UpdateTeamAvatar); ok {
+		return UpdateTeamAvatar(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.UpdateTeamAvatar, got %T", cmd)
+}
+
+func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) error {
+	tx, txErr := uow.Begin(&gorm.Session{})
+	if txErr != nil {
+		return txErr
+	}
+
+	defer func() {
+		tx.Rollback()
+	}()
+
+	team, err := uow.Team.Get(cmd.TeamID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return exception.NewNotFoundException(err.Error())
+		}
+		return err
+	}
+
+	fileContentType := cmd.File.Header.Get("Content-Type")
+
+	// check file type, only allow image
+	if !strings.HasPrefix(fileContentType, "image") {
+		return exception.NewBadRequestException("invalid file type, only allow image")
+	}
+
+	if cmd.File.Size > config.StorageConfig.StaticMaxAvatarSize {
+		return exception.NewBadRequestException("file size too large")
+	}
+
+	if team.AvatarURL != "" {
+		// get avatar path after public url
+		paths := strings.Split(team.AvatarURL, "/")
+		path := filepath.Join(config.StorageConfig.StaticRoot, config.StorageConfig.StaticAvatarPath, paths[len(paths)-1])
+		if err := util.DeleteFileInLocal(path); err != nil {
+			return err
+		}
+	}
+
+	fileType := strings.Split(fileContentType, "/")[1]
+	avatarName := fmt.Sprintf("%s.%s", ksuid.New().String(), fileType)
+
+	if err := util.SaveFileToLocal(avatarName, cmd.File); err != nil {
+		return err
+	}
+
+	payload := map[string]interface{}{
+		"avatarURL": config.StorageConfig.StaticPublicURL + config.StorageConfig.StaticAvatarPath + avatarName,
+	}
+
+	team.Update(payload)
+	_, err = uow.Team.Update(team)
+	if err != nil {
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func DeleteTeamAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.DeleteTeamAvatar); ok {
+		return DeleteTeamAvatar(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.DeleteTeamAvatar, got %T", cmd)
+}
+
+func DeleteTeamAvatar(uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) error {
+	tx, txErr := uow.Begin(&gorm.Session{})
+	if txErr != nil {
+		return txErr
+	}
+
+	defer func() {
+		tx.Rollback()
+	}()
+
+	team, err := uow.Team.Get(cmd.TeamID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return exception.NewNotFoundException(err.Error())
+		}
+		return err
+	}
+
+	if team.AvatarURL != "" {
+		// get avatar path after public url
+		paths := strings.Split(team.AvatarURL, "/")
+		path := filepath.Join(config.StorageConfig.StaticRoot, config.StorageConfig.StaticAvatarPath, paths[len(paths)-1])
+		if err := util.DeleteFileInLocal(path); err != nil {
+			return err
+		}
+
+		team.AvatarURL = ""
+		_, err = uow.Team.Update(team)
+		if err != nil {
+			return err
+		}
+		tx.Commit()
+	}
 
 	return nil
 }

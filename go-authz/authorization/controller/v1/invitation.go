@@ -35,10 +35,10 @@ func (ctrl *invitationController) Routes(route *gin.RouterGroup) {
 	invitation.DELETE("/:id", middleware.DeserializeUser(), ctrl.DeleteInvitation)
 }
 
-// @Summary Get invitation by ID
+// @Summary Verify invitation by ID
 // @Schemes
-// @Description Get invitation data by ID
-// @Tags Team
+// @Description Verify invitation data by ID
+// @Tags Membership
 // @Accept json
 // @Produce json
 // @Param id path string true "Team ID"
@@ -71,7 +71,7 @@ func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 // @Summary Get invitation by ID
 // @Schemes
 // @Description Get invitation data by ID
-// @Tags Invitation
+// @Tags Membership
 // @Accept json
 // @Produce json
 // @Param id path string true "Invitation ID"
@@ -99,7 +99,7 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 // @Summary Delete invitation by ID
 // @Schemes
 // @Description Delete invitation data by ID
-// @Tags Invitation
+// @Tags Membership
 // @Accept json
 // @Produce json
 // @Param id path string true "Invitation ID"

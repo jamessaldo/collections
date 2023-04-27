@@ -20,8 +20,8 @@ var COMMAND_HANDLERS = map[reflect.Type]func(uow *service.UnitOfWork, mailer wor
 	reflect.TypeOf(&command.DeleteInvitation{}):       DeleteInvitationWrapper,
 	reflect.TypeOf(&command.UpdateInvitationStatus{}): UpdateInvitationStatusWrapper,
 	reflect.TypeOf(&command.LoginByGoogle{}):          LoginByGoogleWrapper,
-	// reflect.TypeOf(command.UpdateTeamAvatar{}):     update_team_avatar,
-	// reflect.TypeOf(command.DeleteTeamAvatar{}):     delete_team_avatar,
-	// reflect.TypeOf(command.UpdateUserAvatar{}):     update_user_avatar,
-	// reflect.TypeOf(command.DeleteUserAvatar{}):     delete_user_avatar,
+	reflect.TypeOf(&command.UpdateTeamAvatar{}):       UpdateTeamAvatarWrapper,
+	reflect.TypeOf(&command.DeleteTeamAvatar{}):       DeleteTeamAvatarWrapper,
+	reflect.TypeOf(&command.UpdateUserAvatar{}):       UpdateUserAvatarWrapper,
+	reflect.TypeOf(&command.DeleteUserAvatar{}):       DeleteUserAvatarWrapper,
 }

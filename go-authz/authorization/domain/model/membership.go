@@ -53,3 +53,17 @@ type MembershipOptions struct {
 	UserID       uuid.UUID
 	RoleID       uuid.UUID
 }
+
+func (t *Team) Update(payload map[string]any) {
+	if val, ok := payload["name"].(string); ok && val != "" {
+		t.Name = val
+	}
+
+	if val, ok := payload["description"].(string); ok && val != "" {
+		t.Description = val
+	}
+
+	if val, ok := payload["avatarURL"].(string); ok && val != "" {
+		t.AvatarURL = val
+	}
+}

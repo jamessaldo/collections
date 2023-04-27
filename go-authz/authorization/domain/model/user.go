@@ -99,3 +99,18 @@ func (u *User) AddPersonalTeam(role *Role) *Membership {
 		RoleID: role.ID,
 	}
 }
+
+func (u *User) Update(payload map[string]any) {
+	if val, ok := payload["firstName"]; ok && val != "" {
+		u.FirstName = payload["firstName"].(string)
+	}
+	if val, ok := payload["lastName"]; ok && val != "" {
+		u.LastName = payload["lastName"].(string)
+	}
+	if val, ok := payload["phoneNumber"]; ok && val != "" {
+		u.PhoneNumber = payload["phoneNumber"].(string)
+	}
+	if val, ok := payload["avatarURL"]; ok && val != "" {
+		u.AvatarURL = payload["avatarURL"].(string)
+	}
+}

@@ -177,7 +177,7 @@ paths:
             type: string
       summary: Delete invitation by ID
       tags:
-      - Invitation
+      - Membership
     get:
       consumes:
       - application/json
@@ -197,12 +197,12 @@ paths:
             $ref: '#/definitions/dto.InvitationRetreivalSchema'
       summary: Get invitation by ID
       tags:
-      - Invitation
+      - Membership
   /invitations/verify:
     post:
       consumes:
       - application/json
-      description: Get invitation data by ID
+      description: Verify invitation data by ID
       parameters:
       - description: Team ID
         in: path
@@ -216,9 +216,9 @@ paths:
           description: OK
           schema:
             type: string
-      summary: Get invitation by ID
+      summary: Verify invitation by ID
       tags:
-      - Team
+      - Membership
   /teams:
     get:
       consumes:
@@ -355,7 +355,7 @@ paths:
             type: string
       summary: Send invitation
       tags:
-      - Team
+      - Membership
   /teams/{id}/invitation/{invitation_id}:
     post:
       consumes:
@@ -381,7 +381,7 @@ paths:
             type: string
       summary: Resend Invitation
       tags:
-      - Team
+      - Membership
   /teams/{id}/last-active:
     put:
       consumes:
@@ -428,7 +428,7 @@ paths:
             type: string
       summary: Delete team member
       tags:
-      - Team
+      - Membership
     put:
       consumes:
       - application/json
@@ -452,6 +452,52 @@ paths:
           schema:
             type: string
       summary: Change team member role
+      tags:
+      - Membership
+  /teams/{team_id}/avatar:
+    delete:
+      consumes:
+      - application/json
+      description: Delete team avatar
+      parameters:
+      - description: Team ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Delete team avatar
+      tags:
+      - Team
+    put:
+      consumes:
+      - application/json
+      description: Update team avatar
+      parameters:
+      - description: Team ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: avatar
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Update team avatar
       tags:
       - Team
   /users:
@@ -537,6 +583,41 @@ paths:
           schema:
             $ref: '#/definitions/dto.PublicUser'
       summary: Get user by ID
+      tags:
+      - User
+  /users/avatar:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user avatar
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Delete user avatar
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: Update user avatar
+      parameters:
+      - description: User avatar
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Update user avatar
       tags:
       - User
   /users/me:

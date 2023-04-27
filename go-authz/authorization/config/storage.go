@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/viper"
@@ -33,6 +35,13 @@ type StorageConfiguration struct {
 	MaxIdleConns    int   `mapstructure:"MAX_IDLE_CONNS"`
 	MaxOpenConns    int   `mapstructure:"MAX_OPEN_CONNS"`
 	ConnMaxLifetime int64 `mapstructure:"CONN_MAX_LIFETIME"`
+
+	// Static Storage
+	StaticDriver        string `mapstructure:"STATIC_DRIVER"`
+	StaticRoot          string `mapstructure:"STATIC_ROOT"`
+	StaticPublicURL     string `mapstructure:"STATIC_PUBLIC_URL"`
+	StaticAvatarPath    string `mapstructure:"STATIC_AVATAR_PATH"`
+	StaticMaxAvatarSize int64  `mapstructure:"STATIC_MAX_AVATAR_SIZE"`
 }
 
 func loadStorageConfig(path string) (config StorageConfiguration, err error) {
@@ -40,9 +49,15 @@ func loadStorageConfig(path string) (config StorageConfiguration, err error) {
 	viper.SetConfigType("env")
 	viper.SetConfigName("storage")
 
-	viper.SetDefault("MaxIdleConns", 10)
-	viper.SetDefault("MaxOpenConns", 100)
-	viper.SetDefault("ConnMaxLifetime", 30)
+	viper.SetDefault("MAX_IDLE_CONNS", 10)
+	viper.SetDefault("MAX_OPEN_CONNS", 100)
+	viper.SetDefault("CONN_MAX_LIFETIME", 30)
+
+	viper.SetDefault("STATIC_DRIVER", "local")
+	viper.SetDefault("STATIC_ROOT", "static/")
+	viper.SetDefault("STATIC_PUBLIC_URL", fmt.Sprintf("http://localhost:%s/static/", AppConfig.AppPort))
+	viper.SetDefault("STATIC_AVATAR_PATH", "avatar/")
+	viper.SetDefault("STATIC_MAX_AVATAR_SIZE", 1024*1024*2)
 
 	viper.AutomaticEnv()
 
@@ -51,6 +66,6 @@ func loadStorageConfig(path string) (config StorageConfiguration, err error) {
 		return
 	}
 
-	err = viper.Unmarshal(&config)
+	err = viper.Unmarshal(&config, DecoderErrorUnset)
 	return
 }

@@ -1,6 +1,9 @@
 package command
 
-import "auth/domain/model"
+import (
+	"auth/domain/model"
+	"mime/multipart"
+)
 
 // TODO: fix naming/usage of command
 type UpdateUser struct {
@@ -14,4 +17,13 @@ type UpdateUser struct {
 type DeleteUser struct {
 	User *model.User
 	Command
+}
+
+type UpdateUserAvatar struct {
+	File *multipart.FileHeader `form:"avatar" binding:"required"`
+	User *model.User
+}
+
+type DeleteUserAvatar struct {
+	User *model.User
 }

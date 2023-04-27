@@ -42,6 +42,8 @@ func (ctrl *teamController) Routes(route *gin.RouterGroup) {
 	team.PUT("/:id/members/:membership_id", middleware.DeserializeUser(), ctrl.ChangeMemberRole)
 	team.POST("/:id/invitation", middleware.DeserializeUser(), ctrl.SendInvitation)
 	team.POST("/:id/invitation/:invitation_id", middleware.DeserializeUser(), ctrl.ResendInvitation)
+	team.PUT("/:id/avatar", middleware.DeserializeUser(), ctrl.UpdateTeamAvatar)
+	team.DELETE("/:id/avatar", middleware.DeserializeUser(), ctrl.DeleteTeamAvatar)
 }
 
 // @Summary Get team by ID
@@ -69,7 +71,7 @@ func (ctrl *teamController) GetTeamById(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"team": team}})
 }
 
@@ -119,7 +121,7 @@ func (ctrl *teamController) GetTeams(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": teams})
 }
 
@@ -156,7 +158,7 @@ func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
 	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "message": "OK"})
 }
 
@@ -197,7 +199,7 @@ func (ctrl *teamController) UpdateTeam(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
@@ -231,14 +233,14 @@ func (ctrl *teamController) UpdateLastActiveTeam(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
 // @Summary Delete team member
 // @Schemes
 // @Description Delete team member
-// @Tags Team
+// @Tags Membership
 // @Accept json
 // @Produce json
 // @Param team_id path string true "Team ID"
@@ -270,14 +272,14 @@ func (ctrl *teamController) DeleteTeamMember(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
 // @Summary Change team member role
 // @Schemes
 // @Description Change team member role
-// @Tags Team
+// @Tags Membership
 // @Accept json
 // @Produce json
 // @Param team_id path string true "Team ID"
@@ -314,14 +316,14 @@ func (ctrl *teamController) ChangeMemberRole(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
 // @Summary Send invitation
 // @Schemes
 // @Description Send invitation to join team
-// @Tags Team
+// @Tags Membership
 // @Accept json
 // @Produce json
 // @Param team_id path string true "Team ID"
@@ -354,14 +356,14 @@ func (ctrl *teamController) SendInvitation(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
 // @Summary Resend Invitation
 // @Schemes
 // @Description Resend invitation to join team
-// @Tags Team
+// @Tags Membership
 // @Accept json
 // @Produce json
 // @Param team_id path string true "Team ID"
@@ -398,6 +400,75 @@ func (ctrl *teamController) ResendInvitation(ctx *gin.Context) {
 		return
 	}
 
-	// Return team data
+	// Return success response
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
+}
+
+// @Summary Update team avatar
+// @Schemes
+// @Description Update team avatar
+// @Tags Team
+// @Accept json
+// @Produce json
+// @Param id path int true "Team ID"
+// @Param avatar formData file true "avatar"
+// @Success 200 {string} string "OK"
+// @Router /teams/{team_id}/avatar [put]
+func (ctrl *teamController) UpdateTeamAvatar(ctx *gin.Context) {
+	log.Debug("Update user avatar")
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+
+	// Get team ID from request parameter
+	id := ctx.Param("id")
+	log.Debug("Update avatar for team with ID = ", id)
+
+	// Parse the request body into a User struct
+	var cmd command.UpdateTeamAvatar
+	if err := ctx.ShouldBind(&cmd); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cmd.TeamID = uuid.FromStringOrNil(id)
+
+	err := bus.Handle(&cmd)
+	if err != nil {
+		log.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+
+	// Return user data
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
+}
+
+// @Summary Delete team avatar
+// @Schemes
+// @Description Delete team avatar
+// @Tags Team
+// @Accept json
+// @Produce json
+// @Param id path int true "Team ID"
+// @Success 200 {string} string "OK"
+// @Router /teams/{team_id}/avatar [delete]
+func (ctrl *teamController) DeleteTeamAvatar(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+
+	// Get team ID from request parameter
+	id := ctx.Param("id")
+	log.Debug("Delete avatar for team by ID = ", id)
+
+	var cmd command.DeleteTeamAvatar
+
+	cmd.TeamID = uuid.FromStringOrNil(id)
+
+	err := bus.Handle(&cmd)
+	if err != nil {
+		log.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+
+	// Return success response
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }

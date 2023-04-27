@@ -1,11 +1,17 @@
 package handlers
 
 import (
+	"auth/config"
+	"auth/controller/exception"
 	"auth/domain/command"
 	"auth/infrastructure/worker"
 	"auth/service"
+	"auth/util"
 	"fmt"
+	"path/filepath"
+	"strings"
 
+	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 )
 
@@ -26,15 +32,13 @@ func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) error {
 		tx.Rollback()
 	}()
 
-	if cmd.FirstName != "" {
-		cmd.User.FirstName = cmd.FirstName
+	payload := map[string]interface{}{
+		"firstName":   cmd.FirstName,
+		"lastName":    cmd.LastName,
+		"phoneNumber": cmd.PhoneNumber,
 	}
-	if cmd.LastName != "" {
-		cmd.User.LastName = cmd.LastName
-	}
-	if cmd.PhoneNumber != "" {
-		cmd.User.PhoneNumber = cmd.PhoneNumber
-	}
+
+	cmd.User.Update(payload)
 
 	_, err := uow.User.Update(cmd.User)
 	if err != nil {
@@ -71,6 +75,100 @@ func DeleteUser(uow *service.UnitOfWork, cmd *command.DeleteUser) error {
 	}
 
 	tx.Commit()
+
+	return nil
+}
+
+func UpdateUserAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.UpdateUserAvatar); ok {
+		return UpdateUserAvatar(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.UpdateUserAvatar, got %T", cmd)
+}
+
+func UpdateUserAvatar(uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) error {
+	tx, txErr := uow.Begin(&gorm.Session{})
+	if txErr != nil {
+		return txErr
+	}
+
+	defer func() {
+		tx.Rollback()
+	}()
+
+	fileContentType := cmd.File.Header.Get("Content-Type")
+
+	// check file type, only allow image
+	if !strings.HasPrefix(fileContentType, "image") {
+		return exception.NewBadRequestException("invalid file type, only allow image")
+	}
+
+	if cmd.File.Size > config.StorageConfig.StaticMaxAvatarSize {
+		return exception.NewBadRequestException("file size too large")
+	}
+
+	if cmd.User.AvatarURL != "" {
+		// get avatar path after public url
+		paths := strings.Split(cmd.User.AvatarURL, "/")
+		path := filepath.Join(config.StorageConfig.StaticRoot, config.StorageConfig.StaticAvatarPath, paths[len(paths)-1])
+		if err := util.DeleteFileInLocal(path); err != nil {
+			return err
+		}
+	}
+
+	fileType := strings.Split(fileContentType, "/")[1]
+	avatarName := fmt.Sprintf("%s.%s", ksuid.New().String(), fileType)
+
+	if err := util.SaveFileToLocal(avatarName, cmd.File); err != nil {
+		return err
+	}
+
+	payload := map[string]interface{}{
+		"avatarURL": config.StorageConfig.StaticPublicURL + config.StorageConfig.StaticAvatarPath + avatarName,
+	}
+
+	cmd.User.Update(payload)
+	_, err := uow.User.Update(cmd.User)
+	if err != nil {
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func DeleteUserAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+	if c, ok := cmd.(*command.DeleteUserAvatar); ok {
+		return DeleteUserAvatar(uow, c)
+	}
+	return fmt.Errorf("invalid command type, expected *command.DeleteUserAvatar, got %T", cmd)
+}
+
+func DeleteUserAvatar(uow *service.UnitOfWork, cmd *command.DeleteUserAvatar) error {
+	tx, txErr := uow.Begin(&gorm.Session{})
+	if txErr != nil {
+		return txErr
+	}
+
+	defer func() {
+		tx.Rollback()
+	}()
+
+	if cmd.User.AvatarURL != "" {
+		// get avatar path after public url
+		paths := strings.Split(cmd.User.AvatarURL, "/")
+		path := filepath.Join(config.StorageConfig.StaticRoot, config.StorageConfig.StaticAvatarPath, paths[len(paths)-1])
+		if err := util.DeleteFileInLocal(path); err != nil {
+			return err
+		}
+		cmd.User.AvatarURL = ""
+		_, err := uow.User.Update(cmd.User)
+		if err != nil {
+			return err
+		}
+		tx.Commit()
+	}
 
 	return nil
 }

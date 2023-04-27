@@ -37,6 +37,8 @@ func (ctrl *userController) Routes(route *gin.RouterGroup) {
 	user.GET("", ctrl.GetUsers)
 	user.PUT("", middleware.DeserializeUser(), ctrl.UpdateUser)
 	user.DELETE("", middleware.DeserializeUser(), ctrl.DeleteUser)
+	user.PUT("/avatar", middleware.DeserializeUser(), ctrl.UpdateUserAvatar)
+	user.DELETE("/avatar", middleware.DeserializeUser(), ctrl.DeleteUserAvatar)
 }
 
 // @Summary Get current user
@@ -177,6 +179,68 @@ func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	cmd := command.DeleteUser{
+		User: currentUser,
+	}
+
+	err := bus.Handle(&cmd)
+	if err != nil {
+		log.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+
+	// Return user data
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
+}
+
+// @Summary Update user avatar
+// @Schemes
+// @Description Update user avatar
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param avatar formData file true "User avatar"
+// @Success 200 {string} string "OK"
+// @Router /users/avatar [put]
+func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
+	log.Debug("Update user avatar")
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+	currentUser := ctx.MustGet("currentUser").(*model.User)
+
+	// Parse the request body into a User struct
+	var cmd command.UpdateUserAvatar
+	if err := ctx.ShouldBind(&cmd); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cmd.User = currentUser
+
+	err := bus.Handle(&cmd)
+	if err != nil {
+		log.Error(err)
+		_ = ctx.Error(err)
+		return
+	}
+
+	// Return user data
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
+}
+
+// @Summary Delete user avatar
+// @Schemes
+// @Description Delete user avatar
+// @Tags User
+// @Accept json
+// @Produce json
+// @Success 200 {string} string "OK"
+// @Router /users/avatar [delete]
+func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
+	log.Debug("Delete user avatar")
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+	currentUser := ctx.MustGet("currentUser").(*model.User)
+
+	cmd := command.DeleteUserAvatar{
 		User: currentUser,
 	}
 

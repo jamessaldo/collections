@@ -21,7 +21,7 @@ const docTemplate = `{
     "paths": {
         "/invitations/verify": {
             "post": {
-                "description": "Get invitation data by ID",
+                "description": "Verify invitation data by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -29,9 +29,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Team"
+                    "Membership"
                 ],
-                "summary": "Get invitation by ID",
+                "summary": "Verify invitation by ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -61,7 +61,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Invitation"
+                    "Membership"
                 ],
                 "summary": "Get invitation by ID",
                 "parameters": [
@@ -91,7 +91,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Invitation"
+                    "Membership"
                 ],
                 "summary": "Delete invitation by ID",
                 "parameters": [
@@ -301,7 +301,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Team"
+                    "Membership"
                 ],
                 "summary": "Send invitation",
                 "parameters": [
@@ -333,7 +333,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Team"
+                    "Membership"
                 ],
                 "summary": "Resend Invitation",
                 "parameters": [
@@ -404,7 +404,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Team"
+                    "Membership"
                 ],
                 "summary": "Change team member role",
                 "parameters": [
@@ -441,7 +441,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Team"
+                    "Membership"
                 ],
                 "summary": "Delete team member",
                 "parameters": [
@@ -456,6 +456,75 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Membership ID",
                         "name": "membership_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{team_id}/avatar": {
+            "put": {
+                "description": "Update team avatar",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Update team avatar",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Team ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "avatar",
+                        "name": "avatar",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete team avatar",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Team"
+                ],
+                "summary": "Delete team avatar",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Team ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -557,6 +626,59 @@ const docTemplate = `{
                     "User"
                 ],
                 "summary": "Delete user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/avatar": {
+            "put": {
+                "description": "Update user avatar",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update user avatar",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "User avatar",
+                        "name": "avatar",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete user avatar",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Delete user avatar",
                 "responses": {
                     "200": {
                         "description": "OK",

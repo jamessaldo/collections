@@ -26,10 +26,12 @@ func (server *Server) InitializeApp(bootstrap gin.HandlerFunc) {
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
 	router := gin.Default()
+	router.MaxMultipartMemory = config.StorageConfig.StaticMaxAvatarSize
 	router.Use(middleware.CORSMiddleware()) //For CORS
 	router.Use(middleware.HandleCustomError())
 	router.Use(bootstrap)
 	router.NoRoute(NoRoute)
+	router.StaticFS("/static", http.Dir("./static"))
 
 	routerApi := router.Group("/api")
 	routerV1 := routerApi.Group("/v1")

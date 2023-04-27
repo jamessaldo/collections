@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/viper"
@@ -18,6 +19,10 @@ func init() {
 	}
 }
 
+func DecoderErrorUnset(c *mapstructure.DecoderConfig) {
+	c.ErrorUnset = true
+}
+
 type ApplicationConfiguration struct {
 	FrontEndOrigin string `mapstructure:"FRONTEND_ORIGIN"`
 	AppPort        string `mapstructure:"APP_PORT"`
@@ -25,6 +30,7 @@ type ApplicationConfiguration struct {
 	AppName        string `mapstructure:"APP_NAME"`
 
 	// JWT
+	JWTKid                string        `mapstructure:"JWT_KID"`
 	JWTTokenSecret        string        `mapstructure:"JWT_SECRET"`
 	RefreshJWTTokenSecret string        `mapstructure:"REFRESH_JWT_SECRET"`
 	TokenExpiresIn        time.Duration `mapstructure:"TOKEN_EXPIRED_IN"`
@@ -43,6 +49,8 @@ func loadAppConfig(path string) (config ApplicationConfiguration, err error) {
 	viper.SetConfigType("env")
 	viper.SetConfigName("app")
 	viper.SetDefault("APP_PORT", "8888")
+	viper.SetDefault("APP_ENV", "development")
+	viper.SetDefault("APP_NAME", "svc-authorization")
 
 	viper.AutomaticEnv()
 
@@ -51,6 +59,6 @@ func loadAppConfig(path string) (config ApplicationConfiguration, err error) {
 		return
 	}
 
-	err = viper.Unmarshal(&config)
+	err = viper.Unmarshal(&config, DecoderErrorUnset)
 	return
 }

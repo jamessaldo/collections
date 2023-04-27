@@ -86,6 +86,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// create a directory for avatars if it doesn't exist
+	if config.StorageConfig.StaticDriver == "local" {
+		if err := os.MkdirAll(config.StorageConfig.StaticRoot+config.StorageConfig.StaticAvatarPath, 0755); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	bootstrap := Bootstrap(db, mailer)
 
 	server := controller.Server{}
