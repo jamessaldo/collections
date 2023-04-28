@@ -24,10 +24,12 @@ func DecoderErrorUnset(c *mapstructure.DecoderConfig) {
 }
 
 type ApplicationConfiguration struct {
-	FrontEndOrigin string `mapstructure:"FRONTEND_ORIGIN"`
-	AppPort        string `mapstructure:"APP_PORT"`
-	AppEnv         string `mapstructure:"APP_ENV"`
-	AppName        string `mapstructure:"APP_NAME"`
+	FrontEndOrigin  string `mapstructure:"FRONTEND_ORIGIN"`
+	AppHost         string `mapstructure:"APP_HOST"`
+	AppPort         string `mapstructure:"APP_PORT"`
+	AppExtAuthzPort string `mapstructure:"APP_EXT_AUTHZ_PORT"`
+	AppEnv          string `mapstructure:"APP_ENV"`
+	AppName         string `mapstructure:"APP_NAME"`
 
 	// JWT
 	JWTKid                string        `mapstructure:"JWT_KID"`

@@ -20,7 +20,8 @@ import (
 
 func DeserializeUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		uow := ctx.MustGet("uow").(*service.UnitOfWork)
+		bus := ctx.MustGet("bus").(*service.MessageBus)
+		uow := bus.UoW
 		cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 		var token string

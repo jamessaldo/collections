@@ -9,7 +9,7 @@ import (
 )
 
 type UnitOfWork struct {
-	db         *gorm.DB
+	DB         *gorm.DB
 	ctx        context.Context
 	User       repository.UserRepository
 	Role       repository.RoleRepository
@@ -23,7 +23,7 @@ func NewUnitOfWork(db *gorm.DB) (*UnitOfWork, error) {
 	ctx := context.Background()
 
 	return &UnitOfWork{
-		db:         db,
+		DB:         db,
 		ctx:        ctx,
 		User:       repository.NewUserRepository(db),
 		Role:       repository.NewRoleRepository(db),
@@ -35,11 +35,11 @@ func NewUnitOfWork(db *gorm.DB) (*UnitOfWork, error) {
 }
 
 func (u *UnitOfWork) GetDB() *gorm.DB {
-	return u.db
+	return u.DB
 }
 
 func (u *UnitOfWork) Begin(sessionConfig *gorm.Session) (*gorm.DB, error) {
-	tx := u.db.Session(sessionConfig).Begin()
+	tx := u.DB.Session(sessionConfig).Begin()
 	if tx.Error != nil {
 		return nil, tx.Error
 	}

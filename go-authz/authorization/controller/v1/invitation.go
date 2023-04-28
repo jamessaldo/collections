@@ -78,7 +78,8 @@ func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 // @Success 200 {object} dto.InvitationRetreivalSchema
 // @Router /invitations/{id} [get]
 func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+	uow := bus.UoW
 
 	// Get invitation ID from request parameter
 	id := ctx.Param("id")

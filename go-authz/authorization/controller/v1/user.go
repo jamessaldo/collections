@@ -70,7 +70,8 @@ func (ctrl *userController) GetMe(ctx *gin.Context) {
 // @Success 200 {object} dto.PublicUser
 // @Router /users/{id} [get]
 func (ctrl *userController) GetUserById(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+	uow := bus.UoW
 	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	// Get user ID from request parameter
@@ -113,7 +114,8 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 // @Router /users [get]
 func (ctrl *userController) GetUsers(ctx *gin.Context) {
 	log.Debug("Get all users data")
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+	uow := bus.UoW
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {

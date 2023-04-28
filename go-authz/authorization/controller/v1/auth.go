@@ -37,7 +37,7 @@ func (ctrl *authController) Routes(route *gin.RouterGroup) {
 
 func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	uow := bus.UoW
 	code := ctx.Query("code")
 	var pathUrl string = "/"
 

@@ -17,6 +17,7 @@ type EndpointRepository interface {
 	Update(*model.Endpoint, *gorm.DB) (*model.Endpoint, error)
 	Get(uuid.UUID) (*model.Endpoint, error)
 	List() ([]model.Endpoint, error)
+	ListFilteredBy(teamId, userId uuid.UUID) ([]model.Endpoint, error)
 }
 
 func NewEndpointRepository(db *gorm.DB) EndpointRepository {
@@ -51,6 +52,15 @@ func (repo *endpointRepository) Get(id uuid.UUID) (*model.Endpoint, error) {
 func (repo *endpointRepository) List() ([]model.Endpoint, error) {
 	var endpoints []model.Endpoint
 	err := repo.db.Debug().Find(&endpoints).Error
+	if err != nil {
+		return nil, err
+	}
+	return endpoints, nil
+}
+
+func (repo *endpointRepository) ListFilteredBy(teamId, userId uuid.UUID) ([]model.Endpoint, error) {
+	var endpoints []model.Endpoint
+	err := repo.db.Raw("SELECT e as endpoint FROM memberships m LEFT JOIN accesses a ON a.role_id = m.role_id LEFT JOIN endpoints e ON e.id = a.endpoint_id WHERE m.team_id = ? AND m.user_id = ?", teamId, userId).Scan(&endpoints).Error
 	if err != nil {
 		return nil, err
 	}

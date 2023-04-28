@@ -56,7 +56,8 @@ func (ctrl *teamController) Routes(route *gin.RouterGroup) {
 // @Success 200 {object} dto.TeamRetrievalSchema
 // @Router /teams/{id} [get]
 func (ctrl *teamController) GetTeamById(ctx *gin.Context) {
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+	uow := bus.UoW
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Get team ID from request parameter
@@ -88,7 +89,8 @@ func (ctrl *teamController) GetTeamById(ctx *gin.Context) {
 // @Router /teams [get]
 func (ctrl *teamController) GetTeams(ctx *gin.Context) {
 	log.Debug("Get all teams data")
-	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+	uow := bus.UoW
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))

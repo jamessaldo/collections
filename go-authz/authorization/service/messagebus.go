@@ -10,14 +10,14 @@ type Message interface{}
 
 type MessageBus struct {
 	commandHandlers map[reflect.Type]func(uow *UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error
-	uow             *UnitOfWork
+	UoW             *UnitOfWork
 	mailer          worker.WorkerInterface
 }
 
 func NewMessageBus(commandHandlers map[reflect.Type]func(uow *UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error, uow *UnitOfWork, mailer worker.WorkerInterface) *MessageBus {
 	return &MessageBus{
 		commandHandlers: commandHandlers,
-		uow:             uow,
+		UoW:             uow,
 		mailer:          mailer,
 	}
 }
@@ -35,7 +35,7 @@ func (mb *MessageBus) handleCommand(message Message) error {
 	if !ok {
 		return fmt.Errorf("no handler for %v", reflect.TypeOf(message))
 	}
-	err := handler(mb.uow, mb.mailer, message)
+	err := handler(mb.UoW, mb.mailer, message)
 	if err != nil {
 		return err
 	}
