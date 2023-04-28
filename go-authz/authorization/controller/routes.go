@@ -48,7 +48,7 @@ func (server *Server) InitializeApp(bootstrap gin.HandlerFunc) {
 	routerV1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	//Starting the application
-	log.Fatal(router.Run(":" + config.AppConfig.AppPort))
+	log.Fatal(router.Run(config.AppConfig.AppHost + ":" + config.AppConfig.AppPort))
 }
 
 func NoRoute(ctx *gin.Context) {

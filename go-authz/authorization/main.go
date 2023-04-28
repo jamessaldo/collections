@@ -40,7 +40,6 @@ func init() {
 }
 
 func main() {
-
 	// create a directory for avatars if it doesn't exist
 	if config.StorageConfig.StaticDriver == "local" {
 		if err := os.MkdirAll(config.StorageConfig.StaticRoot+config.StorageConfig.StaticAvatarPath, 0755); err != nil {
