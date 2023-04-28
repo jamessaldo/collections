@@ -2,13 +2,17 @@ package v1
 
 import (
 	"auth/domain/command"
+	"auth/domain/dto"
 	"auth/domain/model"
 	"auth/middleware"
 	"auth/service"
+	"auth/util"
 	"auth/view"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
+	"github.com/allegro/bigcache/v3"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
@@ -67,17 +71,30 @@ func (ctrl *userController) GetMe(ctx *gin.Context) {
 // @Router /users/{id} [get]
 func (ctrl *userController) GetUserById(ctx *gin.Context) {
 	uow := ctx.MustGet("uow").(*service.UnitOfWork)
+	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	// Get user ID from request parameter
 	id := ctx.Param("id")
 	log.Debug("Get user data by ID = ", id)
 
-	// Get user data from database
-	user, err := view.User(uuid.FromStringOrNil(id), uow)
+	var user *dto.PublicUser = &dto.PublicUser{}
+
+	userBytes, err := cache.Get(util.UserCachePrefix + id)
+	if err == nil {
+		var userCache *model.User = &model.User{}
+		err = json.Unmarshal(userBytes, userCache)
+		if err == nil {
+			user = userCache.PublicUser()
+		}
+	}
 	if err != nil {
-		log.Error(err)
-		_ = ctx.Error(err)
-		return
+		// Get user data from database
+		user, err = view.User(uuid.FromStringOrNil(id), uow)
+		if err != nil {
+			log.Error(err)
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	// Return user data
@@ -144,6 +161,7 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 	log.Debug("Update user data")
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 	bus := ctx.MustGet("bus").(*service.MessageBus)
+	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateUser
@@ -160,6 +178,7 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	cache.Delete(util.UserCachePrefix + currentUser.ID.String())
 
 	// Return user data
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
@@ -206,6 +225,7 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 	log.Debug("Update user avatar")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
+	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateUserAvatar
@@ -222,6 +242,7 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	cache.Delete(util.UserCachePrefix + currentUser.ID.String())
 
 	// Return user data
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
@@ -239,6 +260,7 @@ func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
 	log.Debug("Delete user avatar")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
+	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	cmd := command.DeleteUserAvatar{
 		User: currentUser,
@@ -251,6 +273,7 @@ func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
 		return
 	}
 
+	cache.Delete(util.UserCachePrefix + currentUser.ID.String())
 	// Return user data
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
 }

@@ -8,9 +8,12 @@ import (
 	"auth/infrastructure/worker"
 	"auth/service"
 	"auth/service/handlers"
+	"context"
 	"flag"
 	"os"
+	"time"
 
+	"github.com/allegro/bigcache/v3"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -45,15 +48,18 @@ func init() {
 }
 
 func Bootstrap(db *gorm.DB, mailer worker.WorkerInterface) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		uow, err := service.NewUnitOfWork(db)
-		if err != nil {
-			log.Fatal(err)
-		}
+	uow, err := service.NewUnitOfWork(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	messagebus := service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer)
+	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(10*time.Minute))
 
+	return func(ctx *gin.Context) {
 		ctx.Set("uow", uow)
 		ctx.Set("mailer", mailer)
-		ctx.Set("bus", service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer))
+		ctx.Set("bus", messagebus)
+		ctx.Set("cache", cache)
 		ctx.Next()
 	}
 }

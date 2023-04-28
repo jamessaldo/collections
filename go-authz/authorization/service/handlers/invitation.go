@@ -102,7 +102,7 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 		}
 
 		// add invitation
-		_, err = uow.Invitation.Add(&invitation)
+		_, err = uow.Invitation.Add(&invitation, tx)
 		if err != nil {
 			return err
 		}
@@ -234,7 +234,7 @@ func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) er
 	}
 
 	// delete invitation
-	err = uow.Invitation.Delete(invitation.ID)
+	err = uow.Invitation.Delete(invitation.ID, tx)
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 	// update invitation
 	invitation.Status = model.InvitationStatus(cmd.Status)
 	invitation.IsActive = false
-	invitation, err = uow.Invitation.Update(invitation)
+	invitation, err = uow.Invitation.Update(invitation, tx)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 			RoleID: role.ID,
 		}
 
-		_, err = uow.Membership.Add(membership)
+		_, err = uow.Membership.Add(membership, tx)
 		if err != nil {
 			return err
 		}

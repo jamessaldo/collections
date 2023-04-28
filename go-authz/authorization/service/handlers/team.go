@@ -65,7 +65,7 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 		RoleID: ownerRole.ID,
 	}
 
-	_, err = uow.Membership.Add(membership)
+	_, err = uow.Membership.Add(membership, tx)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
 		team.Description = cmd.Description
 	}
 
-	_, err = uow.Team.Update(team)
+	_, err = uow.Team.Update(team, tx)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActive
 	membership := memberships[0]
 	membership.LastActiveAt = &lastActiveAt
 
-	_, err = uow.Membership.Update(&membership)
+	_, err = uow.Membership.Update(&membership, tx)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) er
 		return exception.NewForbiddenException("You cannot delete owner of the team")
 	}
 
-	err = uow.Membership.Delete(cmd.MembershipID)
+	err = uow.Membership.Delete(cmd.MembershipID, tx)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) er
 
 	membership.RoleID = role.ID
 
-	_, err = uow.Membership.Update(membership)
+	_, err = uow.Membership.Update(membership, tx)
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) er
 	}
 
 	team.Update(payload)
-	_, err = uow.Team.Update(team)
+	_, err = uow.Team.Update(team, tx)
 	if err != nil {
 		return err
 	}
@@ -372,7 +372,7 @@ func DeleteTeamAvatar(uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) er
 		}
 
 		team.AvatarURL = ""
-		_, err = uow.Team.Update(team)
+		_, err = uow.Team.Update(team, tx)
 		if err != nil {
 			return err
 		}

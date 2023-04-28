@@ -9,32 +9,30 @@ import (
 
 type endpointRepository struct {
 	db *gorm.DB
-	tx *gorm.DB
 }
 
 // endpointRepository implements the EndpointRepository interface
 type EndpointRepository interface {
-	Add(*model.Endpoint) (*model.Endpoint, error)
-	Update(*model.Endpoint) (*model.Endpoint, error)
+	Add(*model.Endpoint, *gorm.DB) (*model.Endpoint, error)
+	Update(*model.Endpoint, *gorm.DB) (*model.Endpoint, error)
 	Get(uuid.UUID) (*model.Endpoint, error)
 	List() ([]model.Endpoint, error)
-	WithTrx(*gorm.DB) *endpointRepository
 }
 
 func NewEndpointRepository(db *gorm.DB) EndpointRepository {
 	return &endpointRepository{db: db}
 }
 
-func (repo *endpointRepository) Add(endpoint *model.Endpoint) (*model.Endpoint, error) {
-	err := repo.tx.Debug().Create(&endpoint).Error
+func (repo *endpointRepository) Add(endpoint *model.Endpoint, tx *gorm.DB) (*model.Endpoint, error) {
+	err := tx.Debug().Create(&endpoint).Error
 	if err != nil {
 		return nil, err
 	}
 	return endpoint, nil
 }
 
-func (repo *endpointRepository) Update(endpoint *model.Endpoint) (*model.Endpoint, error) {
-	err := repo.tx.Debug().Save(&endpoint).Error
+func (repo *endpointRepository) Update(endpoint *model.Endpoint, tx *gorm.DB) (*model.Endpoint, error) {
+	err := tx.Debug().Save(&endpoint).Error
 	if err != nil {
 		return nil, err
 	}
@@ -57,9 +55,4 @@ func (repo *endpointRepository) List() ([]model.Endpoint, error) {
 		return nil, err
 	}
 	return endpoints, nil
-}
-
-func (repo *endpointRepository) WithTrx(tx *gorm.DB) *endpointRepository {
-	repo.tx = tx
-	return repo
 }

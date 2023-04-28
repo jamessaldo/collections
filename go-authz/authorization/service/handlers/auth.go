@@ -70,7 +70,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 			user.Username = util.RandomUsername(user.Username)
 		}
 
-		_, userErr = uow.User.Add(user)
+		_, userErr = uow.User.Add(user, tx)
 		if userErr != nil {
 			return userErr
 		}
@@ -85,7 +85,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 
 		membership := user.AddPersonalTeam(ownerRole)
 
-		_, err := uow.Membership.Add(membership)
+		_, err := uow.Membership.Add(membership, tx)
 		if err != nil {
 			return err
 		}

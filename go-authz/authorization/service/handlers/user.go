@@ -40,7 +40,7 @@ func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) error {
 
 	cmd.User.Update(payload)
 
-	_, err := uow.User.Update(cmd.User)
+	_, err := uow.User.Update(cmd.User, tx)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func DeleteUser(uow *service.UnitOfWork, cmd *command.DeleteUser) error {
 
 	cmd.User.IsActive = false
 
-	_, err := uow.User.Update(cmd.User)
+	_, err := uow.User.Update(cmd.User, tx)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func UpdateUserAvatar(uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) er
 	}
 
 	cmd.User.Update(payload)
-	_, err := uow.User.Update(cmd.User)
+	_, err := uow.User.Update(cmd.User, tx)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func DeleteUserAvatar(uow *service.UnitOfWork, cmd *command.DeleteUserAvatar) er
 			return err
 		}
 		cmd.User.AvatarURL = ""
-		_, err := uow.User.Update(cmd.User)
+		_, err := uow.User.Update(cmd.User, tx)
 		if err != nil {
 			return err
 		}

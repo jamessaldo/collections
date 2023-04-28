@@ -43,11 +43,5 @@ func (u *UnitOfWork) Begin(sessionConfig *gorm.Session) (*gorm.DB, error) {
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
-	u.User = u.User.WithTrx(tx)
-	u.Role = u.Role.WithTrx(tx)
-	u.Endpoint = u.Endpoint.WithTrx(tx)
-	u.Team = u.Team.WithTrx(tx)
-	u.Membership = u.Membership.WithTrx(tx)
-	u.Invitation = u.Invitation.WithTrx(tx)
 	return tx, nil
 }

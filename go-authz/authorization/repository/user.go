@@ -10,28 +10,26 @@ import (
 
 type userRepository struct {
 	db *gorm.DB
-	tx *gorm.DB
 }
 
 // userRepository implements the UserRepository interface
 type UserRepository interface {
-	Add(*model.User) (*model.User, error)
+	Add(*model.User, *gorm.DB) (*model.User, error)
 	AddBatch([]model.User) error
-	Update(*model.User) (*model.User, error)
+	Update(*model.User, *gorm.DB) (*model.User, error)
 	Get(uuid.UUID) (*model.User, error)
 	List(page, pageSize int) (model.Users, error)
 	GetByEmail(string) (*model.User, error)
 	GetByUsername(string) (*model.User, error)
 	Count() (int64, error)
-	WithTrx(*gorm.DB) *userRepository
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (repo *userRepository) Add(user *model.User) (*model.User, error) {
-	err := repo.tx.Debug().Create(&user).Error
+func (repo *userRepository) Add(user *model.User, tx *gorm.DB) (*model.User, error) {
+	err := tx.Debug().Create(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +45,8 @@ func (repo *userRepository) AddBatch(users []model.User) error {
 	return nil
 }
 
-func (repo *userRepository) Update(user *model.User) (*model.User, error) {
-	err := repo.tx.Debug().Save(&user).Error
+func (repo *userRepository) Update(user *model.User, tx *gorm.DB) (*model.User, error) {
+	err := tx.Debug().Save(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -101,9 +99,4 @@ func (repo *userRepository) Count() (int64, error) {
 		return 0, err
 	}
 	return count, nil
-}
-
-func (repo *userRepository) WithTrx(tx *gorm.DB) *userRepository {
-	repo.tx = tx
-	return repo
 }

@@ -170,7 +170,7 @@ func _(db *gorm.DB, user_data *model.User, counter, workerIndex int) {
 		tx.Rollback()
 	}()
 
-	_, userErr := uow.User.Add(user_data)
+	_, userErr := uow.User.Add(user_data, tx)
 	if userErr != nil {
 		log.Error(userErr)
 		tx.Rollback()
@@ -240,7 +240,7 @@ func (s Seed) AccessSeed() {
 		for _, endpoint := range role.Endpoints {
 			roleData.AddEndpoints(cacheEndpoint[endpoint.Name])
 		}
-		_, roleErr := uow.Role.Add(&roleData)
+		_, roleErr := uow.Role.Add(&roleData, tx)
 		if roleErr != nil {
 			log.Error(roleErr)
 		}

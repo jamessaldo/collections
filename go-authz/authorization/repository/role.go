@@ -9,24 +9,22 @@ import (
 
 type roleRepository struct {
 	db *gorm.DB
-	tx *gorm.DB
 }
 
 // roleRepository implements the RoleRepository interface
 type RoleRepository interface {
-	Add(*model.Role) (*model.Role, error)
-	Update(*model.Role) (*model.Role, error)
+	Add(*model.Role, *gorm.DB) (*model.Role, error)
+	Update(*model.Role, *gorm.DB) (*model.Role, error)
 	Get(model.RoleType) (*model.Role, error)
 	List() ([]model.Role, error)
-	WithTrx(*gorm.DB) *roleRepository
 }
 
 func NewRoleRepository(db *gorm.DB) RoleRepository {
 	return &roleRepository{db: db}
 }
 
-func (repo *roleRepository) Add(role *model.Role) (*model.Role, error) {
-	err := repo.tx.Debug().Clauses(clause.OnConflict{DoNothing: true}).Create(&role).Error
+func (repo *roleRepository) Add(role *model.Role, tx *gorm.DB) (*model.Role, error) {
+	err := tx.Debug().Clauses(clause.OnConflict{DoNothing: true}).Create(&role).Error
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +32,8 @@ func (repo *roleRepository) Add(role *model.Role) (*model.Role, error) {
 	return role, nil
 }
 
-func (repo *roleRepository) Update(role *model.Role) (*model.Role, error) {
-	err := repo.tx.Debug().Save(&role).Error
+func (repo *roleRepository) Update(role *model.Role, tx *gorm.DB) (*model.Role, error) {
+	err := tx.Debug().Save(&role).Error
 	if err != nil {
 		return nil, err
 	}
@@ -58,9 +56,4 @@ func (repo *roleRepository) List() ([]model.Role, error) {
 		return nil, err
 	}
 	return roles, nil
-}
-
-func (repo *roleRepository) WithTrx(tx *gorm.DB) *roleRepository {
-	repo.tx = tx
-	return repo
 }

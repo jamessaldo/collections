@@ -1,15 +1,18 @@
 package middleware
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
 	"auth/config"
 	"auth/controller/exception"
+	"auth/domain/model"
 	"auth/service"
 	"auth/util"
 
+	"github.com/allegro/bigcache/v3"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -18,6 +21,7 @@ import (
 func DeserializeUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		uow := ctx.MustGet("uow").(*service.UnitOfWork)
+		cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 		var token string
 
@@ -48,18 +52,28 @@ func DeserializeUser() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		user_id, _ := uuid.FromString(fmt.Sprint(sub))
-		user, userErr := uow.User.Get(user_id)
 
-		if userErr != nil {
-			if errors.Is(userErr, gorm.ErrRecordNotFound) {
-				_ = ctx.Error(exception.NewNotFoundException("the user belonging to this token no logger exists"))
+		var user *model.User = &model.User{}
+		stringId := fmt.Sprint(sub)
+
+		userBytes, err := cache.Get(util.UserCachePrefix + stringId)
+		if err == nil {
+			err = json.Unmarshal(userBytes, user)
+		}
+		if err != nil {
+			user_id, _ := uuid.FromString(stringId)
+			user, err = uow.User.Get(user_id)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					_ = ctx.Error(exception.NewNotFoundException("the user belonging to this token no logger exists"))
+				} else {
+					_ = ctx.Error(err)
+				}
 				ctx.Abort()
 				return
 			}
-			_ = ctx.Error(userErr)
-			ctx.Abort()
-			return
+			json, _ := json.Marshal(user)
+			cache.Set(util.UserCachePrefix+stringId, json)
 		}
 
 		if !user.IsActive {

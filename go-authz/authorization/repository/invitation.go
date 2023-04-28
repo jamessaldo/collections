@@ -10,16 +10,15 @@ import (
 
 type invitationRepository struct {
 	db *gorm.DB
-	tx *gorm.DB
 }
 
 type InvitationRepository interface {
-	Add(*model.Invitation) (*model.Invitation, error)
-	Update(*model.Invitation) (*model.Invitation, error)
+	Add(*model.Invitation, *gorm.DB) (*model.Invitation, error)
+	AddBatch([]model.Invitation) error
+	Update(*model.Invitation, *gorm.DB) (*model.Invitation, error)
 	Get(string) (*model.Invitation, error)
 	List(opts *model.InvitationOptions) ([]model.Invitation, error)
-	Delete(string) error
-	WithTrx(*gorm.DB) *invitationRepository
+	Delete(string, *gorm.DB) error
 }
 
 // invitationRepository implements the InvitationRepository interface
@@ -27,8 +26,8 @@ func NewInvitationRepository(db *gorm.DB) InvitationRepository {
 	return &invitationRepository{db: db}
 }
 
-func (repo *invitationRepository) Add(invitation *model.Invitation) (*model.Invitation, error) {
-	err := repo.tx.Debug().Create(&invitation).Error
+func (repo *invitationRepository) Add(invitation *model.Invitation, tx *gorm.DB) (*model.Invitation, error) {
+	err := tx.Debug().Create(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +43,8 @@ func (repo *invitationRepository) AddBatch(invitations []model.Invitation) error
 	return nil
 }
 
-func (repo *invitationRepository) Update(invitation *model.Invitation) (*model.Invitation, error) {
-	err := repo.tx.Debug().Save(&invitation).Error
+func (repo *invitationRepository) Update(invitation *model.Invitation, tx *gorm.DB) (*model.Invitation, error) {
+	err := tx.Debug().Save(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
@@ -91,15 +90,10 @@ func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.I
 	return invitations, nil
 }
 
-func (repo *invitationRepository) Delete(id string) error {
-	err := repo.tx.Debug().Where("id = ?", id).Delete(&model.Invitation{}).Error
+func (repo *invitationRepository) Delete(id string, tx *gorm.DB) error {
+	err := tx.Debug().Where("id = ?", id).Delete(&model.Invitation{}).Error
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (repo *invitationRepository) WithTrx(tx *gorm.DB) *invitationRepository {
-	repo.tx = tx
-	return repo
 }
