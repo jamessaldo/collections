@@ -1,8 +1,8 @@
 package main
 
 import (
-	authz "auth"
 	"auth/config"
+	"auth/infrastructure"
 	"auth/view"
 	"context"
 	"log"
@@ -18,7 +18,7 @@ import (
 )
 
 type AuthorizationServer struct {
-	bootstrap *authz.Bootstraps
+	bootstrap *infrastructure.Bootstraps
 }
 
 // inject a header that can be used for future rate limiting
@@ -66,7 +66,7 @@ func main() {
 	}
 	log.Printf("listening on %s", lis.Addr())
 
-	bootstrap := authz.NewBootstraps()
+	bootstrap := infrastructure.NewBootstraps()
 
 	grpcServer := grpc.NewServer()
 	authServer := &AuthorizationServer{

@@ -3,6 +3,7 @@ package main
 import (
 	"auth/config"
 	"auth/controller"
+	"auth/infrastructure"
 	"auth/infrastructure/persistence"
 	"flag"
 	"os"
@@ -47,7 +48,7 @@ func main() {
 		}
 	}
 
-	bootstrap := NewBootstraps()
+	bootstrap := infrastructure.NewBootstraps()
 	handleArgs(bootstrap.Bus.UoW.DB)
 
 	server := controller.Server{}
