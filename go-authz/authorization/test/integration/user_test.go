@@ -1,10 +1,11 @@
 package integration
 
 import (
+	"auth/domain/command"
+	"auth/domain/dto"
 	"auth/domain/model"
-	"auth/infrastructure/worker"
 	"auth/service"
-	"auth/service/handlers"
+	"auth/view"
 	"errors"
 	"log"
 	"time"
@@ -15,144 +16,149 @@ import (
 	"gorm.io/gorm"
 )
 
-var _ = Describe("Repository", func() {
+func createUser(user *model.User, uow *service.UnitOfWork, tx *gorm.DB) error {
+	_, err := uow.User.Add(user, tx)
+	if err != nil {
+		return err
+	}
+
+	ownerRole, err := uow.Role.Get(model.Owner)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Fatalf("Role with name %s is not exist! Detail: %s", model.Owner, err.Error())
+			return err
+		}
+		return err
+	}
+
+	membership := user.AddPersonalTeam(ownerRole)
+
+	_, err = uow.Membership.Add(membership, tx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var _ = Describe("User Testing", func() {
 	var (
-		bus *service.MessageBus
+		johnUserId uuid.UUID
 	)
 	BeforeEach(func() {
-		err := Db.AutoMigrate(
-			&model.User{},
-			&model.Endpoint{},
-			&model.Role{},
-			&model.Access{},
-			&model.Membership{},
-			&model.Team{},
-			&model.Invitation{})
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		uow, err := service.NewUnitOfWork(Db)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		asynqClient := worker.CreateAsynqClient()
-		defer asynqClient.Close()
-
-		mailer := worker.NewMailer(asynqClient)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		Ω(err).To(Succeed())
-
-		bus = service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer)
-
+		uow := Bus.UoW
 		tx, txErr := uow.Begin(&gorm.Session{})
-		if txErr != nil {
-			log.Fatal(txErr)
-		}
+		Ω(txErr).To(Succeed())
 
 		defer func() {
 			tx.Rollback()
 		}()
 
 		now := time.Now()
-
-		uow = bus.UoW
-
+		johnUserId = uuid.NewV4()
 		user := &model.User{
-			ID:          uuid.NewV4(),
-			FirstName:   "John",
-			LastName:    "Doe",
-			Email:       "johndoe@example.com",
-			Password:    "",
-			PhoneNumber: "",
-			AvatarURL:   "",
-			Provider:    "Google",
-			Verified:    true,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
-		_, err = uow.User.Add(user, tx)
-		if err != nil {
-			log.Fatal(err)
+			ID:        johnUserId,
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "johndoe@example.com",
+			Username:  "johndoe",
+			Provider:  "Google",
+			Verified:  true,
+			CreatedAt: now,
+			UpdatedAt: now,
 		}
 
-		ownerRole, err := uow.Role.Get(model.Owner)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				log.Fatalf("Role with name %s is not exist! Detail: %s", model.Owner, err.Error())
+		err := createUser(user, uow, tx)
+		Ω(err).To(Succeed())
+		tx.Commit()
+
+	})
+	Context("Load", func() {
+		It("Found", func() {
+			user, err := view.User(johnUserId, Bus.UoW)
+			Ω(err).To(Succeed())
+			Ω(user.FirstName).To(Equal("John"))
+			Ω(user.LastName).To(Equal("Doe"))
+			Ω(user.Email).To(Equal("johndoe@example.com"))
+			Ω(user).To(BeAssignableToTypeOf(&dto.PublicUser{}))
+		})
+		It("Not Found", func() {
+			_, err := view.User(uuid.NewV4(), Bus.UoW)
+			Ω(err).To(HaveOccurred())
+		})
+	})
+	It("List", func() {
+		respPaginated, err := view.Users(Bus.UoW, 1, 10)
+		Ω(err).To(Succeed())
+		Ω(respPaginated.Data).To(HaveLen(1))
+		Ω(respPaginated.Page).To(Equal(1))
+		Ω(respPaginated.PageSize).To(Equal(10))
+		Ω(respPaginated.TotalPage).To(Equal(1))
+		Ω(int(respPaginated.TotalData)).To(Equal(1))
+		Ω(respPaginated.HasNext).To(BeFalse())
+		Ω(respPaginated.HasPrev).To(BeFalse())
+	})
+	Context("Save", func() {
+		It("Create", func() {
+			uow := Bus.UoW
+			tx, txErr := uow.Begin(&gorm.Session{})
+			Ω(txErr).To(Succeed())
+
+			defer func() {
+				tx.Rollback()
+			}()
+
+			now := time.Now()
+			janeUserId := uuid.NewV4()
+			user := &model.User{
+				ID:        janeUserId,
+				FirstName: "Jane",
+				LastName:  "Doe",
+				Email:     "janedoe@example.com",
+				Username:  "janedoe",
+				Provider:  "Google",
+				Verified:  true,
+				CreatedAt: now,
+				UpdatedAt: now,
 			}
-			log.Fatal(err)
-		}
 
-		membership := user.AddPersonalTeam(ownerRole)
+			err := createUser(user, uow, tx)
+			tx.Commit()
+			Ω(err).To(Succeed())
 
-		_, err = uow.Membership.Add(membership, tx)
-		if err != nil {
-			log.Fatal(err)
-		}
-		Ω(err).To(Succeed())
+			respPaginated, err := view.Users(Bus.UoW, 1, 10)
+			Ω(err).To(Succeed())
+			Ω(respPaginated.Data).To(HaveLen(2))
+		})
+		It("Update", func() {
+			user, err := Bus.UoW.User.Get(johnUserId)
+			Ω(err).To(Succeed())
+			Ω(user.FirstName).To(Equal("John"))
+			Ω(user.PhoneNumber).To(Equal(""))
+			Ω(user.IsActive).To(BeTrue())
+
+			cmd := command.UpdateUser{
+				FirstName:   "Johnny",
+				PhoneNumber: "08123456789",
+				User:        user,
+			}
+			err = Bus.Handle(&cmd)
+			Ω(err).To(Succeed())
+
+			user, _ = Bus.UoW.User.Get(johnUserId)
+			Ω(user.FirstName).To(Equal("Johnny"))
+			Ω(user.PhoneNumber).To(Equal("08123456789"))
+		})
 	})
-	// Context("Load", func() {
-	// 	It("Found", func() {
-	// 		blog, err := repo.Load(1)
-
-	// 		Ω(err).To(Succeed())
-	// 		Ω(blog.Content).To(Equal("hello"))
-	// 		Ω(blog.Tags).To(Equal(pq.StringArray{"a", "b"}))
-	// 	})
-	// 	It("Not Found", func() {
-	// 		_, err := repo.Load(999)
-	// 		Ω(err).To(HaveOccurred())
-	// 	})
-	// })
-	It("ListAll", func() {
-		l, err := bus.UoW.User.List(1, 10)
+	It("Delete", func() {
+		user, err := Bus.UoW.User.Get(johnUserId)
 		Ω(err).To(Succeed())
-		Ω(l).To(HaveLen(1))
+		cmd := command.DeleteUser{
+			User: user,
+		}
+		err = Bus.Handle(&cmd)
+		Ω(err).To(Succeed())
+		_, err = view.User(johnUserId, Bus.UoW)
+		Ω(err).To(HaveOccurred())
 	})
-	// It("List", func() {
-	// 	l, err := repo.List(0, 10)
-	// 	Ω(err).To(Succeed())
-	// 	Ω(l).To(HaveLen(1))
-	// })
-	// Context("Save", func() {
-	// 	It("Create", func() {
-	// 		blog := &dbtest.Blog{
-	// 			Title:     "post2",
-	// 			Content:   "hello",
-	// 			Tags:      []string{"a", "b"},
-	// 			CreatedAt: time.Now(),
-	// 		}
-	// 		err := repo.Save(blog)
-	// 		Ω(err).To(Succeed())
-	// 		Ω(blog.ID).To(BeEquivalentTo(2))
-	// 	})
-	// 	It("Update", func() {
-	// 		blog, err := repo.Load(1)
-	// 		Ω(err).To(Succeed())
-
-	// 		blog.Title = "foo"
-	// 		err = repo.Save(blog)
-	// 		Ω(err).To(Succeed())
-	// 	})
-	// })
-	// It("Delete", func() {
-	// 	err := repo.Delete(1)
-	// 	Ω(err).To(Succeed())
-	// 	_, err = repo.Load(1)
-	// 	Ω(err).To(HaveOccurred())
-	// })
-	// DescribeTable("SearchByTitle",
-	// 	func(q string, found int) {
-	// 		l, err := repo.SearchByTitle(q, 0, 10)
-	// 		Ω(err).To(Succeed())
-	// 		Ω(l).To(HaveLen(found))
-	// 	},
-	// 	Entry("found", "post", 1),
-	// 	Entry("not found", "bar", 0),
-	// )
 })

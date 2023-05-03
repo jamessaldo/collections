@@ -59,7 +59,7 @@ func Team(id uuid.UUID, user *model.User, uow *service.UnitOfWork) (*dto.TeamRet
 }
 
 func Teams(uow *service.UnitOfWork, user *model.User, name string, page, pageSize int) (dto.Pagination, error) {
-	var teams []*dto.TeamRetrievalSchema
+	var teams []interface{}
 	var totalMemberships int64
 
 	membershipOpts := &model.MembershipOptions{

@@ -1,7 +1,16 @@
 package integration
 
 import (
+	"auth/domain/model"
+	"auth/infrastructure/persistence"
+	"auth/infrastructure/worker"
+	"auth/service"
+	"auth/service/handlers"
 	"fmt"
+	"log"
+	"os"
+	"path"
+	"runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,8 +26,11 @@ func TestDocker(t *testing.T) {
 	RunSpecs(t, "Docker Suite")
 }
 
-var Db *gorm.DB
-var cleanupDocker func()
+var (
+	Db            *gorm.DB
+	cleanupDocker func()
+	Bus           *service.MessageBus
+)
 
 var _ = BeforeSuite(func() {
 	// setup *gorm.Db with docker
@@ -32,14 +44,52 @@ var _ = AfterSuite(func() {
 
 var _ = BeforeEach(func() {
 	// clear db tables before each test
-	err := Db.Exec(`DROP SCHEMA public CASCADE;CREATE SCHEMA public;`).Error
+	err := Db.Exec(`DROP SCHEMA public CASCADE;`).Error
 	Ω(err).To(Succeed())
+	err = Db.Exec(`CREATE SCHEMA public;`).Error
+	Ω(err).To(Succeed())
+
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Join(path.Dir(filename), "..", "..")
+	err = os.Chdir(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	err = Db.AutoMigrate(
+		&model.User{},
+		&model.Endpoint{},
+		&model.Role{},
+		&model.Access{},
+		&model.Membership{},
+		&model.Team{},
+		&model.Invitation{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	uow, err := service.NewUnitOfWork(Db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	asynqClient := worker.CreateAsynqClient()
+	defer asynqClient.Close()
+
+	mailer := worker.NewMailer(asynqClient)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	Ω(err).To(Succeed())
+
+	Bus = service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer)
+
+	persistence.Execute(Db, "AccessSeed")
 })
 
 const (
 	DBDriver = "postgres"
-	DBHost   = "localhost"
-	DBPort   = "5432"
 	DBUser   = "postgres"
 	DBName   = "authz_test"
 	DBPasswd = "postgres"
@@ -68,16 +118,18 @@ func setupGormWithDocker() (*gorm.DB, func()) {
 		chk(err)
 	}
 
-	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", DBDriver, DBUser, DBPasswd, DBHost, DBPort, DBName)
+	hostAndPort := resource.GetHostPort("5432/tcp")
+	dsn := fmt.Sprintf("%s://%s:%s@%s/%s", DBDriver, DBUser, DBPasswd, hostAndPort, DBName)
 
 	var gdb *gorm.DB
 	// retry until db server is ready
 	err = pool.Retry(func() error {
-		gdb, err := gorm.Open(postgres.New(postgres.Config{
+		gdb, err = gorm.Open(postgres.New(postgres.Config{
 			DriverName: "pgx",
 			DSN:        dsn,
 		}), &gorm.Config{
 			PrepareStmt: true,
+			Logger:      nil,
 		})
 		if err != nil {
 			return err

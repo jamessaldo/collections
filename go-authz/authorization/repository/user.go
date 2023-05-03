@@ -55,7 +55,8 @@ func (repo *userRepository) Update(user *model.User, tx *gorm.DB) (*model.User, 
 
 func (repo *userRepository) Get(id uuid.UUID) (*model.User, error) {
 	var user model.User
-	err := repo.db.Debug().Where("id = ?", id).First(&user).Error
+	// get user by id and isActive = true
+	err := repo.db.Debug().Where(&model.User{ID: id, IsActive: true}).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +75,7 @@ func (repo *userRepository) List(page, pageSize int) (model.Users, error) {
 
 func (repo *userRepository) GetByEmail(email string) (*model.User, error) {
 	var user model.User
-	err := repo.db.Debug().Where("email = ?", email).Take(&user).Error
+	err := repo.db.Debug().Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +85,7 @@ func (repo *userRepository) GetByEmail(email string) (*model.User, error) {
 
 func (repo *userRepository) GetByUsername(username string) (*model.User, error) {
 	var user model.User
-	err := repo.db.Debug().Where("username = ?", username).Take(&user).Error
+	err := repo.db.Debug().Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

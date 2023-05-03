@@ -3,19 +3,19 @@ package dto
 import "math"
 
 type Pagination struct {
-	Page      int         `json:"page"`
-	PageSize  int         `json:"page_size"`
-	TotalData int64       `json:"total_data"`
-	TotalPage int         `json:"total_page"`
-	NextPage  int         `json:"next_page"`
-	PrevPage  int         `json:"prev_page"`
-	HasNext   bool        `json:"has_next"`
-	HasPrev   bool        `json:"has_prev"`
-	Data      interface{} `json:"data"`
+	Page      int           `json:"page"`
+	PageSize  int           `json:"page_size"`
+	TotalData int64         `json:"total_data"`
+	TotalPage int           `json:"total_page"`
+	NextPage  int           `json:"next_page"`
+	PrevPage  int           `json:"prev_page"`
+	HasNext   bool          `json:"has_next"`
+	HasPrev   bool          `json:"has_prev"`
+	Data      []interface{} `json:"data"`
 }
 
 // create a function to generate paginate data
-func Paginate(page, pageSize int, totalData int64, data interface{}) Pagination {
+func Paginate(page, pageSize int, totalData int64, data []interface{}) Pagination {
 	totalPage := int(math.Ceil(float64(totalData) / float64(pageSize)))
 
 	nextPage := -1

@@ -31,8 +31,8 @@ type User struct {
 type Users []User
 
 // So that we dont expose the user's email address and password to the world
-func (users Users) PublicUsers() []*dto.PublicUser {
-	result := make([]*dto.PublicUser, len(users))
+func (users Users) PublicUsers() []interface{} {
+	result := make([]interface{}, len(users))
 	for index, user := range users {
 		result[index] = user.PublicUser()
 	}
