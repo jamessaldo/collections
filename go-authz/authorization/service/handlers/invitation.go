@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"auth/controller/exception"
-	"auth/domain/command"
-	"auth/domain/model"
-	"auth/infrastructure/worker"
-	"auth/service"
+	"authorization/controller/exception"
+	"authorization/domain/command"
+	"authorization/domain/model"
+	"authorization/infrastructure/worker"
+	"authorization/service"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/segmentio/ksuid"

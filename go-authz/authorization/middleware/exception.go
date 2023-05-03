@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"auth/controller/exception"
+	"authorization/controller/exception"
 
 	"github.com/gin-gonic/gin"
 )

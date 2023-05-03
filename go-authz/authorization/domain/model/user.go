@@ -1,7 +1,7 @@
 package model
 
 import (
-	"auth/domain/dto"
+	"authorization/domain/dto"
 	"fmt"
 	"html"
 	"strings"

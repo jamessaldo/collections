@@ -1,10 +1,10 @@
 package view
 
 import (
-	"auth/controller/exception"
-	"auth/domain/dto"
-	"auth/domain/model"
-	"auth/service"
+	"authorization/controller/exception"
+	"authorization/domain/dto"
+	"authorization/domain/model"
+	"authorization/service"
 	"errors"
 
 	"gorm.io/gorm"

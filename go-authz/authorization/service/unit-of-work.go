@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"auth/repository"
+	"authorization/repository"
 
 	"gorm.io/gorm"
 )

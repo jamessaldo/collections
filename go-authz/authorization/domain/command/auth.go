@@ -1,6 +1,6 @@
 package command
 
-import "auth/util"
+import "authorization/util"
 
 type LoginByGoogle struct {
 	Code       string `json:"code"`

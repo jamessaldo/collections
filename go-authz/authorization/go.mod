@@ -1,4 +1,4 @@
-module auth
+module authorization
 
 go 1.20
 

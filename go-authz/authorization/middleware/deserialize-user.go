@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"auth/config"
-	"auth/controller/exception"
-	"auth/domain/model"
-	"auth/service"
-	"auth/util"
+	"authorization/config"
+	"authorization/controller/exception"
+	"authorization/domain/model"
+	"authorization/service"
+	"authorization/util"
 
 	"github.com/allegro/bigcache/v3"
 	"github.com/gin-gonic/gin"

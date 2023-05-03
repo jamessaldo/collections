@@ -1,13 +1,13 @@
 package v1
 
 import (
-	"auth/config"
-	"auth/controller/exception"
-	"auth/domain/command"
-	"auth/middleware"
-	"auth/service"
-	"auth/util"
-	"auth/view"
+	"authorization/config"
+	"authorization/controller/exception"
+	"authorization/domain/command"
+	"authorization/middleware"
+	"authorization/service"
+	"authorization/util"
+	"authorization/view"
 	"context"
 	"fmt"
 	"net/http"

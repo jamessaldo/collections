@@ -1,9 +1,9 @@
 package main
 
 import (
-	"auth/config"
-	"auth/infrastructure"
-	"auth/view"
+	"authorization/config"
+	"authorization/infrastructure"
+	"authorization/view"
 	"context"
 	"log"
 	"net"

@@ -1,8 +1,8 @@
 package util
 
 import (
-	"auth/config"
-	"auth/domain/model"
+	"authorization/config"
+	"authorization/domain/model"
 	"fmt"
 	"time"
 

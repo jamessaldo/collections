@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"auth/config"
-	"auth/controller/exception"
-	"auth/domain/command"
-	"auth/infrastructure/worker"
-	"auth/service"
-	"auth/util"
+	"authorization/config"
+	"authorization/controller/exception"
+	"authorization/domain/command"
+	"authorization/infrastructure/worker"
+	"authorization/service"
+	"authorization/util"
 	"fmt"
 	"path/filepath"
 	"strings"

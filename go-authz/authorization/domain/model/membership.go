@@ -1,7 +1,7 @@
 package model
 
 import (
-	"auth/domain/dto"
+	"authorization/domain/dto"
 	"time"
 
 	uuid "github.com/satori/go.uuid"

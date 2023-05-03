@@ -1,13 +1,13 @@
 package v1
 
 import (
-	"auth/domain/command"
-	"auth/domain/dto"
-	"auth/domain/model"
-	"auth/middleware"
-	"auth/service"
-	"auth/util"
-	"auth/view"
+	"authorization/domain/command"
+	"authorization/domain/dto"
+	"authorization/domain/model"
+	"authorization/middleware"
+	"authorization/service"
+	"authorization/util"
+	"authorization/view"
 	"encoding/json"
 	"net/http"
 	"strconv"

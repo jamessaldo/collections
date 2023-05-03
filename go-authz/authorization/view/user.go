@@ -1,10 +1,10 @@
 package view
 
 import (
-	"auth/controller/exception"
-	"auth/domain/dto"
-	"auth/service"
-	"auth/util"
+	"authorization/controller/exception"
+	"authorization/domain/dto"
+	"authorization/service"
+	"authorization/util"
 	"errors"
 
 	uuid "github.com/satori/go.uuid"

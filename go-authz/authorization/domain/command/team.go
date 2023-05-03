@@ -1,7 +1,7 @@
 package command
 
 import (
-	"auth/domain/model"
+	"authorization/domain/model"
 	"mime/multipart"
 
 	uuid "github.com/satori/go.uuid"

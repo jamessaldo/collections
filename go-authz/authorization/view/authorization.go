@@ -1,8 +1,8 @@
 package view
 
 import (
-	"auth/domain/model"
-	"auth/service"
+	"authorization/domain/model"
+	"authorization/service"
 	"regexp"
 	"strings"
 

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"auth/config"
-	"auth/controller"
-	"auth/infrastructure"
-	"auth/infrastructure/persistence"
+	"authorization/config"
+	"authorization/controller"
+	"authorization/infrastructure"
+	"authorization/infrastructure/persistence"
 	"flag"
 	"os"
 

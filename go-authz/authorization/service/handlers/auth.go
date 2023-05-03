@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"auth/config"
-	"auth/controller/exception"
-	"auth/domain/command"
-	"auth/domain/model"
-	"auth/infrastructure/worker"
-	"auth/service"
-	"auth/util"
+	"authorization/config"
+	"authorization/controller/exception"
+	"authorization/domain/command"
+	"authorization/domain/model"
+	"authorization/infrastructure/worker"
+	"authorization/service"
+	"authorization/util"
 
 	"fmt"
 

@@ -1,11 +1,11 @@
 package infrastructure
 
 import (
-	"auth/domain/model"
-	"auth/infrastructure/persistence"
-	"auth/infrastructure/worker"
-	"auth/service"
-	"auth/service/handlers"
+	"authorization/domain/model"
+	"authorization/infrastructure/persistence"
+	"authorization/infrastructure/worker"
+	"authorization/service"
+	"authorization/service/handlers"
 	"context"
 	"time"
 

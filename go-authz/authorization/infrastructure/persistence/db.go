@@ -1,7 +1,7 @@
 package persistence
 
 import (
-	"auth/config"
+	"authorization/config"
 	"fmt"
 	"log"
 	"os"

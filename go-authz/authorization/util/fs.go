@@ -1,7 +1,7 @@
 package util
 
 import (
-	"auth/config"
+	"authorization/config"
 	"io"
 	"mime/multipart"
 	"os"

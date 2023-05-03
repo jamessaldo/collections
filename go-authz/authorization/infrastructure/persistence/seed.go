@@ -1,8 +1,8 @@
 package persistence
 
 import (
-	"auth/domain/model"
-	"auth/service"
+	"authorization/domain/model"
+	"authorization/service"
 	"fmt"
 	"math"
 	"os"

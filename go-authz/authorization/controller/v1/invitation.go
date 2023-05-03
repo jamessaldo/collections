@@ -1,11 +1,11 @@
 package v1
 
 import (
-	"auth/domain/command"
-	"auth/domain/model"
-	"auth/middleware"
-	"auth/service"
-	"auth/view"
+	"authorization/domain/command"
+	"authorization/domain/model"
+	"authorization/middleware"
+	"authorization/service"
+	"authorization/view"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"

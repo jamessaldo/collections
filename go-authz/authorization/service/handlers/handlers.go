@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"auth/domain/command"
-	"auth/infrastructure/worker"
-	"auth/service"
+	"authorization/domain/command"
+	"authorization/infrastructure/worker"
+	"authorization/service"
 	"reflect"
 )
 

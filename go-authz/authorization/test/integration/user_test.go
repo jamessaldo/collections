@@ -1,11 +1,11 @@
 package integration
 
 import (
-	"auth/domain/command"
-	"auth/domain/dto"
-	"auth/domain/model"
-	"auth/service"
-	"auth/view"
+	"authorization/domain/command"
+	"authorization/domain/dto"
+	"authorization/domain/model"
+	"authorization/service"
+	"authorization/view"
 	"errors"
 	"log"
 	"time"

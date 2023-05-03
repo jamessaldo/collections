@@ -1,16 +1,16 @@
 package controller
 
 import (
-	"auth/config"
-	v1 "auth/controller/v1"
-	"auth/middleware"
+	"authorization/config"
+	v1 "authorization/controller/v1"
+	"authorization/middleware"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 
-	docs "auth/docs"
+	docs "authorization/docs"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"

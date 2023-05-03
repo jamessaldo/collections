@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"auth/domain/model"
+	"authorization/domain/model"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

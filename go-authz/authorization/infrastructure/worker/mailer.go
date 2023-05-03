@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"auth/config"
+	"authorization/config"
 
 	log "github.com/sirupsen/logrus"
 
