@@ -38,7 +38,9 @@ definitions:
     type: object
   dto.Pagination:
     properties:
-      data: {}
+      data:
+        items: {}
+        type: array
       has_next:
         type: boolean
       has_prev:

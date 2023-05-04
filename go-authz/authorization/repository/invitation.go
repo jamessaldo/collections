@@ -27,7 +27,7 @@ func NewInvitationRepository(db *gorm.DB) InvitationRepository {
 }
 
 func (repo *invitationRepository) Add(invitation *model.Invitation, tx *gorm.DB) (*model.Invitation, error) {
-	err := tx.Debug().Create(&invitation).Error
+	err := tx.Create(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (repo *invitationRepository) Add(invitation *model.Invitation, tx *gorm.DB)
 
 // add batch gorm
 func (repo *invitationRepository) AddBatch(invitations []model.Invitation) error {
-	err := repo.db.Debug().Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(invitations, 1000).Error
+	err := repo.db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(invitations, 1000).Error
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (repo *invitationRepository) AddBatch(invitations []model.Invitation) error
 }
 
 func (repo *invitationRepository) Update(invitation *model.Invitation, tx *gorm.DB) (*model.Invitation, error) {
-	err := tx.Debug().Save(&invitation).Error
+	err := tx.Save(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (repo *invitationRepository) Update(invitation *model.Invitation, tx *gorm.
 
 func (repo *invitationRepository) Get(id string) (*model.Invitation, error) {
 	var invitation model.Invitation
-	err := repo.db.Debug().Where("id = ?", id).First(&invitation).Error
+	err := repo.db.Where("id = ?", id).Preload("Role").First(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (repo *invitationRepository) Get(id string) (*model.Invitation, error) {
 }
 
 func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.Invitation, error) {
-	db := repo.db.Debug().Preload("Role")
+	db := repo.db.Preload("Role")
 
 	if len(opts.Statuses) > 0 {
 		db = db.Where("status IN (?)", opts.Statuses)
@@ -91,7 +91,7 @@ func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.I
 }
 
 func (repo *invitationRepository) Delete(id string, tx *gorm.DB) error {
-	err := tx.Debug().Where("id = ?", id).Delete(&model.Invitation{}).Error
+	err := tx.Where("id = ?", id).Delete(&model.Invitation{}).Error
 	if err != nil {
 		return err
 	}

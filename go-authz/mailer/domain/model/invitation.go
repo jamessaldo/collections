@@ -25,6 +25,7 @@ type Invitation struct {
 	TeamID    uuid.UUID        `gorm:"type:uuid;not null"`
 	RoleID    uuid.UUID        `gorm:"type:uuid;not null"`
 	SenderID  uuid.UUID        `gorm:"type:uuid;not null"`
+	IsActive  bool             `gorm:"default:true"`
 	CreatedAt time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
 	UpdatedAt time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
 }

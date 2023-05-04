@@ -804,7 +804,10 @@ const docTemplate = `{
         "dto.Pagination": {
             "type": "object",
             "properties": {
-                "data": {},
+                "data": {
+                    "type": "array",
+                    "items": {}
+                },
                 "has_next": {
                     "type": "boolean"
                 },

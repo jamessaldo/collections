@@ -48,7 +48,9 @@ func main() {
 		}
 	}
 
-	bootstrap := infrastructure.NewBootstraps()
+	asynqClient, bootstrap := infrastructure.NewBootstraps()
+	defer asynqClient.Close()
+
 	handleArgs(bootstrap.Bus.UoW.DB)
 
 	server := controller.Server{}

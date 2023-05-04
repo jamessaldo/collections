@@ -2,6 +2,7 @@ package worker
 
 import (
 	"authorization/config"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -27,10 +28,14 @@ func (ac *AsynqClient) SendEmail(payload *Payload) error {
 	// Define tasks.
 	task := NewEmailTask(payload)
 
+	// Set a delay duration to 2 minutes.
+	delay := 2 * time.Second
+
 	// Process the task immediately in critical queue.
 	if _, err := ac.client.Enqueue(
 		task,                    // task payload
 		asynq.Queue("critical"), // set queue for task
+		asynq.ProcessIn(delay),
 	); err != nil {
 		log.Error(err)
 		return err

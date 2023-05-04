@@ -10,16 +10,15 @@ import (
 
 type invitationRepository struct {
 	db *gorm.DB
-	tx *gorm.DB
 }
 
 type InvitationRepository interface {
-	Add(*model.Invitation) (*model.Invitation, error)
-	Update(*model.Invitation) (*model.Invitation, error)
-	Get(uuid.UUID) (*model.Invitation, error)
+	Add(*model.Invitation, *gorm.DB) (*model.Invitation, error)
+	AddBatch([]model.Invitation) error
+	Update(*model.Invitation, *gorm.DB) (*model.Invitation, error)
+	Get(string) (*model.Invitation, error)
 	List(opts *model.InvitationOptions) ([]model.Invitation, error)
-	Delete(uuid.UUID) error
-	WithTrx(*gorm.DB) *invitationRepository
+	Delete(string, *gorm.DB) error
 }
 
 // invitationRepository implements the InvitationRepository interface
@@ -27,8 +26,8 @@ func NewInvitationRepository(db *gorm.DB) InvitationRepository {
 	return &invitationRepository{db: db}
 }
 
-func (repo *invitationRepository) Add(invitation *model.Invitation) (*model.Invitation, error) {
-	err := repo.tx.Debug().Omit("Team.Creator").Create(&invitation).Error
+func (repo *invitationRepository) Add(invitation *model.Invitation, tx *gorm.DB) (*model.Invitation, error) {
+	err := tx.Create(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
@@ -37,24 +36,24 @@ func (repo *invitationRepository) Add(invitation *model.Invitation) (*model.Invi
 
 // add batch gorm
 func (repo *invitationRepository) AddBatch(invitations []model.Invitation) error {
-	err := repo.db.Debug().Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(invitations, 1000).Error
+	err := repo.db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(invitations, 1000).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (repo *invitationRepository) Update(invitation *model.Invitation) (*model.Invitation, error) {
-	err := repo.tx.Debug().Save(&invitation).Error
+func (repo *invitationRepository) Update(invitation *model.Invitation, tx *gorm.DB) (*model.Invitation, error) {
+	err := tx.Save(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
 	return invitation, nil
 }
 
-func (repo *invitationRepository) Get(id uuid.UUID) (*model.Invitation, error) {
+func (repo *invitationRepository) Get(id string) (*model.Invitation, error) {
 	var invitation model.Invitation
-	err := repo.db.Debug().Where("id = ?", id).First(&invitation).Error
+	err := repo.db.Where("id = ?", id).First(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +61,7 @@ func (repo *invitationRepository) Get(id uuid.UUID) (*model.Invitation, error) {
 }
 
 func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.Invitation, error) {
-	db := repo.db.Debug()
+	db := repo.db
 
 	if len(opts.Statuses) > 0 {
 		db = db.Where("status IN (?)", opts.Statuses)
@@ -91,16 +90,10 @@ func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.I
 	return invitations, nil
 }
 
-func (repo *invitationRepository) Delete(id uuid.UUID) error {
-	err := repo.tx.Debug().Where("id = ?", id).Delete(&model.Invitation{}).Error
+func (repo *invitationRepository) Delete(id string, tx *gorm.DB) error {
+	err := tx.Where("id = ?", id).Delete(&model.Invitation{}).Error
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (repo *invitationRepository) WithTrx(tx *gorm.DB) *invitationRepository {
-
-	repo.tx = tx
-	return repo
 }

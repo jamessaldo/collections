@@ -25,7 +25,7 @@ func NewEndpointRepository(db *gorm.DB) EndpointRepository {
 }
 
 func (repo *endpointRepository) Add(endpoint *model.Endpoint, tx *gorm.DB) (*model.Endpoint, error) {
-	err := tx.Debug().Create(&endpoint).Error
+	err := tx.Create(&endpoint).Error
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (repo *endpointRepository) Add(endpoint *model.Endpoint, tx *gorm.DB) (*mod
 }
 
 func (repo *endpointRepository) Update(endpoint *model.Endpoint, tx *gorm.DB) (*model.Endpoint, error) {
-	err := tx.Debug().Save(&endpoint).Error
+	err := tx.Save(&endpoint).Error
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (repo *endpointRepository) Update(endpoint *model.Endpoint, tx *gorm.DB) (*
 
 func (repo *endpointRepository) Get(id uuid.UUID) (*model.Endpoint, error) {
 	var endpoint model.Endpoint
-	err := repo.db.Debug().Where("id = ?", id).First(&endpoint).Error
+	err := repo.db.Where("id = ?", id).First(&endpoint).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (repo *endpointRepository) Get(id uuid.UUID) (*model.Endpoint, error) {
 
 func (repo *endpointRepository) List() ([]model.Endpoint, error) {
 	var endpoints []model.Endpoint
-	err := repo.db.Debug().Find(&endpoints).Error
+	err := repo.db.Find(&endpoints).Error
 	if err != nil {
 		return nil, err
 	}

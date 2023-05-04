@@ -7,11 +7,12 @@ import (
 	"authorization/service"
 	"authorization/service/handlers"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"runtime"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,6 +20,7 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func TestDocker(t *testing.T) {
@@ -33,6 +35,7 @@ var (
 )
 
 var _ = BeforeSuite(func() {
+	log.SetLevel(log.ErrorLevel)
 	// setup *gorm.Db with docker
 	Db, cleanupDocker = setupGormWithDocker()
 })
@@ -73,10 +76,9 @@ var _ = BeforeEach(func() {
 		log.Fatal(err)
 	}
 
-	asynqClient := worker.CreateAsynqClient()
-	defer asynqClient.Close()
+	asynqClient := worker.CreateAsynqClientMock()
 
-	mailer := worker.NewMailer(asynqClient)
+	mailer := worker.NewMailerMock(asynqClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,11 +131,12 @@ func setupGormWithDocker() (*gorm.DB, func()) {
 			DSN:        dsn,
 		}), &gorm.Config{
 			PrepareStmt: true,
-			Logger:      nil,
+			Logger:      logger.Default.LogMode(logger.Silent),
 		})
 		if err != nil {
 			return err
 		}
+
 		db, err := gdb.DB()
 		if err != nil {
 			return err

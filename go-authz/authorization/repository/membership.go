@@ -28,7 +28,7 @@ func NewMembershipRepository(db *gorm.DB) MembershipRepository {
 }
 
 func (repo *membershipRepository) Add(membership *model.Membership, tx *gorm.DB) (*model.Membership, error) {
-	err := tx.Debug().Omit("Team.Creator").Create(&membership).Error
+	err := tx.Omit("Team.Creator").Create(&membership).Error
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (repo *membershipRepository) Add(membership *model.Membership, tx *gorm.DB)
 
 // add batch gorm
 func (repo *membershipRepository) AddBatch(memberships []model.Membership) error {
-	err := repo.db.Debug().Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(memberships, 1000).Error
+	err := repo.db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(memberships, 1000).Error
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (repo *membershipRepository) AddBatch(memberships []model.Membership) error
 }
 
 func (repo *membershipRepository) Update(membership *model.Membership, tx *gorm.DB) (*model.Membership, error) {
-	err := tx.Debug().Save(&membership).Error
+	err := tx.Save(&membership).Error
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (repo *membershipRepository) Update(membership *model.Membership, tx *gorm.
 
 func (repo *membershipRepository) Get(id uuid.UUID) (*model.Membership, error) {
 	var membership model.Membership
-	err := repo.db.Debug().Preload("Role").Where("id = ?", id).First(&membership).Error
+	err := repo.db.Preload("Role").Where("id = ?", id).First(&membership).Error
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (repo *membershipRepository) Get(id uuid.UUID) (*model.Membership, error) {
 }
 
 func (repo *membershipRepository) List(opts *model.MembershipOptions) ([]model.Membership, error) {
-	db := repo.db.Debug()
+	db := repo.db
 
 	if opts.IsSelectTeam {
 		db = db.Preload("Team.Creator")
@@ -100,7 +100,7 @@ func (repo *membershipRepository) List(opts *model.MembershipOptions) ([]model.M
 }
 
 func (repo *membershipRepository) Delete(id uuid.UUID, tx *gorm.DB) error {
-	err := tx.Debug().Where("id = ?", id).Delete(&model.Membership{}).Error
+	err := tx.Where("id = ?", id).Delete(&model.Membership{}).Error
 	if err != nil {
 		return err
 	}

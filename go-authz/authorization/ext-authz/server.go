@@ -66,7 +66,8 @@ func main() {
 	}
 	log.Printf("listening on %s", lis.Addr())
 
-	bootstrap := infrastructure.NewBootstraps()
+	asynqClient, bootstrap := infrastructure.NewBootstraps()
+	defer asynqClient.Close()
 
 	grpcServer := grpc.NewServer()
 	authServer := &AuthorizationServer{

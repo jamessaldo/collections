@@ -16,7 +16,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func createUser(user *model.User, uow *service.UnitOfWork, tx *gorm.DB) error {
+func createUser(user *model.User, uow *service.UnitOfWork) error {
+	tx, txErr := uow.Begin(&gorm.Session{})
+	Ω(txErr).To(Succeed())
+
+	defer func() {
+		tx.Rollback()
+	}()
+
 	_, err := uow.User.Add(user, tx)
 	if err != nil {
 		return err
@@ -37,6 +44,7 @@ func createUser(user *model.User, uow *service.UnitOfWork, tx *gorm.DB) error {
 	if err != nil {
 		return err
 	}
+	tx.Commit()
 
 	return nil
 }
@@ -47,12 +55,6 @@ var _ = Describe("User Testing", func() {
 	)
 	BeforeEach(func() {
 		uow := Bus.UoW
-		tx, txErr := uow.Begin(&gorm.Session{})
-		Ω(txErr).To(Succeed())
-
-		defer func() {
-			tx.Rollback()
-		}()
 
 		now := time.Now()
 		johnUserId = uuid.NewV4()
@@ -68,9 +70,8 @@ var _ = Describe("User Testing", func() {
 			UpdatedAt: now,
 		}
 
-		err := createUser(user, uow, tx)
+		err := createUser(user, uow)
 		Ω(err).To(Succeed())
-		tx.Commit()
 
 	})
 	Context("Load", func() {
@@ -101,12 +102,6 @@ var _ = Describe("User Testing", func() {
 	Context("Save", func() {
 		It("Create", func() {
 			uow := Bus.UoW
-			tx, txErr := uow.Begin(&gorm.Session{})
-			Ω(txErr).To(Succeed())
-
-			defer func() {
-				tx.Rollback()
-			}()
 
 			now := time.Now()
 			janeUserId := uuid.NewV4()
@@ -122,8 +117,7 @@ var _ = Describe("User Testing", func() {
 				UpdatedAt: now,
 			}
 
-			err := createUser(user, uow, tx)
-			tx.Commit()
+			err := createUser(user, uow)
 			Ω(err).To(Succeed())
 
 			respPaginated, err := view.Users(Bus.UoW, 1, 10)

@@ -73,11 +73,10 @@ func seed(s Seed, seedMethodName string) {
 		log.Fatal("No method called ", seedMethodName)
 	}
 	// Execute the method
-	log.Info("Seeding", seedMethodName, "...")
+	log.Info("Seeding ", seedMethodName, "...")
 	m.Call(nil)
-	log.Info("Seed", seedMethodName, "successfully execute")
 	duration := time.Since(start)
-	log.Info("done in", int(math.Ceil(duration.Seconds())), "seconds")
+	log.Info("done in ", int(math.Ceil(duration.Seconds())), " seconds")
 }
 
 func generateUsers(jobs chan<- model.User) {

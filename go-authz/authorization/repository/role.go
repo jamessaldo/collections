@@ -24,7 +24,7 @@ func NewRoleRepository(db *gorm.DB) RoleRepository {
 }
 
 func (repo *roleRepository) Add(role *model.Role, tx *gorm.DB) (*model.Role, error) {
-	err := tx.Debug().Clauses(clause.OnConflict{DoNothing: true}).Create(&role).Error
+	err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&role).Error
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (repo *roleRepository) Add(role *model.Role, tx *gorm.DB) (*model.Role, err
 }
 
 func (repo *roleRepository) Update(role *model.Role, tx *gorm.DB) (*model.Role, error) {
-	err := tx.Debug().Save(&role).Error
+	err := tx.Save(&role).Error
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (repo *roleRepository) Update(role *model.Role, tx *gorm.DB) (*model.Role, 
 
 func (repo *roleRepository) Get(name model.RoleType) (*model.Role, error) {
 	var role model.Role
-	err := repo.db.Debug().Where("name = ?", name).First(&role).Error
+	err := repo.db.Where("name = ?", name).First(&role).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (repo *roleRepository) Get(name model.RoleType) (*model.Role, error) {
 
 func (repo *roleRepository) List() ([]model.Role, error) {
 	var roles []model.Role
-	err := repo.db.Debug().Find(&roles).Error
+	err := repo.db.Find(&roles).Error
 	if err != nil {
 		return nil, err
 	}

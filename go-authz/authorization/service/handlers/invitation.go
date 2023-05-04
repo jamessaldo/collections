@@ -308,5 +308,6 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 		}
 	}
 
+	tx.Commit()
 	return nil
 }

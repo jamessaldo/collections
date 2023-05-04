@@ -29,7 +29,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (repo *userRepository) Add(user *model.User, tx *gorm.DB) (*model.User, error) {
-	err := tx.Debug().Create(&user).Error
+	err := tx.Create(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (repo *userRepository) AddBatch(users []model.User) error {
 }
 
 func (repo *userRepository) Update(user *model.User, tx *gorm.DB) (*model.User, error) {
-	err := tx.Debug().Save(&user).Error
+	err := tx.Save(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (repo *userRepository) Update(user *model.User, tx *gorm.DB) (*model.User, 
 func (repo *userRepository) Get(id uuid.UUID) (*model.User, error) {
 	var user model.User
 	// get user by id and isActive = true
-	err := repo.db.Debug().Where(&model.User{ID: id, IsActive: true}).First(&user).Error
+	err := repo.db.Where(&model.User{ID: id, IsActive: true}).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (repo *userRepository) Get(id uuid.UUID) (*model.User, error) {
 func (repo *userRepository) List(page, pageSize int) (model.Users, error) {
 	var users []model.User
 	offset := (page - 1) * pageSize
-	err := repo.db.Debug().Limit(pageSize).Offset(offset).Find(&users).Error
+	err := repo.db.Limit(pageSize).Offset(offset).Find(&users).Error
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (repo *userRepository) List(page, pageSize int) (model.Users, error) {
 
 func (repo *userRepository) GetByEmail(email string) (*model.User, error) {
 	var user model.User
-	err := repo.db.Debug().Where("email = ?", email).First(&user).Error
+	err := repo.db.Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (repo *userRepository) GetByEmail(email string) (*model.User, error) {
 
 func (repo *userRepository) GetByUsername(username string) (*model.User, error) {
 	var user model.User
-	err := repo.db.Debug().Where("username = ?", username).First(&user).Error
+	err := repo.db.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (repo *userRepository) GetByUsername(username string) (*model.User, error) 
 
 func (repo *userRepository) Count() (int64, error) {
 	var count int64
-	err := repo.db.Debug().Model(&model.User{}).Select("id").Count(&count).Error
+	err := repo.db.Model(&model.User{}).Select("id").Count(&count).Error
 	if err != nil {
 		return 0, err
 	}

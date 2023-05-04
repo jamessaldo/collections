@@ -35,5 +35,5 @@ func NewEmailTask(data *Payload) *asynq.Task {
 	}
 
 	// Return a new task with given type and payload.
-	return asynq.NewTask(TypeEmailTask, b)
+	return asynq.NewTask(TypeDelayedEmail, b)
 }

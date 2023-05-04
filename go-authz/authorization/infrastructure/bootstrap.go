@@ -11,6 +11,7 @@ import (
 
 	"github.com/allegro/bigcache/v3"
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,7 +22,7 @@ type Bootstraps struct {
 	Endpoints map[string]*model.Endpoint
 }
 
-func NewBootstraps() *Bootstraps {
+func NewBootstraps() (*asynq.Client, *Bootstraps) {
 	db, err := persistence.CreateDBConnection()
 	if err != nil {
 		log.Fatal(err)
@@ -45,7 +46,6 @@ func NewBootstraps() *Bootstraps {
 	}
 
 	asynqClient := worker.CreateAsynqClient()
-	defer asynqClient.Close()
 
 	mailer := worker.NewMailer(asynqClient)
 	if err != nil {
@@ -56,7 +56,7 @@ func NewBootstraps() *Bootstraps {
 	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(10*time.Minute))
 	endpoints := make(map[string]*model.Endpoint)
 
-	return &Bootstraps{
+	return asynqClient, &Bootstraps{
 		Bus:       messagebus,
 		mailer:    mailer,
 		cache:     cache,
