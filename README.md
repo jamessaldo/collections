@@ -41,9 +41,9 @@ The 'collections' repository is a portfolio of my various explorations that show
 The 'collections' repository currently includes the following explorations:
 
 - `go-authz` : An authorization service written in Go that provides secure and customizable access control to your applications.
-- `express-boilerplate-ts` : An ExpressJS boilerplate that uses TypeScript for improved type safety and developer productivity.
-- `all-hail-nextjs` : A full-stack web application built using NextJS, a popular React framework that enables server-side rendering and optimized performance.
-- `next-three-js` : A simple landing page built using NextJS that incorporates ThreeJS, a popular library for creating 3D graphics on the web.
+- `express-boilerplate-ts` : An ExpressJS boilerplate that uses TypeScript for improved type safety and developer productivity. [WIP]
+- `all-hail-nextjs` : A full-stack web application built using NextJS, a popular React framework that enables server-side rendering and optimized performance. [WIP]
+- `next-three-js` : A simple landing page built using NextJS that incorporates ThreeJS, a popular library for creating 3D graphics on the web. [WIP]
 
 These explorations showcase different technologies and frameworks, and are designed to provide a reference for new programmers who are learning to code and want to explore different technologies. They also serve as a portfolio of my skills and experiences.
 

@@ -1,5 +1,5 @@
 {
-  "name": "xendit-callback",
+  "name": "express-boilerplate-ts",
   "version": "1.0.0",
   "description": "Backend service for handling callback from xendit (payment gateway).",
   "bin": {

@@ -1,4 +1,4 @@
-# xendit-callback
+# express-boilerplate-ts
 
 ## Getting Started
 
@@ -10,7 +10,7 @@ To clone the repository, use the following commands:
 
 ```sh
 git clone git@github.com:jamessaldo/collections.git
-cd collections/xendit-callback
+cd collections/express-boilerplate-ts
 yarn install
 ```
 
