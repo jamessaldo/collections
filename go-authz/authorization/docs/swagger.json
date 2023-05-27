@@ -46,36 +46,6 @@
             }
         },
         "/invitations/{id}": {
-            "get": {
-                "description": "Get invitation data by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Membership"
-                ],
-                "summary": "Get invitation by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Invitation ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.InvitationRetreivalSchema"
-                        }
-                    }
-                }
-            },
             "delete": {
                 "description": "Delete invitation data by ID",
                 "consumes": [
@@ -102,6 +72,38 @@
                         "description": "OK",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/invitations/{id}/check": {
+            "get": {
+                "description": "Get invitation data by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Membership"
+                ],
+                "summary": "Get invitation by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invitation ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.InvitationRetreivalSchema"
                         }
                     }
                 }

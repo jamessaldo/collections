@@ -8,7 +8,6 @@ import (
 	"authorization/service"
 	"authorization/util"
 	"authorization/view"
-	"context"
 	"fmt"
 	"net/http"
 
@@ -32,6 +31,7 @@ func NewAuthController() AuthController {
 func (ctrl *authController) Routes(route *gin.RouterGroup) {
 	auth := route.Group("/auth")
 	auth.GET("/logout", middleware.DeserializeUser(), ctrl.Logout)
+	auth.GET("/refresh", ctrl.RefreshAccessToken)
 	auth.GET("/sessions/oauth/google", ctrl.LoginByGoogle)
 }
 
@@ -52,15 +52,7 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 		return
 	}
 
-	tokenRes, err := util.GetGoogleOauthToken(context.Background(), code)
-	if err != nil {
-		err = exception.NewBadGatewayException(err.Error())
-		log.Error(err)
-		_ = ctx.Error(err)
-		return
-	}
-
-	googleUser, err := util.GetGoogleUser(context.Background(), tokenRes.Access_token, tokenRes.Id_token)
+	googleUser, err := util.GetGoogleUser(code)
 	if err != nil {
 		err = exception.NewBadGatewayException(err.Error())
 		log.Error(err)
@@ -88,12 +80,41 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 		return
 	}
 
-	ctx.SetCookie("token", token, config.AppConfig.TokenMaxAge*60, "/", "localhost", false, true)
-	ctx.SetCookie("refreshToken", refreshToken, config.AppConfig.RefreshTokenMaxAge*60, "/", "localhost", false, true)
+	ctx.SetCookie("access_token", token, config.AppConfig.AccessTokenMaxAge*60, "/", "localhost", false, true)
+	ctx.SetCookie("refresh_token", refreshToken, config.AppConfig.RefreshTokenMaxAge*60, "/", "localhost", false, true)
+	ctx.SetCookie("logged_in", "true", config.AppConfig.AccessTokenMaxAge*60, "/", "localhost", false, false)
 	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprint(config.AppConfig.FrontEndOrigin, cmd.PathURL))
 }
 
+func (ctrl *authController) RefreshAccessToken(ctx *gin.Context) {
+	bus := ctx.MustGet("bus").(*service.MessageBus)
+	uow := bus.UoW
+
+	message := "could not refresh access token"
+
+	refresh_token, err := ctx.Cookie("refresh_token")
+
+	if err != nil {
+		log.Error(err)
+		_ = ctx.Error(exception.NewUnauthorizedException("refresh token is required: " + err.Error()))
+		return
+	}
+
+	accessToken, err := view.RefreshAccessToken(refresh_token, uow)
+	if err != nil {
+		log.Error(err)
+		_ = ctx.Error(exception.NewUnauthorizedException(message))
+		return
+	}
+
+	ctx.SetCookie("access_token", accessToken, config.AppConfig.AccessTokenMaxAge*60, "/", "localhost", false, true)
+	ctx.SetCookie("logged_in", "true", config.AppConfig.AccessTokenMaxAge*60, "/", "localhost", false, false)
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"access_token": accessToken}})
+}
+
 func (ctrl *authController) Logout(ctx *gin.Context) {
-	ctx.SetCookie("token", "", -1, "/", "localhost", false, true)
+	ctx.SetCookie("access_token", "", -1, "/", "localhost", false, true)
+	ctx.SetCookie("refresh_token", "", -1, "/", "localhost", false, true)
+	ctx.SetCookie("logged_in", "", -1, "/", "localhost", false, false)
 	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
 }

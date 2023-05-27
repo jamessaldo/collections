@@ -29,26 +29,52 @@ static_resources:
                       #       context_extensions:
                       #         virtual_host: collections_services
                       routes:
-                        # - match:
-                        #     safe_regex:
-                        #       google_re2: {}
-                        #       regex: ^\/auth\/v1\/invitation\/.*\/check
-                        #   route:
-                        #     cluster: svc-authorization
-                        #   typed_per_filter_config:
-                        #     envoy.filters.http.ext_authz:
-                        #       "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
-                        #       disabled: true
+                        - match:
+                            safe_regex:
+                              google_re2: {}
+                              regex: ^\/auth\/v1\/invitations\/.*\/check
+                          route:
+                            cluster: svc-authorization
+                            regex_rewrite:
+                              pattern:
+                                google_re2: {}
+                                regex: ^\/auth\/v1\/(.*)
+                              substitution: /api/v1/\1
+                          typed_per_filter_config:
+                            envoy.filters.http.ext_authz:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                              disabled: true
                         - match:
                             prefix: "/auth/v1"
                           route:
                             cluster: svc-authorization
+                            regex_rewrite:
+                              pattern:
+                                google_re2: {}
+                                regex: ^\/auth\/v1\/(.*)
+                              substitution: /api/v1/\1
                         - match:
-                            safe_regex:
-                              google_re2: {}
-                              regex: ^\/auth\/(docs|openapi.json)
+                            prefix: "/auth/docs"
                           route:
                             cluster: svc-authorization
+                            prefix_rewrite: "/api/v1/docs/index.html"
+                          typed_per_filter_config:
+                            envoy.filters.http.ext_authz:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                              disabled: true
+                        - match:
+                            safe_regex:
+                              google_re2:
+                                max_program_size: 200
+                              regex: ^\/auth\/(swagger-ui-bundle.js|swagger-ui.css|swagger-ui-standalone-preset.js|favicon-16x16.png|doc.json)
+                          route:
+                            cluster: svc-authorization
+                            regex_rewrite:
+                              pattern:
+                                google_re2:
+                                  max_program_size: 200
+                                regex: ^\/auth\/(swagger-ui-bundle.js|swagger-ui.css|swagger-ui-standalone-preset.js|favicon-16x16.png|doc.json)
+                              substitution: /api/v1/docs/\1
                           typed_per_filter_config:
                             envoy.filters.http.ext_authz:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
@@ -59,28 +85,29 @@ static_resources:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
                       providers:
                         authenticate-service:
-                          issuer: http://localhost:8888
+                          issuer: https://accounts.google.com
                           payload_in_metadata: "jwt_payload"
-                          audiences:
-                            - console
-                            - account
-                          local_jwks:
-                            inline_code: |
-                              {
-                                "keys": [
-                                  {
-                                    "kty": "oct",
-                                    "kid": "11c3ca623d2d76f3657f64e52474dcb72b9a46c194422b5cf3ac6e04473269ec",
-                                    "alg": "HS256",
-                                    "k": "e7a483082fcebc7f4cec8bd135f4c0c609bc09bda35a8b8da50da8cd14eebd25"
-                                  }
-                                ]
-                              }
+                          # audiences:
+                          #   - 480990274560-jkgrdoit5nuk7shg11lbqt223akfqgr3.apps.googleusercontent.com
+                          remote_jwks:
+                            http_uri:
+                              uri: https://www.googleapis.com/oauth2/v3/certs
+                              cluster: google-oauth2
+                              timeout: 1s
+                            cache_duration:
+                              seconds: 300
+                            # async_fetch:
+                            #   fast_listener: true
+                            # retry_policy:
+                            #   retry_back_off:
+                            #     base_interval: 0.01s
+                            #     max_interval: 20s
+                            #   num_retries: 10
                       rules:
                         - match:
                             safe_regex:
                               google_re2: {}
-                              regex: ^\/auth\/v1\/invitation\/.*\/check
+                              regex: ^\/auth\/v1\/invitations\/.*\/check
                         - match:
                             prefix: /auth/v1
                           requires:
@@ -106,19 +133,38 @@ static_resources:
                       #         request_handle:headers():replace("user-id", value.jwt_payload.sub)
                       #       end
                       #     end
-                  # - name: envoy.filters.http.ext_authz
-                  #   typed_config:
-                  #     "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
-                  #     transport_api_version: V3
-                  #     grpc_service:
-                  #       envoy_grpc:
-                  #         cluster_name: ext-authz
-                  #       timeout: 1s
-                  # - name: envoy.filters.http.router
-                  #   typed_config:
-                  #     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                  - name: envoy.filters.http.ext_authz
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                      transport_api_version: V3
+                      grpc_service:
+                        envoy_grpc:
+                          cluster_name: ext-authz
+                        timeout: 1s
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
   clusters:
+    - name: google-oauth2
+      connect_timeout: 2s
+      type: LOGICAL_DNS
+      dns_lookup_family: V4_ONLY
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: google-oauth2
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: oauth2.googleapis.com
+                      port_value: 443
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: oauth2.googleapis.com
     - name: svc-authorization
       type: STRICT_DNS
       connect_timeout: 5s

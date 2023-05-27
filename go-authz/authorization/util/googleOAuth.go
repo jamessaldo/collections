@@ -2,22 +2,16 @@ package util
 
 import (
 	"authorization/config"
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"net/url"
-	"time"
-)
 
-type GoogleOauthToken struct {
-	Access_token string
-	Id_token     string
-}
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+)
 
 type GoogleUserResult struct {
 	Id            string
@@ -30,92 +24,34 @@ type GoogleUserResult struct {
 	Locale        string
 }
 
-func GetGoogleOauthToken(ctx context.Context, code string) (*GoogleOauthToken, error) {
-	const rootURl = "https://oauth2.googleapis.com/token"
-
-	values := url.Values{}
-	values.Add("grant_type", "authorization_code")
-	values.Add("code", code)
-	values.Add("client_id", config.AppConfig.GoogleClientID)
-	values.Add("client_secret", config.AppConfig.GoogleClientSecret)
-	values.Add("redirect_uri", config.AppConfig.GoogleOAuthRedirectUrl)
-
-	query := values.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "POST", rootURl, bytes.NewBufferString(query))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	client := http.Client{
-		Timeout: time.Second * 30,
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		fmt.Print(config.AppConfig.GoogleClientID)
-		return nil, errors.New("could not retrieve token")
-	}
-
-	var resBody bytes.Buffer
-	_, err = io.Copy(&resBody, res.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var GoogleOauthTokenRes map[string]interface{}
-
-	if err := json.Unmarshal(resBody.Bytes(), &GoogleOauthTokenRes); err != nil {
-		return nil, err
-	}
-
-	tokenBody := &GoogleOauthToken{
-		Access_token: GoogleOauthTokenRes["access_token"].(string),
-		Id_token:     GoogleOauthTokenRes["id_token"].(string),
-	}
-
-	return tokenBody, nil
+var googleOauthConfig = &oauth2.Config{
+	RedirectURL:  config.AppConfig.GoogleOAuthRedirectUrl,
+	ClientID:     config.AppConfig.GoogleClientID,
+	ClientSecret: config.AppConfig.GoogleClientSecret,
+	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+	Endpoint:     google.Endpoint,
 }
 
-func GetGoogleUser(ctx context.Context, access_token string, id_token string) (*GoogleUserResult, error) {
-	rootUrl := fmt.Sprintf("https://www.googleapis.com/oauth2/v2/userinfo?alt=json&access_token=%s", access_token)
+const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?alt=json&access_token="
 
-	req, err := http.NewRequestWithContext(ctx, "GET", rootUrl, nil)
+func GetGoogleUser(code string) (*GoogleUserResult, error) {
+	token, err := googleOauthConfig.Exchange(context.Background(), code)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
 	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", id_token))
-
-	client := http.Client{
-		Timeout: time.Second * 30,
-	}
-
-	res, err := client.Do(req)
+	response, err := http.Get(oauthGoogleUrlAPI + token.AccessToken)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
 	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("could not retrieve user")
-	}
-
-	var resBody bytes.Buffer
-	_, err = io.Copy(&resBody, res.Body)
+	defer response.Body.Close()
+	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed read response: %s", err.Error())
 	}
 
 	var GoogleUserRes map[string]interface{}
 
-	if err := json.Unmarshal(resBody.Bytes(), &GoogleUserRes); err != nil {
+	if err := json.Unmarshal(contents, &GoogleUserRes); err != nil {
 		return nil, err
 	}
 

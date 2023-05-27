@@ -6,78 +6,90 @@ import (
 	"fmt"
 	"time"
 
+	"encoding/base64"
+
 	"github.com/golang-jwt/jwt/v5"
+	uuid "github.com/satori/go.uuid"
 )
 
-func GenerateToken(ttl time.Duration, payload interface{}, secretJWTKey, jwtKid string) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-
+func CreateToken(userid string, ttl time.Duration, privateKey string) (*model.TokenDetails, error) {
 	now := time.Now().UTC()
-	claims := token.Claims.(jwt.MapClaims)
+	td := &model.TokenDetails{
+		ExpiresIn: new(int64),
+		Token:     new(string),
+	}
+	*td.ExpiresIn = now.Add(ttl).Unix()
+	td.TokenUuid = uuid.NewV4().String()
+	td.UserID = userid
 
-	claims["sub"] = payload.(*model.User).ID
-	claims["exp"] = now.Add(ttl).Unix()
-	claims["iat"] = now.Unix()
-	claims["nbf"] = now.Unix()
-
-	token.Header["kid"] = jwtKid
-
-	tokenString, err := token.SignedString([]byte(secretJWTKey))
+	decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("could not decode token private key: %w", err)
+	}
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(decodedPrivateKey)
 
 	if err != nil {
-		return "", fmt.Errorf("generating JWT Token failed: %w", err)
+		return nil, fmt.Errorf("create: parse token private key: %w", err)
 	}
 
-	return tokenString, nil
+	atClaims := make(jwt.MapClaims)
+	atClaims["sub"] = userid
+	atClaims["token_uuid"] = td.TokenUuid
+	atClaims["exp"] = td.ExpiresIn
+	atClaims["iat"] = now.Unix()
+	atClaims["nbf"] = now.Unix()
+
+	*td.Token, err = jwt.NewWithClaims(jwt.SigningMethodRS256, atClaims).SignedString(key)
+	if err != nil {
+		return nil, fmt.Errorf("create: sign token: %w", err)
+	}
+
+	return td, nil
 }
 
-func GenerateRefreshToken(ttl time.Duration, payload interface{}, secretRefreshJWTKey string) (string, error) {
-	refreshToken := jwt.New(jwt.SigningMethodHS256)
+func ValidateToken(token string, publicKey string) (*model.TokenDetails, error) {
+	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
+	if err != nil {
+		return nil, fmt.Errorf("could not decode: %w", err)
+	}
 
-	now := time.Now().UTC()
-	claims := refreshToken.Claims.(jwt.MapClaims)
-
-	claims["sub"] = payload
-	claims["exp"] = now.Add(ttl).Unix()
-
-	refreshTokenString, err := refreshToken.SignedString([]byte(secretRefreshJWTKey))
+	key, err := jwt.ParseRSAPublicKeyFromPEM(decodedPublicKey)
 
 	if err != nil {
-		return "", fmt.Errorf("generating JWT Refresh Token failed: %w", err)
+		return nil, fmt.Errorf("validate: parse key: %w", err)
 	}
 
-	return refreshTokenString, nil
-}
-
-func ValidateToken(token string, signedJWTKey string) (interface{}, error) {
-	tok, err := jwt.Parse(token, func(jwtToken *jwt.Token) (interface{}, error) {
-		if _, ok := jwtToken.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected method: %s", jwtToken.Header["alg"])
+	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected method: %s", t.Header["alg"])
 		}
-
-		return []byte(signedJWTKey), nil
+		return key, nil
 	})
+
 	if err != nil {
-		return nil, fmt.Errorf("invalidate token: %w", err)
+		return nil, fmt.Errorf("validate: %w", err)
 	}
 
-	claims, ok := tok.Claims.(jwt.MapClaims)
-	if !ok || !tok.Valid {
-		return nil, fmt.Errorf("invalid token claim")
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok || !parsedToken.Valid {
+		return nil, fmt.Errorf("validate: invalid token")
 	}
 
-	return claims["sub"], nil
+	return &model.TokenDetails{
+		TokenUuid: fmt.Sprint(claims["token_uuid"]),
+		UserID:    fmt.Sprint(claims["sub"]),
+	}, nil
 }
 
-func GenerateTokens(user *model.User) (string, string, error) {
-	token, err := GenerateToken(config.AppConfig.TokenExpiresIn, user, config.AppConfig.JWTTokenSecret, config.AppConfig.JWTKid)
+func GenerateTokens(user *model.User) (*model.TokenDetails, *model.TokenDetails, error) {
+	token, err := CreateToken(user.ID.String(), config.AppConfig.AccessTokenExpiresIn, config.AppConfig.AccessTokenPrivateKey)
 	if err != nil {
-		return "", "", err
+		return nil, nil, err
 	}
 
-	refreshToken, err := GenerateRefreshToken(config.AppConfig.RefreshTokenExpiresIn, user, config.AppConfig.RefreshJWTTokenSecret)
+	refreshToken, err := CreateToken(user.ID.String(), config.AppConfig.RefreshTokenExpiresIn, config.AppConfig.RefreshTokenPrivateKey)
 	if err != nil {
-		return "", "", err
+		return nil, nil, err
 	}
 
 	return token, refreshToken, nil

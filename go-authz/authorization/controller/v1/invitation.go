@@ -31,7 +31,7 @@ func NewInvitationController() InvitationController {
 func (ctrl *invitationController) Routes(route *gin.RouterGroup) {
 	invitation := route.Group("/invitations")
 	invitation.POST("/verify", middleware.DeserializeUser(), ctrl.VerifyInvitation)
-	invitation.GET("/:id", ctrl.GetInvitationByID)
+	invitation.GET("/:id/check", ctrl.GetInvitationByID)
 	invitation.DELETE("/:id", middleware.DeserializeUser(), ctrl.DeleteInvitation)
 }
 
@@ -76,7 +76,7 @@ func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 // @Produce json
 // @Param id path string true "Invitation ID"
 // @Success 200 {object} dto.InvitationRetreivalSchema
-// @Router /invitations/{id} [get]
+// @Router /invitations/{id}/check [get]
 func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	uow := bus.UoW

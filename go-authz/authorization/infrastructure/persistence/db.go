@@ -12,7 +12,11 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func CreateDBConnection() (*gorm.DB, error) {
+var (
+	DBConnection *gorm.DB
+)
+
+func CreateDBConnection() error {
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
@@ -25,7 +29,7 @@ func CreateDBConnection() (*gorm.DB, error) {
 
 	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.StorageConfig.DBDriver, config.StorageConfig.DBUser, config.StorageConfig.DBPassword, config.StorageConfig.DBHost, config.StorageConfig.DBPort, config.StorageConfig.DBName)
 
-	db, err := gorm.Open(postgres.New(postgres.Config{
+	connection, err := gorm.Open(postgres.New(postgres.Config{
 		DriverName: "pgx",
 		DSN:        dsn,
 	}), &gorm.Config{
@@ -33,12 +37,12 @@ func CreateDBConnection() (*gorm.DB, error) {
 		Logger:      newLogger,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	pgDB, err := db.DB()
+	pgDB, err := connection.DB()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
@@ -51,5 +55,6 @@ func CreateDBConnection() (*gorm.DB, error) {
 	duration := time.Duration(config.StorageConfig.ConnMaxLifetime * int64(time.Minute))
 	pgDB.SetConnMaxLifetime(duration)
 
-	return db, nil
+	DBConnection = connection
+	return nil
 }

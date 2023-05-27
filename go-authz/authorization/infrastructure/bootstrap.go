@@ -23,12 +23,14 @@ type Bootstraps struct {
 }
 
 func NewBootstraps() (*asynq.Client, *Bootstraps) {
-	db, err := persistence.CreateDBConnection()
+	err := persistence.CreateDBConnection()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(
+	persistence.ConnectRedis()
+
+	err = persistence.DBConnection.AutoMigrate(
 		&model.User{},
 		&model.Endpoint{},
 		&model.Role{},
@@ -40,7 +42,7 @@ func NewBootstraps() (*asynq.Client, *Bootstraps) {
 		log.Fatal(err)
 	}
 
-	uow, err := service.NewUnitOfWork(db)
+	uow, err := service.NewUnitOfWork(persistence.DBConnection)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -8,3 +8,5 @@ access:
 	go run . seed AccessSeed
 gotest:
 	go test ./test/... -cover -v
+authz:
+	go run ./ext-authz/server.go

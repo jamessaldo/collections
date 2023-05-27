@@ -180,6 +180,7 @@ paths:
       summary: Delete invitation by ID
       tags:
       - Membership
+  /invitations/{id}/check:
     get:
       consumes:
       - application/json

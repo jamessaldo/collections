@@ -32,13 +32,15 @@ type ApplicationConfiguration struct {
 	AppName         string `mapstructure:"APP_NAME"`
 
 	// JWT
-	JWTKid                string        `mapstructure:"JWT_KID"`
-	JWTTokenSecret        string        `mapstructure:"JWT_SECRET"`
-	RefreshJWTTokenSecret string        `mapstructure:"REFRESH_JWT_SECRET"`
-	TokenExpiresIn        time.Duration `mapstructure:"TOKEN_EXPIRED_IN"`
-	TokenMaxAge           int           `mapstructure:"TOKEN_MAXAGE"`
-	RefreshTokenExpiresIn time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRED_IN"`
-	RefreshTokenMaxAge    int           `mapstructure:"REFRESH_TOKEN_MAXAGE"`
+	JWTKid                 string        `mapstructure:"JWT_KID"`
+	AccessTokenPrivateKey  string        `mapstructure:"ACCESS_TOKEN_PRIVATE_KEY"`
+	AccessTokenPublicKey   string        `mapstructure:"ACCESS_TOKEN_PUBLIC_KEY"`
+	RefreshTokenPrivateKey string        `mapstructure:"REFRESH_TOKEN_PRIVATE_KEY"`
+	RefreshTokenPublicKey  string        `mapstructure:"REFRESH_TOKEN_PUBLIC_KEY"`
+	AccessTokenExpiresIn   time.Duration `mapstructure:"ACCESS_TOKEN_EXPIRED_IN"`
+	RefreshTokenExpiresIn  time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRED_IN"`
+	AccessTokenMaxAge      int           `mapstructure:"ACCESS_TOKEN_MAXAGE"`
+	RefreshTokenMaxAge     int           `mapstructure:"REFRESH_TOKEN_MAXAGE"`
 
 	// Google OAuth
 	GoogleClientID         string `mapstructure:"GOOGLE_OAUTH_CLIENT_ID"`
@@ -51,9 +53,9 @@ func loadAppConfig(path string) (config ApplicationConfiguration, err error) {
 	viper.SetConfigType("env")
 	viper.SetConfigName("app")
 	viper.SetDefault("APP_PORT", "8888")
+	viper.SetDefault("APP_EXT_AUTHZ_PORT", "8889")
 	viper.SetDefault("APP_ENV", "development")
 	viper.SetDefault("APP_NAME", "svc-authorization")
-
 	viper.AutomaticEnv()
 
 	err = viper.ReadInConfig()

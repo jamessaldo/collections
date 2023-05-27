@@ -22,6 +22,7 @@ func (server *Server) InitializeApp(bootstrap gin.HandlerFunc) {
 	userControllerV1 := v1.NewUserController()
 	authControllerV1 := v1.NewAuthController()
 	teamControllerV1 := v1.NewTeamController()
+	invitationControllerV1 := v1.NewInvitationController()
 
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
@@ -36,16 +37,19 @@ func (server *Server) InitializeApp(bootstrap gin.HandlerFunc) {
 	routerApi := router.Group("/api")
 	routerV1 := routerApi.Group("/v1")
 
-	//user routes
-	userControllerV1.Routes(routerV1)
-
 	//authentication routes
 	authControllerV1.Routes(routerApi)
+
+	//invitation routes
+	invitationControllerV1.Routes(routerV1)
 
 	//team routes
 	teamControllerV1.Routes(routerV1)
 
-	routerV1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	//user routes
+	userControllerV1.Routes(routerV1)
+
+	routerV1.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	//Starting the application
 	log.Fatal(router.Run(config.AppConfig.AppHost + ":" + config.AppConfig.AppPort))
