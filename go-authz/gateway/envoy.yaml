@@ -85,7 +85,7 @@ static_resources:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
                       providers:
                         authenticate-service:
-                          issuer: https://accounts.google.com
+                          # issuer: https://accounts.google.com
                           payload_in_metadata: "jwt_payload"
                           # audiences:
                           #   - 480990274560-jkgrdoit5nuk7shg11lbqt223akfqgr3.apps.googleusercontent.com
@@ -103,6 +103,8 @@ static_resources:
                                 base_interval: 0.01s
                                 max_interval: 20s
                               num_retries: 10
+                          # local_jwks:
+                          #   inline_string: '{"keys":[{"alg":"RS256","kty":"RSA","use":"sig","e":"AQAB","kid":"2d9a5ef5b12623c91671a7093cb323333cd07d09","n":""}]}'
                       rules:
                         - match:
                             safe_regex:
@@ -112,27 +114,27 @@ static_resources:
                             prefix: /auth/v1
                           requires:
                             provider_name: authenticate-service
-                  - name: envoy.filters.http.lua
-                    typed_config:
-                      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-                      inline_code: |
-                        function envoy_on_request(request_handle)
-                          local meta = request_handle:streamInfo():dynamicMetadata()
-                          for key, value in pairs(meta) do
-                            request_handle:headers():replace("user-id", value.jwt_payload.sub)
-                          end
-                        end
-                      ## we should update from inline_code to defaul_source_code.inline_string
-                      ## because inline_code field gonna be deprecated in envoy v1.23
-                      ## (currently we still use v1.20)
-                      # default_source_code:
-                      #   inline_string: |
-                      #     function envoy_on_request(request_handle)
-                      #       local meta = request_handle:streamInfo():dynamicMetadata()
-                      #       for key, value in pairs(meta) do
-                      #         request_handle:headers():replace("user-id", value.jwt_payload.sub)
-                      #       end
-                      #     end
+                  # - name: envoy.filters.http.lua
+                  #   typed_config:
+                  #     "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                  # inline_code: |
+                  #   function envoy_on_request(request_handle)
+                  #     local meta = request_handle:streamInfo():dynamicMetadata()
+                  #     for key, value in pairs(meta) do
+                  #       request_handle:headers():replace("user-id", value.jwt_payload.sub)
+                  #     end
+                  #   end
+                  ## we should update from inline_code to defaul_source_code.inline_string
+                  ## because inline_code field gonna be deprecated in envoy v1.23
+                  ## (currently we still use v1.20)
+                  # default_source_code:
+                  #   inline_string: |
+                  #     function envoy_on_request(request_handle)
+                  #       local meta = request_handle:streamInfo():dynamicMetadata()
+                  #       for key, value in pairs(meta) do
+                  #         request_handle:headers():replace("user-id", value.jwt_payload.sub)
+                  #       end
+                  #     end
                   - name: envoy.filters.http.ext_authz
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
