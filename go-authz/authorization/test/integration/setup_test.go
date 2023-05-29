@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"authorization/config"
 	"authorization/domain/model"
 	"authorization/infrastructure/persistence"
 	"authorization/infrastructure/worker"
@@ -90,13 +91,6 @@ var _ = BeforeEach(func() {
 	persistence.Execute(Db, "AccessSeed")
 })
 
-const (
-	DBDriver = "postgres"
-	DBUser   = "postgres"
-	DBName   = "authz_test"
-	DBPasswd = "postgres"
-)
-
 func setupGormWithDocker() (*gorm.DB, func()) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
@@ -104,7 +98,7 @@ func setupGormWithDocker() (*gorm.DB, func()) {
 	runDockerOpt := &dockertest.RunOptions{
 		Repository: "postgres", // image
 		Tag:        "14",       // version
-		Env:        []string{"POSTGRES_PASSWORD=" + DBPasswd, "POSTGRES_DB=" + DBName},
+		Env:        []string{"POSTGRES_PASSWORD=" + config.StorageConfig.DBPassword, "POSTGRES_DB=" + config.StorageConfig.DBName},
 	}
 
 	fnConfig := func(config *docker.HostConfig) {
@@ -121,7 +115,7 @@ func setupGormWithDocker() (*gorm.DB, func()) {
 	}
 
 	hostAndPort := resource.GetHostPort("5432/tcp")
-	dsn := fmt.Sprintf("%s://%s:%s@%s/%s", DBDriver, DBUser, DBPasswd, hostAndPort, DBName)
+	dsn := fmt.Sprintf("%s://%s:%s@%s/%s", config.StorageConfig.DBDriver, config.StorageConfig.DBUser, config.StorageConfig.DBPassword, hostAndPort, config.StorageConfig.DBName)
 
 	var gdb *gorm.DB
 	// retry until db server is ready
