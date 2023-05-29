@@ -39,7 +39,10 @@ func CreateToken(userid string, ttl time.Duration, privateKey string) (*model.To
 	atClaims["iat"] = now.Unix()
 	atClaims["nbf"] = now.Unix()
 
-	*td.Token, err = jwt.NewWithClaims(jwt.SigningMethodRS256, atClaims).SignedString(key)
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodRS256, atClaims)
+	jwtToken.Header["kid"] = config.AppConfig.AccessTokenKID
+
+	*td.Token, err = jwtToken.SignedString(key)
 	if err != nil {
 		return nil, fmt.Errorf("create: sign token: %w", err)
 	}

@@ -96,13 +96,13 @@ static_resources:
                               timeout: 1s
                             cache_duration:
                               seconds: 300
-                            # async_fetch:
-                            #   fast_listener: true
-                            # retry_policy:
-                            #   retry_back_off:
-                            #     base_interval: 0.01s
-                            #     max_interval: 20s
-                            #   num_retries: 10
+                            async_fetch:
+                              fast_listener: true
+                            retry_policy:
+                              retry_back_off:
+                                base_interval: 0.01s
+                                max_interval: 20s
+                              num_retries: 10
                       rules:
                         - match:
                             safe_regex:

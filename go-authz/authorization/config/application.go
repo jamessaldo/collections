@@ -32,7 +32,7 @@ type ApplicationConfiguration struct {
 	AppName         string `mapstructure:"APP_NAME"`
 
 	// JWT
-	JWTKid                 string        `mapstructure:"JWT_KID"`
+	AccessTokenKID         string        `mapstructure:"ACCESS_TOKEN_KID"`
 	AccessTokenPrivateKey  string        `mapstructure:"ACCESS_TOKEN_PRIVATE_KEY"`
 	AccessTokenPublicKey   string        `mapstructure:"ACCESS_TOKEN_PUBLIC_KEY"`
 	RefreshTokenPrivateKey string        `mapstructure:"REFRESH_TOKEN_PRIVATE_KEY"`
