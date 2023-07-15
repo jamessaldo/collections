@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	uuid "github.com/satori/go.uuid"
-	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 )
 
@@ -317,7 +317,7 @@ func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) er
 	}
 
 	fileType := strings.Split(fileContentType, "/")[1]
-	avatarName := fmt.Sprintf("%s.%s", ksuid.New().String(), fileType)
+	avatarName := fmt.Sprintf("%s.%s", ulid.Make(), fileType)
 
 	if err := util.SaveFileToLocal(avatarName, cmd.File); err != nil {
 		return err

@@ -3,6 +3,7 @@ package repository
 import (
 	"authorization/domain/model"
 
+	"github.com/oklog/ulid/v2"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -16,9 +17,9 @@ type InvitationRepository interface {
 	Add(*model.Invitation, *gorm.DB) (*model.Invitation, error)
 	AddBatch([]model.Invitation) error
 	Update(*model.Invitation, *gorm.DB) (*model.Invitation, error)
-	Get(string) (*model.Invitation, error)
+	Get(ulid.ULID) (*model.Invitation, error)
 	List(opts *model.InvitationOptions) ([]model.Invitation, error)
-	Delete(string, *gorm.DB) error
+	Delete(ulid.ULID, *gorm.DB) error
 }
 
 // invitationRepository implements the InvitationRepository interface
@@ -51,7 +52,7 @@ func (repo *invitationRepository) Update(invitation *model.Invitation, tx *gorm.
 	return invitation, nil
 }
 
-func (repo *invitationRepository) Get(id string) (*model.Invitation, error) {
+func (repo *invitationRepository) Get(id ulid.ULID) (*model.Invitation, error) {
 	var invitation model.Invitation
 	err := repo.db.Where("id = ?", id).Preload("Role").First(&invitation).Error
 	if err != nil {
@@ -90,7 +91,7 @@ func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.I
 	return invitations, nil
 }
 
-func (repo *invitationRepository) Delete(id string, tx *gorm.DB) error {
+func (repo *invitationRepository) Delete(id ulid.ULID, tx *gorm.DB) error {
 	err := tx.Where("id = ?", id).Delete(&model.Invitation{}).Error
 	if err != nil {
 		return err

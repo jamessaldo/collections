@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"authorization/controller/exception"
 	"authorization/domain/command"
 	"authorization/domain/model"
 	"authorization/middleware"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 
 	"github.com/gin-gonic/gin"
@@ -381,8 +383,8 @@ func (ctrl *teamController) ResendInvitation(ctx *gin.Context) {
 	log.Debug().Str("id", id).Msg("Resend invitation to join team")
 
 	// Get invitation ID from request parameter
-	invitationID := ctx.Param("invitation_id")
-	log.Debug().Str("invitation_id", invitationID).Msg("Resend invitation with ID")
+	invitationIDString := ctx.Param("invitation_id")
+	log.Debug().Str("invitation_id", invitationIDString).Msg("Resend invitation with ID")
 
 	// Parse the request body into a User struct
 	var cmd command.ResendInvitation
@@ -391,11 +393,19 @@ func (ctrl *teamController) ResendInvitation(ctx *gin.Context) {
 		return
 	}
 
+	invitationID, err := ulid.Parse(invitationIDString)
+
+	if err != nil {
+		badRequest := exception.NewBadGatewayException(err.Error())
+		_ = ctx.Error(badRequest)
+		return
+	}
+
 	cmd.InvitationID = invitationID
 	cmd.TeamID = uuid.FromStringOrNil(id)
 	cmd.Sender = currentUser
 
-	err := bus.Handle(&cmd)
+	err = bus.Handle(&cmd)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to resend invitation to join team")
 		_ = ctx.Error(err)

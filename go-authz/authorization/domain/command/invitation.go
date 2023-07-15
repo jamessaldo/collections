@@ -3,6 +3,7 @@ package command
 import (
 	"authorization/domain/model"
 
+	"github.com/oklog/ulid/v2"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -20,20 +21,20 @@ type Invitee struct {
 }
 
 type UpdateInvitationStatus struct {
-	InvitationID string `json:"invitation_id"`
-	Status       string `json:"status"`
+	InvitationID ulid.ULID `json:"invitation_id"`
+	Status       string    `json:"status"`
 	User         *model.User
 	Command
 }
 
 type DeleteInvitation struct {
-	InvitationID string `json:"invitation_id"`
+	InvitationID ulid.ULID `json:"invitation_id"`
 	User         *model.User
 	Command
 }
 
 type ResendInvitation struct {
-	InvitationID string    `json:"invitation_id"`
+	InvitationID ulid.ULID `json:"invitation_id"`
 	TeamID       uuid.UUID `json:"team_id"`
 	Sender       *model.User
 	Command

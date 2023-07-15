@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/badoux/checkmail"
+	"github.com/oklog/ulid/v2"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -18,7 +19,7 @@ var (
 )
 
 type Invitation struct {
-	ID        string           `gorm:"type:varchar(27);primary_key"`
+	ID        ulid.ULID        `gorm:"type:bytea;primary_key"`
 	Email     string           `gorm:"size:100;not null"`
 	ExpiresAt time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
 	Status    InvitationStatus `gorm:"size:100;not null;"`

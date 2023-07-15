@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"authorization/controller/exception"
 	"authorization/domain/command"
 	"authorization/domain/model"
 	"authorization/middleware"
@@ -8,6 +9,7 @@ import (
 	"authorization/view"
 	"net/http"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 
 	"github.com/gin-gonic/gin"
@@ -85,8 +87,16 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 	id := ctx.Param("id")
 	log.Debug().Str("id", id).Msg("Get invitation data by ID")
 
+	idParsed, err := ulid.Parse(id)
+
+	if err != nil {
+		badRequest := exception.NewBadGatewayException(err.Error())
+		_ = ctx.Error(badRequest)
+		return
+	}
+
 	// Get invitation data from database
-	invitation, err := view.Invitation(id, uow)
+	invitation, err := view.Invitation(idParsed, uow)
 	if err != nil {
 		log.Error().Err(err).Msg("could not get invitation")
 		_ = ctx.Error(err)
@@ -111,15 +121,23 @@ func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
 	// Get invitation ID from request parameter
-	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Delete invitation data by ID")
+	invitationIDString := ctx.Param("id")
+	log.Debug().Str("id", invitationIDString).Msg("Delete invitation data by ID")
 
 	var cmd command.DeleteInvitation
 
-	cmd.InvitationID = id
+	invitationID, err := ulid.Parse(invitationIDString)
+
+	if err != nil {
+		badRequest := exception.NewBadGatewayException(err.Error())
+		_ = ctx.Error(badRequest)
+		return
+	}
+
+	cmd.InvitationID = invitationID
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err = bus.Handle(&cmd)
 	if err != nil {
 		log.Error().Err(err).Msg("could not delete invitation")
 		_ = ctx.Error(err)

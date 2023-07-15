@@ -11,8 +11,8 @@ import (
 	"authorization/infrastructure/worker"
 	"authorization/service"
 
+	"github.com/oklog/ulid/v2"
 	uuid "github.com/satori/go.uuid"
-	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 )
 
@@ -92,7 +92,7 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 
 		// create invitation
 		invitation := model.Invitation{
-			ID:        ksuid.New().String(),
+			ID:        ulid.Make(),
 			Email:     invitee.Email,
 			ExpiresAt: time.Now().Add(time.Hour * 24 * 7),
 			Status:    model.InvitationStatusPending,

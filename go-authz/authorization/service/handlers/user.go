@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/segmentio/ksuid"
+	"github.com/oklog/ulid/v2"
 	"gorm.io/gorm"
 )
 
@@ -117,7 +117,7 @@ func UpdateUserAvatar(uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) er
 	}
 
 	fileType := strings.Split(fileContentType, "/")[1]
-	avatarName := fmt.Sprintf("%s.%s", ksuid.New().String(), fileType)
+	avatarName := fmt.Sprintf("%s.%s", ulid.Make(), fileType)
 
 	if err := util.SaveFileToLocal(avatarName, cmd.File); err != nil {
 		return err

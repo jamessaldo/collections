@@ -1,9 +1,13 @@
 package dto
 
-import "time"
+import (
+	"time"
+
+	"github.com/oklog/ulid/v2"
+)
 
 type InvitationRetreivalSchema struct {
-	ID         string              `json:"id"`
+	ID         ulid.ULID           `json:"id"`
 	Email      string              `json:"email"`
 	ExpiresAt  time.Time           `json:"expires_at"`
 	Status     string              `json:"status"`

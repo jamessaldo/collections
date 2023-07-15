@@ -7,10 +7,11 @@ import (
 	"authorization/service"
 	"errors"
 
+	"github.com/oklog/ulid/v2"
 	"gorm.io/gorm"
 )
 
-func Invitation(id string, uow *service.UnitOfWork) (*dto.InvitationRetreivalSchema, error) {
+func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreivalSchema, error) {
 	invitation, err := uow.Invitation.Get(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
