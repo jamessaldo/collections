@@ -12,7 +12,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 type AuthController interface {
@@ -47,7 +47,7 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 
 	if code == "" {
 		err := exception.NewBadGatewayException("authorization code not provided")
-		log.Error(err)
+		log.Error().Err(err).Msg("authorization code not provided")
 		_ = ctx.Error(err)
 		return
 	}
@@ -55,7 +55,7 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 	googleUser, err := util.GetGoogleUser(code)
 	if err != nil {
 		err = exception.NewBadGatewayException(err.Error())
-		log.Error(err)
+		log.Error().Err(err).Msg("could not get google user")
 		_ = ctx.Error(err)
 		return
 	}
@@ -68,14 +68,14 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 
 	err = bus.Handle(&cmd)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("could not login by google")
 		_ = ctx.Error(err)
 		return
 	}
 
 	token, refreshToken, err := view.LoginByGoogle(googleUser.Email, uow)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("could not get token and refresh token")
 		_ = ctx.Error(err)
 		return
 	}
@@ -95,14 +95,14 @@ func (ctrl *authController) RefreshAccessToken(ctx *gin.Context) {
 	refresh_token, err := ctx.Cookie("refresh_token")
 
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("refresh token is required")
 		_ = ctx.Error(exception.NewUnauthorizedException("refresh token is required: " + err.Error()))
 		return
 	}
 
 	accessToken, err := view.RefreshAccessToken(refresh_token, uow)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("could not refresh access token")
 		_ = ctx.Error(exception.NewUnauthorizedException(message))
 		return
 	}

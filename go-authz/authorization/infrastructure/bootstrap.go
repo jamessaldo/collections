@@ -6,26 +6,22 @@ import (
 	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/service/handlers"
-	"context"
-	"time"
 
-	"github.com/allegro/bigcache/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 type Bootstraps struct {
 	Bus       *service.MessageBus
 	mailer    worker.WorkerInterface
-	cache     *bigcache.BigCache
 	Endpoints map[string]*model.Endpoint
 }
 
 func NewBootstraps() (*asynq.Client, *Bootstraps) {
 	err := persistence.CreateDBConnection()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to connect to database")
 	}
 
 	persistence.ConnectRedis()
@@ -39,29 +35,27 @@ func NewBootstraps() (*asynq.Client, *Bootstraps) {
 		&model.Team{},
 		&model.Invitation{})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to migrate database")
 	}
 
 	uow, err := service.NewUnitOfWork(persistence.DBConnection)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to create unit of work")
 	}
 
 	asynqClient := worker.CreateAsynqClient()
 
 	mailer := worker.NewMailer(asynqClient)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to create mailer")
 	}
 
 	messagebus := service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer)
-	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(10*time.Minute))
 	endpoints := make(map[string]*model.Endpoint)
 
 	return asynqClient, &Bootstraps{
 		Bus:       messagebus,
 		mailer:    mailer,
-		cache:     cache,
 		Endpoints: endpoints,
 	}
 }
@@ -70,7 +64,6 @@ func (bootstrap *Bootstraps) BootstrapMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Set("mailer", bootstrap.mailer)
 		ctx.Set("bus", bootstrap.Bus)
-		ctx.Set("cache", bootstrap.cache)
 		ctx.Next()
 	}
 }

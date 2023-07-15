@@ -13,7 +13,8 @@ import (
 	"runtime"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -36,7 +37,7 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	log.SetLevel(log.ErrorLevel)
+	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	// setup *gorm.Db with docker
 	Db, cleanupDocker = setupGormWithDocker()
 })
@@ -69,19 +70,19 @@ var _ = BeforeEach(func() {
 		&model.Team{},
 		&model.Invitation{})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to migrate database")
 	}
 
 	uow, err := service.NewUnitOfWork(Db)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to create unit of work")
 	}
 
 	asynqClient := worker.CreateAsynqClientMock()
 
 	mailer := worker.NewMailerMock(asynqClient)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to create mailer")
 	}
 
 	Ω(err).To(Succeed())

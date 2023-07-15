@@ -30,12 +30,12 @@ func LoginByGoogle(email string, uow *service.UnitOfWork) (string, string, error
 	ctx := context.TODO()
 	now := time.Now()
 
-	errAccess := persistence.RedisClient.Set(ctx, accessToken.TokenUuid, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
+	errAccess := persistence.RedisClient.Set(ctx, *accessToken.Token, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
 	if errAccess != nil {
 		return "", "", errAccess
 	}
 
-	errRefresh := persistence.RedisClient.Set(ctx, refreshToken.TokenUuid, user.ID.String(), time.Unix(*refreshToken.ExpiresIn, 0).Sub(now)).Err()
+	errRefresh := persistence.RedisClient.Set(ctx, *refreshToken.Token, user.ID.String(), time.Unix(*refreshToken.ExpiresIn, 0).Sub(now)).Err()
 	if errRefresh != nil {
 		return "", "", errRefresh
 	}
@@ -71,7 +71,7 @@ func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, e
 
 	now := time.Now()
 
-	errAccess := persistence.RedisClient.Set(ctx, accessToken.TokenUuid, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
+	errAccess := persistence.RedisClient.Set(ctx, *accessToken.Token, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
 	if errAccess != nil {
 		return "", errAccess
 	}

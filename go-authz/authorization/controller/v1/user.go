@@ -4,16 +4,16 @@ import (
 	"authorization/domain/command"
 	"authorization/domain/dto"
 	"authorization/domain/model"
+	"authorization/infrastructure/persistence"
 	"authorization/middleware"
 	"authorization/service"
 	"authorization/util"
 	"authorization/view"
+	"context"
 	"encoding/json"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"strconv"
-
-	"github.com/allegro/bigcache/v3"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
@@ -54,9 +54,7 @@ func (ctrl *userController) Routes(route *gin.RouterGroup) {
 // @Success 200 {object} dto.ProfileUser
 // @Router /users/me [get]
 func (ctrl *userController) GetMe(ctx *gin.Context) {
-	log.Debug("Get current user data from context")
 	currentUser := ctx.MustGet("currentUser").(*model.User)
-
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"user": currentUser.ProfileUser()}})
 }
 
@@ -72,15 +70,15 @@ func (ctrl *userController) GetMe(ctx *gin.Context) {
 func (ctrl *userController) GetUserById(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	uow := bus.UoW
-	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	// Get user ID from request parameter
 	id := ctx.Param("id")
-	log.Debug("Get user data by ID = ", id)
+	log.Debug().Str("id", id).Msg("Get user data by ID")
 
 	var user *dto.PublicUser = &dto.PublicUser{}
 
-	userBytes, err := cache.Get(util.UserCachePrefix + id)
+	_ctx := context.TODO()
+	userBytes, err := persistence.RedisClient.Get(_ctx, util.UserCachePrefix+id).Bytes()
 	if err == nil {
 		var userCache *model.User = &model.User{}
 		err = json.Unmarshal(userBytes, userCache)
@@ -88,17 +86,17 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 			user = userCache.PublicUser()
 		}
 	}
+
 	if err != nil {
 		// Get user data from database
 		user, err = view.User(uuid.FromStringOrNil(id), uow)
 		if err != nil {
-			log.Error(err)
+			log.Error().Err(err).Msg("Failed to get user data")
 			_ = ctx.Error(err)
 			return
 		}
 	}
 
-	// Return user data
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"user": user}})
 }
 
@@ -113,19 +111,18 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 // @Success 200 {object} dto.PublicUser
 // @Router /users [get]
 func (ctrl *userController) GetUsers(ctx *gin.Context) {
-	log.Debug("Get all users data")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	uow := bus.UoW
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("Failed to get page number")
 		_ = ctx.Error(err)
 	}
 
 	pageSize, err := strconv.Atoi(ctx.DefaultQuery("pageSize", "10"))
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("Failed to get page size")
 		_ = ctx.Error(err)
 	}
 
@@ -140,12 +137,11 @@ func (ctrl *userController) GetUsers(ctx *gin.Context) {
 	// Get user data from database
 	users, err := view.Users(uow, page, pageSize)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("Failed to get users data")
 		_ = ctx.Error(err)
 		return
 	}
 
-	// Return user data
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": users})
 }
 
@@ -160,10 +156,8 @@ func (ctrl *userController) GetUsers(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /users [put]
 func (ctrl *userController) UpdateUser(ctx *gin.Context) {
-	log.Debug("Update user data")
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateUser
@@ -176,13 +170,13 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("Failed to update user data")
 		_ = ctx.Error(err)
 		return
 	}
-	cache.Delete(util.UserCachePrefix + currentUser.ID.String())
 
-	// Return user data
+	_ctx := context.TODO()
+	persistence.RedisClient.Del(_ctx, util.UserCachePrefix+currentUser.ID.String())
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
@@ -195,7 +189,6 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /users [delete]
 func (ctrl *userController) DeleteUser(ctx *gin.Context) {
-	log.Debug("Delete user data")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
 
@@ -205,12 +198,11 @@ func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("Failed to delete user data")
 		_ = ctx.Error(err)
 		return
 	}
 
-	// Return user data
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
 }
 
@@ -224,10 +216,8 @@ func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /users/avatar [put]
 func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
-	log.Debug("Update user avatar")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
-	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateUserAvatar
@@ -240,13 +230,13 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("Failed to update user avatar")
 		_ = ctx.Error(err)
 		return
 	}
-	cache.Delete(util.UserCachePrefix + currentUser.ID.String())
 
-	// Return user data
+	_ctx := context.TODO()
+	persistence.RedisClient.Del(_ctx, util.UserCachePrefix+currentUser.ID.String())
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
 }
 
@@ -259,10 +249,8 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /users/avatar [delete]
 func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
-	log.Debug("Delete user avatar")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*model.User)
-	cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 	cmd := command.DeleteUserAvatar{
 		User: currentUser,
@@ -270,12 +258,12 @@ func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("Failed to delete user avatar")
 		_ = ctx.Error(err)
 		return
 	}
 
-	cache.Delete(util.UserCachePrefix + currentUser.ID.String())
-	// Return user data
+	_ctx := context.TODO()
+	persistence.RedisClient.Del(_ctx, util.UserCachePrefix+currentUser.ID.String())
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
 }

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/bxcodec/faker/v3"
+	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
@@ -48,7 +48,7 @@ func Execute(db *gorm.DB, seedMethodNames ...string) {
 
 	// Execute all seeders if no method name is given
 	if len(seedMethodNames) == 0 {
-		log.Info("Running all seeder...")
+		log.Info().Msg("Seeding database...")
 		// We are looping over the method on a Seed struct
 		for i := 0; i < seedType.NumMethod(); i++ {
 			// Get the method in the current iteration
@@ -70,13 +70,13 @@ func seed(s Seed, seedMethodName string) {
 	m := reflect.ValueOf(s).MethodByName(seedMethodName)
 	// Exit if the method doesn't exist
 	if !m.IsValid() {
-		log.Fatal("No method called ", seedMethodName)
+		log.Fatal().Err(fmt.Errorf("method %s does not exist", seedMethodName)).Msg("Failed to seed database")
 	}
 	// Execute the method
-	log.Info("Seeding ", seedMethodName, "...")
+	log.Info().Str("method name", seedMethodName).Msg("Seeding database...")
 	m.Call(nil)
 	duration := time.Since(start)
-	log.Info("done in ", int(math.Ceil(duration.Seconds())), " seconds")
+	log.Info().Int("duration", int(math.Ceil(duration.Seconds()))).Msg("Successfully seeded database")
 }
 
 func generateUsers(jobs chan<- model.User) {
@@ -143,26 +143,26 @@ func (s Seed) UserSeed() {
 func userSeedBatchRoutine(db *gorm.DB, user_list []model.User, counter, workerIndex int) {
 	uow, err := service.NewUnitOfWork(db)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to create unit of work")
 	}
 
 	userErr := uow.User.AddBatch(user_list)
 	if userErr != nil {
-		log.Error(userErr)
+		log.Error().Err(err).Msg("Failed to insert users")
 	}
 
-	log.Println(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
+	log.Info().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
 }
 
 func _(db *gorm.DB, user_data *model.User, counter, workerIndex int) {
 	uow, err := service.NewUnitOfWork(db)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to create unit of work")
 	}
 
 	tx, err := uow.Begin(&gorm.Session{})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to begin transaction")
 	}
 
 	defer func() {
@@ -171,24 +171,24 @@ func _(db *gorm.DB, user_data *model.User, counter, workerIndex int) {
 
 	_, userErr := uow.User.Add(user_data, tx)
 	if userErr != nil {
-		log.Error(userErr)
+		log.Error().Err(err).Msg("Failed to insert user")
 		tx.Rollback()
 	}
 
 	tx.Commit()
 
-	log.Println(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
+	log.Info().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
 }
 
 func (s Seed) AccessSeed() {
 	uow, err := service.NewUnitOfWork(s.db)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to create unit of work")
 	}
 
-	tx, txErr := uow.Begin(&gorm.Session{})
-	if txErr != nil {
-		log.Fatal(txErr)
+	tx, err := uow.Begin(&gorm.Session{})
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to begin transaction")
 	}
 
 	defer func() {
@@ -198,7 +198,7 @@ func (s Seed) AccessSeed() {
 	endpointPath := filepath.Join("data", "endpoints.yml")
 	endpointDatas, err := os.ReadFile(endpointPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to ")
 	}
 
 	var endpointYAML EndpointYAML
@@ -210,7 +210,7 @@ func (s Seed) AccessSeed() {
 	rolePath := filepath.Join("data", "roles.yml")
 	roleDatas, err := os.ReadFile(rolePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Failed to ")
 	}
 
 	var roleYAML []RoleYAML
@@ -241,7 +241,7 @@ func (s Seed) AccessSeed() {
 		}
 		_, roleErr := uow.Role.Add(&roleData, tx)
 		if roleErr != nil {
-			log.Error(roleErr)
+			log.Error().Err(roleErr).Msg("Failed to insert role")
 		}
 	}
 

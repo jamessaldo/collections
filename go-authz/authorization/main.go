@@ -8,7 +8,8 @@ import (
 	"flag"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -31,12 +32,11 @@ const (
 )
 
 func init() {
-	log.SetReportCaller(true)
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	if config.AppConfig.AppEnv == Production {
-		log.SetFormatter(&log.JSONFormatter{})
-		log.SetLevel(log.InfoLevel)
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	} else {
-		log.SetLevel(log.DebugLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 }
 
@@ -44,7 +44,7 @@ func main() {
 	// create a directory for avatars if it doesn't exist
 	if config.StorageConfig.StaticDriver == "local" {
 		if err := os.MkdirAll(config.StorageConfig.StaticRoot+config.StorageConfig.StaticAvatarPath, 0755); err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Msg("Cannot start the server, reason: cannot create avatar directory")
 		}
 	}
 

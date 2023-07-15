@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"authorization/config"
 	"authorization/controller/exception"
@@ -13,7 +14,6 @@ import (
 	"authorization/service"
 	"authorization/util"
 
-	"github.com/allegro/bigcache/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	uuid "github.com/satori/go.uuid"
@@ -24,7 +24,6 @@ func DeserializeUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		bus := ctx.MustGet("bus").(*service.MessageBus)
 		uow := bus.UoW
-		cache := ctx.MustGet("cache").(*bigcache.BigCache)
 
 		var token string
 
@@ -49,7 +48,15 @@ func DeserializeUser() gin.HandlerFunc {
 			return
 		}
 
-		tokenDetail, err := util.ValidateToken(token, config.AppConfig.AccessTokenPublicKey)
+		_ctx := context.TODO()
+		stringId, err := persistence.RedisClient.Get(_ctx, token).Result()
+		if err == redis.Nil {
+			_ = ctx.Error(exception.NewUnauthorizedException("Token is invalid or session has expired: " + err.Error()))
+			ctx.Abort()
+			return
+		}
+
+		_, err = util.ValidateToken(token, config.AppConfig.AccessTokenPublicKey)
 		if err != nil {
 			_ = ctx.Error(exception.NewUnauthorizedException(err.Error()))
 			ctx.Abort()
@@ -58,19 +65,10 @@ func DeserializeUser() gin.HandlerFunc {
 
 		var user *model.User = &model.User{}
 
-		_ctx := context.TODO()
-		stringId, err := persistence.RedisClient.Get(_ctx, tokenDetail.TokenUuid).Result()
-		if err == redis.Nil {
-			_ = ctx.Error(exception.NewUnauthorizedException("Token is invalid or session has expired: " + err.Error()))
-			ctx.Abort()
-			return
-		}
-
-		userBytes, err := cache.Get(util.UserCachePrefix + stringId)
+		userBytes, err := persistence.RedisClient.Get(_ctx, util.UserCachePrefix+stringId).Bytes()
 		if err == nil {
 			err = json.Unmarshal(userBytes, user)
-		}
-		if err != nil {
+		} else if err == redis.Nil {
 			userId, _ := uuid.FromString(stringId)
 			user, err = uow.User.Get(userId)
 			if err != nil {
@@ -83,7 +81,13 @@ func DeserializeUser() gin.HandlerFunc {
 				return
 			}
 			json, _ := json.Marshal(user)
-			cache.Set(util.UserCachePrefix+stringId, json)
+
+			expiredDate := time.Now().Add(10 * time.Minute)
+			errCache := persistence.RedisClient.Set(ctx, util.UserCachePrefix+stringId, json, time.Until(expiredDate)).Err()
+			if errCache != nil {
+				ctx.Abort()
+				return
+			}
 		}
 
 		if !user.IsActive {

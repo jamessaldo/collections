@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/viper"
 )
@@ -15,7 +15,7 @@ func init() {
 	var err error
 	AppConfig, err = loadAppConfig("./env")
 	if err != nil {
-		log.Fatal("Failed to load config:", err)
+		log.Fatal().Err(err).Msg("Cannot load application configuration")
 	}
 }
 

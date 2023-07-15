@@ -15,8 +15,8 @@ import (
 
 	"fmt"
 
+	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -66,7 +66,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 
 		_, userErr = uow.User.GetByUsername(user.Username)
 		if userErr == nil {
-			log.Info(fmt.Sprintf("username %s already exist, generating random username", user.Username))
+			log.Info().Msg(fmt.Sprintf("username %s already exist, generating random username", user.Username))
 			user.Username = util.RandomUsername(user.Username)
 		}
 

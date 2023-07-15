@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/hibiken/asynq"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -31,7 +31,7 @@ func NewEmailTask(data *Payload) *asynq.Task {
 
 	b, err := json.Marshal(data)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Any("data", data).Msg("Failed to marshal payload data for email task")
 	}
 
 	// Return a new task with given type and payload.

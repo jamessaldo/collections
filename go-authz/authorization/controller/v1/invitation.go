@@ -8,7 +8,7 @@ import (
 	"authorization/view"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -59,7 +59,7 @@ func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("could not verify invitation")
 		_ = ctx.Error(err)
 		return
 	}
@@ -83,12 +83,12 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 
 	// Get invitation ID from request parameter
 	id := ctx.Param("id")
-	log.Debug("Get invitation data by ID = ", id)
+	log.Debug().Str("id", id).Msg("Get invitation data by ID")
 
 	// Get invitation data from database
 	invitation, err := view.Invitation(id, uow)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("could not get invitation")
 		_ = ctx.Error(err)
 		return
 	}
@@ -112,7 +112,7 @@ func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 
 	// Get invitation ID from request parameter
 	id := ctx.Param("id")
-	log.Debug("Get invitation data by ID = ", id)
+	log.Debug().Str("id", id).Msg("Delete invitation data by ID")
 
 	var cmd command.DeleteInvitation
 
@@ -121,7 +121,7 @@ func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Msg("could not delete invitation")
 		_ = ctx.Error(err)
 		return
 	}

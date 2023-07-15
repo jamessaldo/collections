@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/viper"
 )
@@ -14,7 +14,7 @@ func init() {
 	var err error
 	StorageConfig, err = loadStorageConfig("./env")
 	if err != nil {
-		log.Fatal("Failed to load config:", err)
+		log.Fatal().Err(err).Msg("Cannot load storage configuration")
 	}
 }
 
