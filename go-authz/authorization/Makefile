@@ -1,5 +1,5 @@
 run:
-	swag init && go run .
+	swag init --parseDependency --parseInternal && go run .
 build:
 	go build
 install:

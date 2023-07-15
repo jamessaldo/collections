@@ -31,7 +31,7 @@ func (repo *teamRepository) Add(team *model.Team, tx *gorm.DB) (*model.Team, err
 }
 
 func (repo *teamRepository) Update(team *model.Team, tx *gorm.DB) (*model.Team, error) {
-	err := tx.Save(&team).Error
+	err := tx.Debug().Save(&team).Error
 	if err != nil {
 		return nil, err
 	}

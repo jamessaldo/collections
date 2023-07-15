@@ -2,8 +2,10 @@ package model
 
 import (
 	"authorization/domain/dto"
+	"fmt"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -15,6 +17,7 @@ type Team struct {
 	AvatarURL   string    `gorm:"default:'';"`
 	CreatorID   uuid.UUID `gorm:"type:uuid;not null"`
 	Creator     *User     `gorm:"foreignkey:CreatorID;references:ID"`
+	Memberships []*Membership
 
 	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
@@ -26,7 +29,7 @@ type Membership struct {
 	Team   *Team     `gorm:"foreignkey:TeamID;references:ID"`
 	UserID uuid.UUID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:membership_idx"`
 	User   *User     `gorm:"foreignkey:UserID;references:ID"`
-	RoleID uuid.UUID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:membership_idx"`
+	RoleID ulid.ULID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:membership_idx"`
 	Role   *Role     `gorm:"foreignkey:RoleID;references:ID"`
 
 	LastActiveAt *time.Time `gorm:"default:CURRENT_TIMESTAMP"`
@@ -66,4 +69,39 @@ func (t *Team) Update(payload map[string]any) {
 	if val, ok := payload["avatarURL"].(string); ok && val != "" {
 		t.AvatarURL = val
 	}
+}
+
+func (t *Team) AddMembership(teamID, userID uuid.UUID, roleID ulid.ULID) {
+	membership := &Membership{
+		ID:     uuid.NewV4(),
+		TeamID: teamID,
+		UserID: userID,
+		RoleID: roleID,
+	}
+	t.Memberships = append(t.Memberships, membership)
+}
+
+func NewTeam(user *User, teamID uuid.UUID, roleID ulid.ULID, name, description string, isPersonal bool) *Team {
+	membership := &Membership{
+		ID:     uuid.NewV4(),
+		TeamID: teamID,
+		UserID: user.ID,
+		RoleID: roleID,
+	}
+
+	team := &Team{
+		ID:          teamID,
+		Name:        name,
+		Description: description,
+		IsPersonal:  isPersonal,
+		CreatorID:   user.ID,
+		Memberships: []*Membership{membership},
+	}
+
+	if isPersonal {
+		team.Name = fmt.Sprintf("%s's Personal Team", user.FullName())
+		team.Description = fmt.Sprintf("%s's Personal Team will contains your personal apps.", user.FullName())
+	}
+
+	return team
 }

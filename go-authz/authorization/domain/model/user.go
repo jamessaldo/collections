@@ -2,7 +2,6 @@ package model
 
 import (
 	"authorization/domain/dto"
-	"fmt"
 	"html"
 	"strings"
 	"time"
@@ -81,25 +80,6 @@ func (u *User) FullName() string {
 	return fullName
 }
 
-func (u *User) AddPersonalTeam(role *Role) *Membership {
-	team := &Team{
-		ID:          uuid.NewV4(),
-		Name:        fmt.Sprintf("%s's Personal Team", u.FullName()),
-		Description: fmt.Sprintf("%s's Personal Team will contains your personal apps.", u.FullName()),
-		IsPersonal:  true,
-		CreatorID:   u.ID,
-		Creator:     u,
-	}
-
-	return &Membership{
-		ID:     uuid.NewV4(),
-		TeamID: team.ID,
-		Team:   team,
-		UserID: u.ID,
-		RoleID: role.ID,
-	}
-}
-
 func (u *User) Update(payload map[string]any) {
 	if val, ok := payload["firstName"]; ok && val != "" {
 		u.FirstName = payload["firstName"].(string)
@@ -112,5 +92,25 @@ func (u *User) Update(payload map[string]any) {
 	}
 	if val, ok := payload["avatarURL"]; ok && val != "" {
 		u.AvatarURL = payload["avatarURL"].(string)
+	}
+}
+
+func NewUser(firstName, lastName, email, avatarURL, provider string, isVerified bool) *User {
+	now := time.Now()
+	username := strings.ToLower(strings.Split(email, "@")[0])
+
+	return &User{
+		ID:          uuid.NewV4(),
+		FirstName:   firstName,
+		LastName:    lastName,
+		Username:    username,
+		Email:       email,
+		Password:    "",
+		PhoneNumber: "",
+		AvatarURL:   avatarURL,
+		Provider:    provider,
+		Verified:    isVerified,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 }

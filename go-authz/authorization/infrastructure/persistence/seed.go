@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/bxcodec/faker/v3"
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 
@@ -25,7 +26,7 @@ type Seed struct {
 
 type EndpointYAML struct {
 	Endpoints []struct {
-		ID     uuid.UUID `yaml:"id"`
+		ID     ulid.ULID `yaml:"id"`
 		Name   string    `yaml:"name"`
 		Path   string    `yaml:"path"`
 		Method string    `yaml:"method"`
@@ -33,7 +34,7 @@ type EndpointYAML struct {
 }
 
 type RoleYAML struct {
-	ID        uuid.UUID      `yaml:"id"`
+	ID        ulid.ULID      `yaml:"id"`
 	Name      model.RoleType `yaml:"name"`
 	Endpoints []struct {
 		Name string `yaml:"name"`
@@ -195,55 +196,48 @@ func (s Seed) AccessSeed() {
 		tx.Rollback()
 	}()
 
-	endpointPath := filepath.Join("data", "endpoints.yml")
-	endpointDatas, err := os.ReadFile(endpointPath)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to ")
-	}
-
+	endpointDatas := readYAML("endpoints.yml")
 	var endpointYAML EndpointYAML
 	err = yaml.Unmarshal(endpointDatas, &endpointYAML)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Failed to unmarshal endpoint data")
 	}
 
-	rolePath := filepath.Join("data", "roles.yml")
-	roleDatas, err := os.ReadFile(rolePath)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to ")
-	}
-
+	roleDatas := readYAML("roles.yml")
 	var roleYAML []RoleYAML
 	err = yaml.Unmarshal(roleDatas, &roleYAML)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Failed to unmarshal role data")
 	}
 
 	cacheEndpoint := make(map[string]*model.Endpoint)
 
 	for _, endpoint := range endpointYAML.Endpoints {
-		endpointData := model.Endpoint{
-			ID:     endpoint.ID,
-			Name:   endpoint.Name,
-			Path:   endpoint.Path,
-			Method: endpoint.Method,
-		}
-		cacheEndpoint[endpoint.Name] = &endpointData
+		endpointData := model.NewEndpoint(endpoint.ID, endpoint.Name, endpoint.Path, endpoint.Method)
+		cacheEndpoint[endpoint.Name] = endpointData
 	}
 
 	for _, role := range roleYAML {
-		roleData := model.Role{
-			ID:   role.ID,
-			Name: role.Name,
-		}
+		roleData := model.NewRole(role.ID, role.Name)
 		for _, endpoint := range role.Endpoints {
-			roleData.AddEndpoints(cacheEndpoint[endpoint.Name])
+			if val, ok := cacheEndpoint[endpoint.Name]; ok {
+				roleData.AddEndpoints(val)
+			}
 		}
-		_, roleErr := uow.Role.Add(&roleData, tx)
+		_, roleErr := uow.Role.Add(roleData, tx)
 		if roleErr != nil {
 			log.Error().Err(roleErr).Msg("Failed to insert role")
 		}
 	}
 
 	tx.Commit()
+}
+
+func readYAML(filename string) []byte {
+	filePath := filepath.Join("data", filename)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Fatal().Err(err).Msg(fmt.Sprintf("Failed to read role data %s", filename))
+	}
+	return data
 }

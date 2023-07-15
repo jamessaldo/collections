@@ -9,18 +9,12 @@ import (
 	"encoding/base64"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/oklog/ulid/v2"
 	uuid "github.com/satori/go.uuid"
 )
 
-func CreateToken(userid string, ttl time.Duration, privateKey string) (*model.TokenDetails, error) {
+func CreateToken(userID uuid.UUID, ttl time.Duration, privateKey string) (*model.TokenDetails, error) {
 	now := time.Now().UTC()
-	td := &model.TokenDetails{
-		ExpiresIn: new(int64),
-		Token:     new(string),
-	}
-	*td.ExpiresIn = now.Add(ttl).Unix()
-	td.TokenUuid = uuid.NewV4().String()
-	td.UserID = userid
 
 	decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
@@ -33,20 +27,21 @@ func CreateToken(userid string, ttl time.Duration, privateKey string) (*model.To
 	}
 
 	atClaims := make(jwt.MapClaims)
-	atClaims["sub"] = userid
-	atClaims["token_uuid"] = td.TokenUuid
-	atClaims["exp"] = td.ExpiresIn
+	atClaims["sub"] = userID
+	atClaims["token_ulid"] = ulid.Make()
+	atClaims["exp"] = now.Add(ttl).Unix()
 	atClaims["iat"] = now.Unix()
 	atClaims["nbf"] = now.Unix()
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodRS256, atClaims)
 	jwtToken.Header["kid"] = config.AppConfig.AccessTokenKID
 
-	*td.Token, err = jwtToken.SignedString(key)
+	token, err := jwtToken.SignedString(key)
 	if err != nil {
 		return nil, fmt.Errorf("create: sign token: %w", err)
 	}
 
+	td := model.NewTokenDetails(token, atClaims["token_ulid"].(ulid.ULID), userID, atClaims["exp"].(int64))
 	return td, nil
 }
 
@@ -78,19 +73,27 @@ func ValidateToken(token string, publicKey string) (*model.TokenDetails, error) 
 		return nil, fmt.Errorf("validate: invalid token")
 	}
 
-	return &model.TokenDetails{
-		TokenUuid: fmt.Sprint(claims["token_uuid"]),
-		UserID:    fmt.Sprint(claims["sub"]),
-	}, nil
+	tokenUlid, err := ulid.Parse(fmt.Sprint(claims["token_ulid"]))
+	if err != nil {
+		return nil, fmt.Errorf("validate: parse token ulid: %w", err)
+	}
+	expirationIn, err := claims.GetExpirationTime()
+	if err != nil {
+		return nil, fmt.Errorf("validate: get expiration time: %w", err)
+	}
+
+	td := model.NewTokenDetails(token, tokenUlid, uuid.FromStringOrNil(fmt.Sprint(claims["sub"])), expirationIn.Unix())
+
+	return td, nil
 }
 
 func GenerateTokens(user *model.User) (*model.TokenDetails, *model.TokenDetails, error) {
-	token, err := CreateToken(user.ID.String(), config.AppConfig.AccessTokenExpiresIn, config.AppConfig.AccessTokenPrivateKey)
+	token, err := CreateToken(user.ID, config.AppConfig.AccessTokenExpiresIn, config.AppConfig.AccessTokenPrivateKey)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	refreshToken, err := CreateToken(user.ID.String(), config.AppConfig.RefreshTokenExpiresIn, config.AppConfig.RefreshTokenPrivateKey)
+	refreshToken, err := CreateToken(user.ID, config.AppConfig.RefreshTokenExpiresIn, config.AppConfig.RefreshTokenPrivateKey)
 	if err != nil {
 		return nil, nil, err
 	}

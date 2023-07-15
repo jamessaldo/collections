@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
@@ -49,23 +48,8 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 		return err
 	}
 
-	team := &model.Team{
-		ID:          cmd.TeamID,
-		Name:        cmd.Name,
-		Description: cmd.Description,
-		IsPersonal:  false,
-		CreatorID:   cmd.User.ID,
-	}
-
-	membership := &model.Membership{
-		ID:     uuid.NewV4(),
-		TeamID: cmd.TeamID,
-		Team:   team,
-		UserID: cmd.User.ID,
-		RoleID: ownerRole.ID,
-	}
-
-	_, err = uow.Membership.Add(membership, tx)
+	team := model.NewTeam(cmd.User, cmd.TeamID, ownerRole.ID, cmd.Name, cmd.Description, false)
+	_, err = uow.Team.Add(team, tx)
 	if err != nil {
 		return err
 	}
@@ -100,12 +84,10 @@ func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
 		return err
 	}
 
-	if cmd.Name != "" {
-		team.Name = cmd.Name
-	}
-	if cmd.Description != "" {
-		team.Description = cmd.Description
-	}
+	team.Update(map[string]interface{}{
+		"name":        cmd.Name,
+		"description": cmd.Description,
+	})
 
 	_, err = uow.Team.Update(team, tx)
 	if err != nil {
@@ -364,7 +346,6 @@ func DeleteTeamAvatar(uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) er
 	}
 
 	if team.AvatarURL != "" {
-		// get avatar path after public url
 		paths := strings.Split(team.AvatarURL, "/")
 		path := filepath.Join(config.StorageConfig.StaticRoot, config.StorageConfig.StaticAvatarPath, paths[len(paths)-1])
 		if err := util.DeleteFileInLocal(path); err != nil {

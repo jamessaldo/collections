@@ -54,7 +54,7 @@ func (repo *invitationRepository) Update(invitation *model.Invitation, tx *gorm.
 
 func (repo *invitationRepository) Get(id ulid.ULID) (*model.Invitation, error) {
 	var invitation model.Invitation
-	err := repo.db.Where("id = ?", id).Preload("Role").First(&invitation).Error
+	err := repo.db.Where("id = ?", id).Preload("Role").Preload("Team").First(&invitation).Error
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.I
 	if !opts.ExpiresAt.IsZero() {
 		db = db.Where("expires_at <= ?", opts.ExpiresAt)
 	}
-	if opts.RoleID != uuid.Nil {
+	if opts.RoleID.String() != "" {
 		db = db.Where("role_id = ?", opts.RoleID)
 	}
 	if opts.Limit > 0 {

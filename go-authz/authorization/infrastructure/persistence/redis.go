@@ -3,10 +3,9 @@ package persistence
 import (
 	"authorization/config"
 	"context"
-	"fmt"
-	"log"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -22,13 +21,13 @@ func ConnectRedis() {
 	})
 
 	if _, err := RedisClient.Ping(ctx).Result(); err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("❌ Redis client is not connected")
 	}
 
 	err := RedisClient.Set(ctx, "connection", "test connection", 0).Err()
 	if err != nil {
-		log.Fatal("❌ Redis client connection failed: ", err)
+		log.Fatal().Err(err).Msg("❌ Redis client connection failed")
 	}
 
-	fmt.Println("✅ Redis client connected successfully...")
+	log.Info().Msg("✅ Redis client connected successfully...")
 }

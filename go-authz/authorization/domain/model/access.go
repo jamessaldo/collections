@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/oklog/ulid/v2"
 )
 
 type RoleType string
@@ -16,16 +16,16 @@ var (
 )
 
 type Endpoint struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;"`
-	Name      string    `gorm:"size:100;not null;"`
-	Path      string    `gorm:"size:100;not null;"`
+	ID        ulid.ULID `gorm:"type:bytea;primary_key"`
+	Name      string    `gorm:"size:100;not null;unique;"`
+	Path      string    `gorm:"size:100;not null;unique;"`
 	Method    string    `gorm:"size:100;not null;"`
 	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
 type Role struct {
-	ID        uuid.UUID   `gorm:"type:uuid;primary_key;"`
+	ID        ulid.ULID   `gorm:"type:bytea;primary_key"`
 	Name      RoleType    `gorm:"size:100;not null;unique"`
 	Endpoints []*Endpoint `gorm:"many2many:accesses;"`
 	CreatedAt time.Time   `gorm:"default:CURRENT_TIMESTAMP"`
@@ -34,14 +34,18 @@ type Role struct {
 
 type Access struct {
 	ID         int64     `gorm:"primary_key;auto_increment"`
-	RoleID     uuid.UUID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:access_idx"`
-	EndpointID uuid.UUID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:access_idx"`
+	RoleID     ulid.ULID `gorm:"type:bytea;not null;primaryKey;uniqueIndex:access_idx"`
+	EndpointID ulid.ULID `gorm:"type:bytea;not null;primaryKey;uniqueIndex:access_idx"`
 	CreatedAt  time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 	UpdatedAt  time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
-func NewRole(name RoleType) *Role {
-	return &Role{Name: name}
+func NewRole(id ulid.ULID, name RoleType) *Role {
+	return &Role{ID: id, Name: name}
+}
+
+func NewEndpoint(id ulid.ULID, name, path, method string) *Endpoint {
+	return &Endpoint{ID: id, Name: name, Path: path, Method: method}
 }
 
 func (r *Role) AddEndpoints(endpoints ...*Endpoint) {

@@ -38,9 +38,9 @@ func createUser(user *model.User, uow *service.UnitOfWork) error {
 		return err
 	}
 
-	membership := user.AddPersonalTeam(ownerRole)
+	team := model.NewTeam(user, uuid.NewV4(), ownerRole.ID, "", "", true)
 
-	_, err = uow.Membership.Add(membership, tx)
+	_, err = uow.Team.Add(team, tx)
 	if err != nil {
 		return err
 	}

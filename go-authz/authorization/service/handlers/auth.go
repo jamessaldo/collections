@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"authorization/config"
 	"authorization/controller/exception"
@@ -42,27 +41,11 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 		tx.Rollback()
 	}()
 
-	now := time.Now()
 	email := strings.ToLower(cmd.GoogleUser.Email)
 
 	_, userErr := uow.User.GetByEmail(email)
 	if userErr != nil {
-		user := &model.User{
-			ID:          uuid.NewV4(),
-			FirstName:   cmd.GoogleUser.GivenName,
-			LastName:    cmd.GoogleUser.FamilyName,
-			Email:       cmd.GoogleUser.Email,
-			Password:    "",
-			PhoneNumber: "",
-			AvatarURL:   cmd.GoogleUser.Picture,
-			Provider:    GoogleProvider,
-			Verified:    cmd.GoogleUser.VerifiedEmail,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
-
-		username := strings.Split(email, "@")[0]
-		user.Username = strings.ToLower(username)
+		user := model.NewUser(cmd.GoogleUser.GivenName, cmd.GoogleUser.FamilyName, cmd.GoogleUser.Email, cmd.GoogleUser.Picture, GoogleProvider, cmd.GoogleUser.VerifiedEmail)
 
 		_, userErr = uow.User.GetByUsername(user.Username)
 		if userErr == nil {
@@ -83,9 +66,8 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 			return roleErr
 		}
 
-		membership := user.AddPersonalTeam(ownerRole)
-
-		_, err := uow.Membership.Add(membership, tx)
+		team := model.NewTeam(user, uuid.NewV4(), ownerRole.ID, "", "", true)
+		_, err := uow.Team.Add(team, tx)
 		if err != nil {
 			return err
 		}

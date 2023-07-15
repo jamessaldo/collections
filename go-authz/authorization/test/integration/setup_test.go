@@ -58,7 +58,7 @@ var _ = BeforeEach(func() {
 	dir := path.Join(path.Dir(filename), "..", "..")
 	err = os.Chdir(dir)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Failed to change directory")
 	}
 
 	err = Db.AutoMigrate(
@@ -66,8 +66,8 @@ var _ = BeforeEach(func() {
 		&model.Endpoint{},
 		&model.Role{},
 		&model.Access{},
-		&model.Membership{},
 		&model.Team{},
+		&model.Membership{},
 		&model.Invitation{})
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to migrate database")
@@ -146,6 +146,6 @@ func setupGormWithDocker() (*gorm.DB, func()) {
 
 func chk(err error) {
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Failed to setup docker")
 	}
 }

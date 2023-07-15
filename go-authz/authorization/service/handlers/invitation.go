@@ -11,8 +11,6 @@ import (
 	"authorization/infrastructure/worker"
 	"authorization/service"
 
-	"github.com/oklog/ulid/v2"
-	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
@@ -90,19 +88,8 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 			continue
 		}
 
-		// create invitation
-		invitation := model.Invitation{
-			ID:        ulid.Make(),
-			Email:     invitee.Email,
-			ExpiresAt: time.Now().Add(time.Hour * 24 * 7),
-			Status:    model.InvitationStatusPending,
-			TeamID:    cmd.TeamID,
-			RoleID:    role.ID,
-			SenderID:  cmd.Sender.ID,
-		}
-
-		// add invitation
-		_, err = uow.Invitation.Add(&invitation, tx)
+		invitation := model.NewInvitation(invitee.Email, model.InvitationStatusPending, cmd.TeamID, cmd.Sender.ID, role.ID)
+		_, err = uow.Invitation.Add(invitation, tx)
 		if err != nil {
 			return err
 		}
@@ -269,6 +256,8 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 		return err
 	}
 
+	team := &invitation.Team
+
 	// check if user is team owner
 	if invitation.Email != cmd.User.Email {
 		return exception.NewForbiddenException(fmt.Sprintf("you are not invited to join this team with ID %s", invitation.TeamID))
@@ -295,14 +284,9 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 			}
 			return err
 		}
-		membership := &model.Membership{
-			ID:     uuid.NewV4(),
-			TeamID: invitation.TeamID,
-			UserID: cmd.User.ID,
-			RoleID: role.ID,
-		}
 
-		_, err = uow.Membership.Add(membership, tx)
+		team.AddMembership(invitation.TeamID, cmd.User.ID, role.ID)
+		_, err = uow.Team.Update(team, tx)
 		if err != nil {
 			return err
 		}

@@ -91,6 +91,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			team, err := view.Team(cmdA.TeamID, john, Bus.UoW)
 			Ω(err).To(Succeed())
 			Ω(team.IsPersonal).To(BeFalse())
+			Ω(team.Memberships).To(HaveLen(1))
 		})
 		It("Not Found", func() {
 			_, err := view.Team(uuid.NewV4(), john, Bus.UoW)

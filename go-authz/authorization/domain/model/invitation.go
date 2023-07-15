@@ -25,7 +25,7 @@ type Invitation struct {
 	Status    InvitationStatus `gorm:"size:100;not null;"`
 	TeamID    uuid.UUID        `gorm:"type:uuid;not null"`
 	Team      Team             `gorm:"foreignkey:TeamID;references:ID"`
-	RoleID    uuid.UUID        `gorm:"type:uuid;not null"`
+	RoleID    ulid.ULID        `gorm:"type:bytea;not null"`
 	Role      Role             `gorm:"foreignkey:RoleID;references:ID"`
 	SenderID  uuid.UUID        `gorm:"type:uuid;not null"`
 	Sender    User             `gorm:"foreignkey:SenderID;references:ID"`
@@ -49,7 +49,19 @@ type InvitationOptions struct {
 	Email     string
 	TeamID    uuid.UUID
 	ExpiresAt time.Time
-	RoleID    uuid.UUID
+	RoleID    ulid.ULID
 	Statuses  []InvitationStatus
 	Limit     int
+}
+
+func NewInvitation(email string, status InvitationStatus, teamID, senderID uuid.UUID, roleID ulid.ULID) *Invitation {
+	return &Invitation{
+		ID:        ulid.Make(),
+		Email:     email,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 7),
+		Status:    status,
+		TeamID:    teamID,
+		RoleID:    roleID,
+		SenderID:  senderID,
+	}
 }

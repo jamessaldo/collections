@@ -51,7 +51,7 @@ func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, e
 		return "", err
 	}
 
-	userId, err := persistence.RedisClient.Get(ctx, tokenClaims.TokenUuid).Result()
+	userId, err := persistence.RedisClient.Get(ctx, tokenClaims.TokenUlid.String()).Result()
 	if err == redis.Nil {
 		return "", err
 	}
@@ -64,7 +64,7 @@ func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, e
 		return "", err
 	}
 
-	accessToken, err := util.CreateToken(user.ID.String(), config.AppConfig.AccessTokenExpiresIn, config.AppConfig.AccessTokenPrivateKey)
+	accessToken, err := util.CreateToken(user.ID, config.AppConfig.AccessTokenExpiresIn, config.AppConfig.AccessTokenPrivateKey)
 	if err != nil {
 		return "", err
 	}

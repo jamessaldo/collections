@@ -127,7 +127,6 @@ func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 	var cmd command.DeleteInvitation
 
 	invitationID, err := ulid.Parse(invitationIDString)
-
 	if err != nil {
 		badRequest := exception.NewBadGatewayException(err.Error())
 		_ = ctx.Error(badRequest)
