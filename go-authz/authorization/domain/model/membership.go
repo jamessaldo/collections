@@ -101,7 +101,9 @@ func (m *Membership) Validation(userID, teamID uuid.UUID, requestedRole RoleType
 	return nil
 }
 
-func NewTeam(user *User, teamID uuid.UUID, roleID ulid.ULID, name, description string, isPersonal bool) *Team {
+func NewTeam(user *User, roleID ulid.ULID, name, description string, isPersonal bool) *Team {
+	teamID := uuid.NewV4()
+
 	membership := Membership{
 		ID:     uuid.NewV4(),
 		TeamID: teamID,

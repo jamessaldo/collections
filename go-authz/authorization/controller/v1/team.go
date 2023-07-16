@@ -163,7 +163,7 @@ func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
 	}
 
 	// Return success response
-	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "message": "OK"})
+	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "message": "OK", "data": gin.H{"team_id": cmd.TeamID}})
 }
 
 // @Summary Update team

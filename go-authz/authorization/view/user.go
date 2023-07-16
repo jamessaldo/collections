@@ -16,33 +16,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func LoginByGoogle(email string, uow *service.UnitOfWork) (string, string, error) {
-	user, userErr := uow.User.GetByEmail(email)
-	if userErr != nil {
-		return "", "", userErr
-	}
-
-	accessToken, refreshToken, err := util.GenerateTokens(user)
-	if err != nil {
-		return "", "", err
-	}
-
-	ctx := context.TODO()
-	now := time.Now()
-
-	errAccess := persistence.RedisClient.Set(ctx, *accessToken.Token, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
-	if errAccess != nil {
-		return "", "", errAccess
-	}
-
-	errRefresh := persistence.RedisClient.Set(ctx, *refreshToken.Token, user.ID.String(), time.Unix(*refreshToken.ExpiresIn, 0).Sub(now)).Err()
-	if errRefresh != nil {
-		return "", "", errRefresh
-	}
-
-	return *accessToken.Token, *refreshToken.Token, nil
-}
-
 func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, error) {
 	ctx := context.TODO()
 

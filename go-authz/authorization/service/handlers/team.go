@@ -34,17 +34,12 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 		tx.Rollback()
 	}()
 
-	_, err := uow.Team.Get(cmd.TeamID)
-	if err == nil {
-		return exception.NewConflictException("Team already exists")
-	}
-
 	ownerRole, err := uow.Role.Get(model.Owner)
 	if err != nil {
 		return err
 	}
 
-	team := model.NewTeam(cmd.User, cmd.TeamID, ownerRole.ID, cmd.Name, cmd.Description, false)
+	team := model.NewTeam(cmd.User, ownerRole.ID, cmd.Name, cmd.Description, false)
 	_, err = uow.Team.Add(team, tx)
 	if err != nil {
 		return err
@@ -52,6 +47,7 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 
 	tx.Commit()
 
+	cmd.TeamID = team.ID
 	return nil
 }
 

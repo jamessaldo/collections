@@ -12,8 +12,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func createTeam(cmd command.CreateTeam, user *model.User) {
-	err := Bus.Handle(&cmd)
+func createTeam(cmd *command.CreateTeam, user *model.User) {
+	err := Bus.Handle(cmd)
 	Ω(err).To(Succeed())
 
 	team, err := view.Team(cmd.TeamID, user, Bus.UoW)
@@ -30,8 +30,8 @@ var _ = Describe("Team Testing", Ordered, func() {
 		janeUserId uuid.UUID
 		john       *model.User
 		jane       *model.User
-		cmdA       command.CreateTeam
-		cmdB       command.CreateTeam
+		cmdA       *command.CreateTeam
+		cmdB       *command.CreateTeam
 	)
 
 	BeforeEach(func() {
@@ -70,16 +70,14 @@ var _ = Describe("Team Testing", Ordered, func() {
 		err = createUser(jane, uow)
 		Ω(err).To(Succeed())
 
-		cmdA = command.CreateTeam{
-			TeamID:      uuid.NewV4(),
+		cmdA = &command.CreateTeam{
 			Name:        "Team A",
 			Description: "Team A Description",
 			User:        john,
 		}
 		createTeam(cmdA, john)
 
-		cmdB = command.CreateTeam{
-			TeamID:      uuid.NewV4(),
+		cmdB = &command.CreateTeam{
 			Name:        "Team B",
 			Description: "Team B Description",
 			User:        john,
@@ -127,9 +125,9 @@ var _ = Describe("Team Testing", Ordered, func() {
 		})
 	})
 	Context("Invite member to a team", Ordered, func() {
-		var janeTeam command.CreateTeam
+		var janeTeam *command.CreateTeam
 		BeforeEach(func() {
-			janeTeam = command.CreateTeam{
+			janeTeam = &command.CreateTeam{
 				TeamID:      uuid.NewV4(),
 				Name:        "Team Jane",
 				Description: "Team Jane Description",

@@ -88,7 +88,6 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 	log.Debug().Str("id", id).Msg("Get invitation data by ID")
 
 	idParsed, err := ulid.Parse(id)
-
 	if err != nil {
 		badRequest := exception.NewBadGatewayException(err.Error())
 		_ = ctx.Error(badRequest)

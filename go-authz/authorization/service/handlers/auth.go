@@ -17,7 +17,6 @@ import (
 	"fmt"
 
 	"github.com/rs/zerolog/log"
-	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
@@ -71,7 +70,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 			return roleErr
 		}
 
-		team := model.NewTeam(user, uuid.NewV4(), ownerRole.ID, "", "", true)
+		team := model.NewTeam(user, ownerRole.ID, "", "", true)
 		_, err := uow.Team.Add(team, tx)
 		if err != nil {
 			return err
