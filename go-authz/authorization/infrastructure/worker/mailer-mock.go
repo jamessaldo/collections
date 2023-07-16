@@ -19,6 +19,10 @@ func (ac *AsynqClientMock) SendEmail(payload *Payload) error {
 	return nil
 }
 
+func (ac *AsynqClientMock) CreatePayload(templateName EmailTemplate, to, subject string, data map[string]interface{}) *Payload {
+	return nil
+}
+
 func CreateAsynqClientMock() *ClientMock {
 	// Create a new Asynq client.
 	client := &ClientMock{}

@@ -11,6 +11,7 @@ import (
 
 type WorkerInterface interface {
 	SendEmail(payload *Payload) error
+	CreatePayload(templateName EmailTemplate, to, subject string, data map[string]interface{}) *Payload
 }
 
 type AsynqClient struct {
@@ -26,7 +27,7 @@ func NewMailer(client *asynq.Client) *AsynqClient {
 // Enqueue task to send email
 func (ac *AsynqClient) SendEmail(payload *Payload) error {
 	// Define tasks.
-	task := NewEmailTask(payload)
+	task := newEmailTask(payload)
 
 	// Set a delay duration to 2 minutes.
 	delay := 2 * time.Second
@@ -41,6 +42,15 @@ func (ac *AsynqClient) SendEmail(payload *Payload) error {
 		return err
 	}
 	return nil
+}
+
+func (ac *AsynqClient) CreatePayload(templateName EmailTemplate, to, subject string, data map[string]interface{}) *Payload {
+	return &Payload{
+		TemplateName: templateName,
+		To:           to,
+		Subject:      subject,
+		Data:         data,
+	}
 }
 
 func CreateAsynqClient() *asynq.Client {

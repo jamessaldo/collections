@@ -1,6 +1,7 @@
 package model
 
 import (
+	"authorization/controller/exception"
 	"authorization/domain/dto"
 	"fmt"
 	"time"
@@ -79,6 +80,26 @@ func (t *Team) AddMembership(teamID, userID uuid.UUID, roleID ulid.ULID) {
 		RoleID: roleID,
 	}
 	t.Memberships = append(t.Memberships, membership)
+}
+
+func (m *Membership) Validation(userID, teamID uuid.UUID, requestedRole RoleType) error {
+	if m.UserID == userID {
+		return exception.NewForbiddenException("You cannot change your role")
+	}
+
+	if m.TeamID != teamID {
+		return exception.NewForbiddenException(fmt.Sprintf("Team with ID %s is not match with membership-team ID", teamID))
+	}
+
+	if m.Role.Name == Owner {
+		return exception.NewForbiddenException("It's not allowed to change owner role")
+	}
+
+	if requestedRole != "" && requestedRole == Owner {
+		return exception.NewForbiddenException("You cannot change role to owner")
+	}
+
+	return nil
 }
 
 func NewTeam(user *User, teamID uuid.UUID, roleID ulid.ULID, name, description string, isPersonal bool) *Team {

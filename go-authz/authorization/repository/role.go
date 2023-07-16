@@ -1,7 +1,10 @@
 package repository
 
 import (
+	"authorization/controller/exception"
 	"authorization/domain/model"
+	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -44,6 +47,9 @@ func (repo *roleRepository) Get(name model.RoleType) (*model.Role, error) {
 	var role model.Role
 	err := repo.db.Where("name = ?", name).First(&role).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, exception.NewNotFoundException(fmt.Sprintf("Role with name %s is not exist! Detail: %s", name, err.Error()))
+		}
 		return nil, err
 	}
 	return &role, nil

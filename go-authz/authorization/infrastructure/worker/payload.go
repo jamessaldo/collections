@@ -17,16 +17,23 @@ const (
 	TypeDelayedEmail = "email:delayed"
 )
 
+type EmailTemplate string
+
+const (
+	InvitationTemplate EmailTemplate = "invitation-message.html"
+	WelcomingTemplate  EmailTemplate = "welcoming-message.html"
+)
+
 type Payload struct {
 	UserName     string
-	TemplateName string
+	TemplateName EmailTemplate
 	To           string
 	Subject      string
 	Data         map[string]interface{}
 }
 
-// NewEmailTask task payload for a new email.
-func NewEmailTask(data *Payload) *asynq.Task {
+// newEmailTask task payload for a new email.
+func newEmailTask(data *Payload) *asynq.Task {
 	// Specify task payload.
 
 	b, err := json.Marshal(data)

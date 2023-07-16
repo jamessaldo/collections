@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"errors"
 	"strings"
 
 	"authorization/config"
-	"authorization/controller/exception"
 	"authorization/domain/command"
 	"authorization/domain/model"
 	"authorization/infrastructure/worker"
@@ -60,9 +58,6 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 
 		ownerRole, roleErr := uow.Role.Get(model.Owner)
 		if roleErr != nil {
-			if errors.Is(roleErr, gorm.ErrRecordNotFound) {
-				return exception.NewNotFoundException(fmt.Sprintf("Role with name %s is not exist! Detail: %s", model.Owner, roleErr.Error()))
-			}
 			return roleErr
 		}
 
@@ -84,14 +79,9 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 }
 
 func sendWelcomeEmail(mailer worker.WorkerInterface, user *model.User) error {
-	payload := &worker.Payload{
-		TemplateName: "welcoming-message.html",
-		To:           user.Email,
-		Subject:      fmt.Sprintf("Selamat Datang di %s!", config.AppConfig.AppName),
-		Data: map[string]interface{}{
-			"FullName": user.FullName(),
-		},
+	data := map[string]interface{}{
+		"FullName": user.FullName(),
 	}
-
+	payload := mailer.CreatePayload(worker.WelcomingTemplate, user.Email, fmt.Sprintf("Selamat Datang di %s!", config.AppConfig.AppName), data)
 	return mailer.SendEmail(payload)
 }

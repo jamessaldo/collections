@@ -8,7 +8,6 @@ import (
 	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/util"
-	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -42,9 +41,6 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 
 	ownerRole, err := uow.Role.Get(model.Owner)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
@@ -78,9 +74,6 @@ func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
 
 	team, err := uow.Team.Get(cmd.TeamID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
@@ -164,22 +157,12 @@ func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) er
 
 	membership, err := uow.Membership.Get(cmd.MembershipID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
-	if membership.UserID == cmd.User.ID {
-		return exception.NewForbiddenException("You cannot delete yourself")
-	}
-
-	if membership.TeamID != cmd.TeamID {
-		return exception.NewForbiddenException(fmt.Sprintf("Team with ID %s is not match with membership-team ID", cmd.TeamID))
-	}
-
-	if membership.Role.Name == model.Owner {
-		return exception.NewForbiddenException("You cannot delete owner of the team")
+	err = membership.Validation(cmd.User.ID, cmd.TeamID, "")
+	if err != nil {
+		return err
 	}
 
 	err = uow.Membership.Delete(cmd.MembershipID, tx)
@@ -211,33 +194,16 @@ func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) er
 
 	membership, err := uow.Membership.Get(cmd.MembershipID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
-	if membership.UserID == cmd.User.ID {
-		return exception.NewForbiddenException("You cannot change your own role")
-	}
-
-	if membership.TeamID != cmd.TeamID {
-		return exception.NewForbiddenException(fmt.Sprintf("Team with ID %s is not match with membership-team ID", cmd.TeamID))
-	}
-
-	if membership.Role.Name == model.Owner {
-		return exception.NewForbiddenException("You cannot delete owner of the team")
-	}
-
-	if cmd.Role == model.Owner {
-		return exception.NewForbiddenException("You cannot change role to owner")
+	err = membership.Validation(cmd.User.ID, cmd.TeamID, cmd.Role)
+	if err != nil {
+		return err
 	}
 
 	role, err := uow.Role.Get(cmd.Role)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
@@ -272,9 +238,6 @@ func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) er
 
 	team, err := uow.Team.Get(cmd.TeamID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
@@ -290,7 +253,6 @@ func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) er
 	}
 
 	if team.AvatarURL != "" {
-		// get avatar path after public url
 		paths := strings.Split(team.AvatarURL, "/")
 		path := filepath.Join(config.StorageConfig.StaticRoot, config.StorageConfig.StaticAvatarPath, paths[len(paths)-1])
 		if err := util.DeleteFileInLocal(path); err != nil {
@@ -339,9 +301,6 @@ func DeleteTeamAvatar(uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) er
 
 	team, err := uow.Team.Get(cmd.TeamID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 

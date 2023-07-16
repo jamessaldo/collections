@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"authorization/controller/exception"
 	"authorization/domain/model"
+	"errors"
 
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -31,7 +33,7 @@ func (repo *teamRepository) Add(team *model.Team, tx *gorm.DB) (*model.Team, err
 }
 
 func (repo *teamRepository) Update(team *model.Team, tx *gorm.DB) (*model.Team, error) {
-	err := tx.Debug().Save(&team).Error
+	err := tx.Save(&team).Error
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +44,9 @@ func (repo *teamRepository) Get(id uuid.UUID) (*model.Team, error) {
 	var team model.Team
 	err := repo.db.Preload("Creator").Where("id = ?", id).First(&team).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, exception.NewNotFoundException(err.Error())
+		}
 		return nil, err
 	}
 	return &team, nil

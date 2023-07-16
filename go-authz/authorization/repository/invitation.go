@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"authorization/controller/exception"
 	"authorization/domain/model"
+	"errors"
 
 	"github.com/oklog/ulid/v2"
 	uuid "github.com/satori/go.uuid"
@@ -56,6 +58,9 @@ func (repo *invitationRepository) Get(id ulid.ULID) (*model.Invitation, error) {
 	var invitation model.Invitation
 	err := repo.db.Where("id = ?", id).Preload("Role").Preload("Team").First(&invitation).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, exception.NewNotFoundException(err.Error())
+		}
 		return nil, err
 	}
 	return &invitation, nil

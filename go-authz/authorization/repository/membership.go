@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"authorization/controller/exception"
 	"authorization/domain/model"
+	"errors"
 
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -56,6 +58,9 @@ func (repo *membershipRepository) Get(id uuid.UUID) (*model.Membership, error) {
 	var membership model.Membership
 	err := repo.db.Preload("Role").Where("id = ?", id).First(&membership).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, exception.NewNotFoundException(err.Error())
+		}
 		return nil, err
 	}
 	return &membership, nil

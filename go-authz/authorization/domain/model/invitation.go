@@ -1,6 +1,7 @@
 package model
 
 import (
+	"authorization/controller/exception"
 	"time"
 
 	"github.com/badoux/checkmail"
@@ -43,6 +44,17 @@ func (invitation *Invitation) Validate(action string) map[string]string {
 		}
 	}
 	return errorMessages
+}
+
+func (invitation *Invitation) ResendUpdate() error {
+	// check if invitation is not expired
+	if invitation.ExpiresAt.After(time.Now()) || invitation.Status != InvitationStatusExpired {
+		return exception.NewBadRequestException("invitation is not expired")
+	}
+
+	invitation.Status = InvitationStatusPending
+	invitation.ExpiresAt = time.Now().Add(time.Hour * 24 * 7)
+	return nil
 }
 
 type InvitationOptions struct {

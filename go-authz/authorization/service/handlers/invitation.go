@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
-	"time"
 
 	"authorization/controller/exception"
 	"authorization/domain/command"
@@ -35,9 +33,6 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 	// get team
 	team, err := uow.Team.Get(cmd.TeamID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	} else if team.IsPersonal {
 		return exception.NewForbiddenException(fmt.Sprintf("you can't invite a member to personal team with ID %s", cmd.TeamID))
@@ -66,9 +61,6 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 
 		role, err := uow.Role.Get(invitee.Role)
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return exception.NewNotFoundException(err.Error())
-			}
 			return err
 		}
 
@@ -94,18 +86,15 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 			return err
 		}
 
-		emailPayload := &worker.Payload{
-			TemplateName: "invitation-message.html",
-			To:           invitation.Email,
-			Subject:      fmt.Sprintf("Invitation to join %s team", team.Name),
-			Data: map[string]interface{}{
-				"SenderName":     cmd.Sender.FullName(),
-				"TeamName":       team.Name,
-				"EmailTo":        invitation.Email,
-				"InvitationLink": fmt.Sprintf("http://localhost:3000/invitation/%s", invitation.ID),
-				"InvitationID":   invitation.ID,
-			},
+		data := map[string]interface{}{
+			"SenderName":     cmd.Sender.FullName(),
+			"TeamName":       team.Name,
+			"EmailTo":        invitation.Email,
+			"InvitationLink": fmt.Sprintf("http://localhost:3000/invitation/%s", invitation.ID),
+			"InvitationID":   invitation.ID,
 		}
+
+		emailPayload := mailer.CreatePayload(worker.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
 
 		// send email
 		errSendMail := mailer.SendEmail(emailPayload)
@@ -138,9 +127,6 @@ func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cm
 	// get team
 	team, err := uow.Team.Get(cmd.TeamID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	} else if team.IsPersonal {
 		return exception.NewForbiddenException(fmt.Sprintf("you can't invite a member to personal team with ID %s", cmd.TeamID))
@@ -149,32 +135,23 @@ func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cm
 	// get invitation
 	invitation, err := uow.Invitation.Get(cmd.InvitationID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
-	// check if invitation is not expired
-	if invitation.ExpiresAt.After(time.Now()) || invitation.Status != model.InvitationStatusExpired {
-		return exception.NewBadRequestException("invitation is not expired")
+	err = invitation.ResendUpdate()
+	if err != nil {
+		return err
 	}
 
-	invitation.Status = model.InvitationStatusPending
-	invitation.ExpiresAt = time.Now().Add(time.Hour * 24 * 7)
-
-	emailPayload := &worker.Payload{
-		TemplateName: "invitation-message.html",
-		To:           invitation.Email,
-		Subject:      fmt.Sprintf("Invitation to join %s team", team.Name),
-		Data: map[string]interface{}{
-			"SenderName":     cmd.Sender.FullName(),
-			"TeamName":       team.Name,
-			"EmailTo":        invitation.Email,
-			"InvitationLink": fmt.Sprintf("http://localhost:3000/invitation/%s", invitation.ID),
-			"InvitationID":   invitation.ID,
-		},
+	data := map[string]interface{}{
+		"SenderName":     cmd.Sender.FullName(),
+		"TeamName":       team.Name,
+		"EmailTo":        invitation.Email,
+		"InvitationLink": fmt.Sprintf("http://localhost:3000/invitation/%s", invitation.ID),
+		"InvitationID":   invitation.ID,
 	}
+
+	emailPayload := mailer.CreatePayload(worker.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
 
 	// send email
 	errSendMail := mailer.SendEmail(emailPayload)
@@ -206,9 +183,6 @@ func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) er
 	// get invitation
 	invitation, err := uow.Invitation.Get(cmd.InvitationID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
@@ -250,9 +224,6 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 	// get invitation
 	invitation, err := uow.Invitation.Get(cmd.InvitationID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundException(err.Error())
-		}
 		return err
 	}
 
@@ -279,9 +250,6 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 	if cmd.Status == string(model.InvitationStatusAccepted) {
 		role, err := uow.Role.Get(invitation.Role.Name)
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return exception.NewNotFoundException(err.Error())
-			}
 			return err
 		}
 
