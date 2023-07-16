@@ -1,4 +1,6 @@
 import React, { type ReactNode } from "react";
+import Header from "./header";
+import Sidebar from "./sidebar";
 
 interface LayoutProps {
   children: ReactNode;
@@ -7,9 +9,9 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   return (
     <div>
-      <header>Header</header>
+      {/* <Header /> */}
+      {/* <Sidebar /> */}
       <main>{children}</main>
-      <footer>Footer</footer>
     </div>
   );
 };

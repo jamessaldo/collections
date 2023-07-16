@@ -7,7 +7,6 @@ interface NestedLayoutProps {
 const NestedLayout = ({ children }: NestedLayoutProps) => {
   return (
     <div>
-      <section>Sidebar</section>
       <div>{children}</div>
     </div>
   );
