@@ -18,20 +18,19 @@ type Team struct {
 	AvatarURL   string    `gorm:"default:'';"`
 	CreatorID   uuid.UUID `gorm:"type:uuid;not null"`
 	Creator     *User     `gorm:"foreignkey:CreatorID;references:ID"`
-	Memberships []*Membership
-
-	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
-	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	Memberships []Membership
+	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
 type Membership struct {
 	ID     uuid.UUID `gorm:"type:uuid;primary_key;"`
 	TeamID uuid.UUID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:membership_idx"`
-	Team   *Team     `gorm:"foreignkey:TeamID;references:ID"`
+	Team   *Team
 	UserID uuid.UUID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:membership_idx"`
-	User   *User     `gorm:"foreignkey:UserID;references:ID"`
-	RoleID ulid.ULID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:membership_idx"`
-	Role   *Role     `gorm:"foreignkey:RoleID;references:ID"`
+	User   *User
+	RoleID ulid.ULID `gorm:"type:bytea;not null;primaryKey;uniqueIndex:membership_idx"`
+	Role   *Role
 
 	LastActiveAt *time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 	CreatedAt    time.Time  `gorm:"default:CURRENT_TIMESTAMP"`
@@ -73,7 +72,7 @@ func (t *Team) Update(payload map[string]any) {
 }
 
 func (t *Team) AddMembership(teamID, userID uuid.UUID, roleID ulid.ULID) {
-	membership := &Membership{
+	membership := Membership{
 		ID:     uuid.NewV4(),
 		TeamID: teamID,
 		UserID: userID,
@@ -103,7 +102,7 @@ func (m *Membership) Validation(userID, teamID uuid.UUID, requestedRole RoleType
 }
 
 func NewTeam(user *User, teamID uuid.UUID, roleID ulid.ULID, name, description string, isPersonal bool) *Team {
-	membership := &Membership{
+	membership := Membership{
 		ID:     uuid.NewV4(),
 		TeamID: teamID,
 		UserID: user.ID,
@@ -116,7 +115,7 @@ func NewTeam(user *User, teamID uuid.UUID, roleID ulid.ULID, name, description s
 		Description: description,
 		IsPersonal:  isPersonal,
 		CreatorID:   user.ID,
-		Memberships: []*Membership{membership},
+		Memberships: []Membership{membership},
 	}
 
 	if isPersonal {

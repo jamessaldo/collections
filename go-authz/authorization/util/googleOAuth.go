@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 
 	"golang.org/x/oauth2"
@@ -68,11 +67,5 @@ func GetGoogleUser(code string) (*GoogleUserResult, error) {
 	if ok {
 		userBody.FamilyName = familyName
 	}
-
 	return userBody, nil
-}
-
-func RandomUsername(username string) string {
-	number := rand.Intn(99999-10000) + 10000
-	return fmt.Sprintf("%s%d", username, number)
 }

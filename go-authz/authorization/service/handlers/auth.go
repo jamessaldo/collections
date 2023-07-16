@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"strings"
+	"time"
 
 	"authorization/config"
+	"authorization/controller/exception"
 	"authorization/domain/command"
 	"authorization/domain/model"
+	"authorization/infrastructure/persistence"
 	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/util"
@@ -39,16 +43,22 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 		tx.Rollback()
 	}()
 
-	email := strings.ToLower(cmd.GoogleUser.Email)
+	googleUser, err := util.GetGoogleUser(cmd.Code)
+	if err != nil {
+		err = exception.NewBadGatewayException(err.Error())
+		log.Error().Err(err).Msg("could not get google user")
+		return err
+	}
 
-	_, userErr := uow.User.GetByEmail(email)
+	email := strings.ToLower(googleUser.Email)
+	user, userErr := uow.User.GetByEmail(email)
 	if userErr != nil {
-		user := model.NewUser(cmd.GoogleUser.GivenName, cmd.GoogleUser.FamilyName, cmd.GoogleUser.Email, cmd.GoogleUser.Picture, GoogleProvider, cmd.GoogleUser.VerifiedEmail)
+		user = model.NewUser(googleUser.GivenName, googleUser.FamilyName, googleUser.Email, googleUser.Picture, GoogleProvider, googleUser.VerifiedEmail)
 
-		_, userErr = uow.User.GetByUsername(user.Username)
+		existUser, userErr := uow.User.GetByUsername(user.Username)
 		if userErr == nil {
 			log.Info().Msg(fmt.Sprintf("username %s already exist, generating random username", user.Username))
-			user.Username = util.RandomUsername(user.Username)
+			existUser.RegenerateUsername()
 		}
 
 		_, userErr = uow.User.Add(user, tx)
@@ -74,6 +84,30 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 
 		tx.Commit()
 	}
+
+	accessToken, refreshToken, err := util.GenerateTokens(user)
+	if err != nil {
+		log.Error().Err(err).Msg("could not generate token")
+		return err
+	}
+
+	ctx := context.TODO()
+	now := time.Now()
+
+	errAccess := persistence.RedisClient.Set(ctx, *accessToken.Token, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
+	if errAccess != nil {
+		log.Error().Err(err).Msg("could not set token to redis")
+		return errAccess
+	}
+
+	errRefresh := persistence.RedisClient.Set(ctx, *refreshToken.Token, user.ID.String(), time.Unix(*refreshToken.ExpiresIn, 0).Sub(now)).Err()
+	if errRefresh != nil {
+		log.Error().Err(err).Msg("could not set refresh token to redis")
+		return errRefresh
+	}
+
+	cmd.Token = *accessToken.Token
+	cmd.RefreshToken = *refreshToken.Token
 
 	return nil
 }

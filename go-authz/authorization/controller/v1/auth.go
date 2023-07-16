@@ -6,7 +6,6 @@ import (
 	"authorization/domain/command"
 	"authorization/middleware"
 	"authorization/service"
-	"authorization/util"
 	"authorization/view"
 	"fmt"
 	"net/http"
@@ -37,7 +36,6 @@ func (ctrl *authController) Routes(route *gin.RouterGroup) {
 
 func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	uow := bus.UoW
 	code := ctx.Query("code")
 	var pathUrl string = "/"
 
@@ -52,36 +50,20 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 		return
 	}
 
-	googleUser, err := util.GetGoogleUser(code)
-	if err != nil {
-		err = exception.NewBadGatewayException(err.Error())
-		log.Error().Err(err).Msg("could not get google user")
-		_ = ctx.Error(err)
-		return
-	}
-
 	cmd := command.LoginByGoogle{
-		Code:       code,
-		PathURL:    pathUrl,
-		GoogleUser: *googleUser,
+		Code:    code,
+		PathURL: pathUrl,
 	}
 
-	err = bus.Handle(&cmd)
+	err := bus.Handle(&cmd)
 	if err != nil {
 		log.Error().Err(err).Msg("could not login by google")
 		_ = ctx.Error(err)
 		return
 	}
 
-	token, refreshToken, err := view.LoginByGoogle(googleUser.Email, uow)
-	if err != nil {
-		log.Error().Err(err).Msg("could not get token and refresh token")
-		_ = ctx.Error(err)
-		return
-	}
-
-	ctx.SetCookie("access_token", token, config.AppConfig.AccessTokenMaxAge*60, "/", "localhost", false, true)
-	ctx.SetCookie("refresh_token", refreshToken, config.AppConfig.RefreshTokenMaxAge*60, "/", "localhost", false, true)
+	ctx.SetCookie("access_token", cmd.Token, config.AppConfig.AccessTokenMaxAge*60, "/", "localhost", false, true)
+	ctx.SetCookie("refresh_token", cmd.RefreshToken, config.AppConfig.RefreshTokenMaxAge*60, "/", "localhost", false, true)
 	ctx.SetCookie("logged_in", "true", config.AppConfig.AccessTokenMaxAge*60, "/", "localhost", false, false)
 	ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprint(config.AppConfig.FrontEndOrigin, cmd.PathURL))
 }

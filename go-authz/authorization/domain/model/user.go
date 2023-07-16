@@ -2,7 +2,9 @@ package model
 
 import (
 	"authorization/domain/dto"
+	"fmt"
 	"html"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -93,6 +95,11 @@ func (u *User) Update(payload map[string]any) {
 	if val, ok := payload["avatarURL"]; ok && val != "" {
 		u.AvatarURL = payload["avatarURL"].(string)
 	}
+}
+
+func (u *User) RegenerateUsername() {
+	number := rand.Intn(99999-10000) + 10000
+	u.Username = fmt.Sprintf("%s%d", u.Username, number)
 }
 
 func NewUser(firstName, lastName, email, avatarURL, provider string, isVerified bool) *User {
