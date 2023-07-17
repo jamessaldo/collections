@@ -1,5 +1,6 @@
 import React from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { api } from "@/utils/api";
 
 const Header = () => {
   return (
@@ -20,9 +21,22 @@ const Header = () => {
 
 function AuthShowcase() {
   const { data: sessionData } = useSession();
+  const message = api.greeting.hello.useQuery(
+    {
+      text: sessionData?.user?.name ?? "friend!",
+    },
+    { enabled: sessionData?.user !== undefined }
+  );
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4">
+    <div className="flex items-center justify-center gap-4">
+      {sessionData && sessionData.user ? (
+        <span className="text-xl font-semibold dark:text-[#2B345F]">
+          {message.data ? message.data : "Loading tRPC query..."}
+        </span>
+      ) : (
+        ""
+      )}
       <button
         className="rounded-full bg-[#2B345F] px-10 py-3 font-semibold text-white no-underline transition hover:bg-[#2B345F]/80"
         onClick={sessionData ? () => void signOut() : () => void signIn()}

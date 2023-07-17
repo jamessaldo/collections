@@ -1,8 +1,5 @@
 import type { ReactElement } from "react";
 import Head from "next/head";
-import Link from "next/link";
-import { api } from "@/utils/api";
-import { useSession } from "next-auth/react";
 import Layout from "@/components/layout";
 import NestedLayout from "@/components/nested-layout";
 import { type NextPageWithLayout } from "./_app";
