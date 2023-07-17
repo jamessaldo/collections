@@ -25,7 +25,7 @@ function AuthShowcase() {
     {
       text: sessionData?.user?.name ?? "friend!",
     },
-    { enabled: sessionData?.user !== undefined }
+    { enabled: sessionData?.user !== undefined, staleTime: Infinity }
   );
 
   return (
