@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"authorization/domain"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,7 +10,6 @@ import (
 
 	"authorization/config"
 	"authorization/controller/exception"
-	"authorization/domain/model"
 	"authorization/infrastructure/persistence"
 	"authorization/service"
 	"authorization/util"
@@ -64,7 +64,7 @@ func DeserializeUser() gin.HandlerFunc {
 			return
 		}
 
-		var user *model.User = &model.User{}
+		var user *domain.User = &domain.User{}
 
 		userBytes, err := persistence.RedisClient.Get(_ctx, util.UserCachePrefix+userId).Bytes()
 		if err == nil {

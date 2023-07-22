@@ -1,7 +1,7 @@
 package persistence
 
 import (
-	"authorization/domain/model"
+	"authorization/domain"
 	"authorization/service"
 	"fmt"
 	"math"
@@ -34,8 +34,8 @@ type EndpointYAML struct {
 }
 
 type RoleYAML struct {
-	ID        ulid.ULID      `yaml:"id"`
-	Name      model.RoleType `yaml:"name"`
+	ID        ulid.ULID       `yaml:"id"`
+	Name      domain.RoleType `yaml:"name"`
 	Endpoints []struct {
 		Name string `yaml:"name"`
 	} `yaml:"endpoints"`
@@ -80,11 +80,11 @@ func seed(s Seed, seedMethodName string) {
 	log.Info().Int("duration", int(math.Ceil(duration.Seconds()))).Msg("Successfully seeded database")
 }
 
-func generateUsers(jobs chan<- model.User) {
+func generateUsers(jobs chan<- domain.User) {
 	now := time.Now()
 	for i := 0; i < 1_111_111; i++ {
 		userId := uuid.NewV4()
-		user_data := model.User{
+		user_data := domain.User{
 			ID:        userId,
 			FirstName: faker.ChineseFirstName(),
 			LastName:  faker.ChineseLastName(),
@@ -103,12 +103,12 @@ func generateUsers(jobs chan<- model.User) {
 	}
 }
 
-func dispatchWorkers(db *gorm.DB, jobs <-chan model.User, wg *sync.WaitGroup) {
+func dispatchWorkers(db *gorm.DB, jobs <-chan domain.User, wg *sync.WaitGroup) {
 	for workerIndex := 0; workerIndex < 100; workerIndex++ {
 		wg.Add(1)
-		go func(workerIndex int, db *gorm.DB, jobs <-chan model.User, wg *sync.WaitGroup) {
+		go func(workerIndex int, db *gorm.DB, jobs <-chan domain.User, wg *sync.WaitGroup) {
 			counter := 0
-			var users []model.User
+			var users []domain.User
 			for {
 				if counter < 15000 {
 					job, more := <-jobs
@@ -131,7 +131,7 @@ func dispatchWorkers(db *gorm.DB, jobs <-chan model.User, wg *sync.WaitGroup) {
 func (s Seed) UserSeed() {
 	maxJobBuffer := 100
 
-	jobs := make(chan model.User, maxJobBuffer)
+	jobs := make(chan domain.User, maxJobBuffer)
 	wg := new(sync.WaitGroup)
 
 	go dispatchWorkers(s.db, jobs, wg)
@@ -141,7 +141,7 @@ func (s Seed) UserSeed() {
 	wg.Wait()
 }
 
-func userSeedBatchRoutine(db *gorm.DB, user_list []model.User, counter, workerIndex int) {
+func userSeedBatchRoutine(db *gorm.DB, user_list []domain.User, counter, workerIndex int) {
 	uow, err := service.NewUnitOfWork(db)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create unit of work")
@@ -155,7 +155,7 @@ func userSeedBatchRoutine(db *gorm.DB, user_list []model.User, counter, workerIn
 	log.Info().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
 }
 
-func _(db *gorm.DB, user_data *model.User, counter, workerIndex int) {
+func _(db *gorm.DB, user_data *domain.User, counter, workerIndex int) {
 	uow, err := service.NewUnitOfWork(db)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create unit of work")
@@ -210,15 +210,15 @@ func (s Seed) AccessSeed() {
 		log.Fatal().Err(err).Msg("Failed to unmarshal role data")
 	}
 
-	cacheEndpoint := make(map[string]*model.Endpoint)
+	cacheEndpoint := make(map[string]*domain.Endpoint)
 
 	for _, endpoint := range endpointYAML.Endpoints {
-		endpointData := model.NewEndpoint(endpoint.ID, endpoint.Name, endpoint.Path, endpoint.Method)
+		endpointData := domain.NewEndpoint(endpoint.ID, endpoint.Name, endpoint.Path, endpoint.Method)
 		cacheEndpoint[endpoint.Name] = endpointData
 	}
 
 	for _, role := range roleYAML {
-		roleData := model.NewRole(role.ID, role.Name)
+		roleData := domain.NewRole(role.ID, role.Name)
 		for _, endpoint := range role.Endpoints {
 			if val, ok := cacheEndpoint[endpoint.Name]; ok {
 				roleData.AddEndpoints(val)

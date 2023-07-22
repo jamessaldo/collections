@@ -2,7 +2,7 @@ package repository
 
 import (
 	"authorization/controller/exception"
-	"authorization/domain/model"
+	"authorization/domain"
 	"errors"
 
 	"github.com/oklog/ulid/v2"
@@ -16,11 +16,11 @@ type invitationRepository struct {
 }
 
 type InvitationRepository interface {
-	Add(*model.Invitation, *gorm.DB) (*model.Invitation, error)
-	AddBatch([]model.Invitation) error
-	Update(*model.Invitation, *gorm.DB) (*model.Invitation, error)
-	Get(ulid.ULID) (*model.Invitation, error)
-	List(opts *model.InvitationOptions) ([]model.Invitation, error)
+	Add(*domain.Invitation, *gorm.DB) (*domain.Invitation, error)
+	AddBatch([]domain.Invitation) error
+	Update(*domain.Invitation, *gorm.DB) (*domain.Invitation, error)
+	Get(ulid.ULID) (*domain.Invitation, error)
+	List(opts *domain.InvitationOptions) ([]domain.Invitation, error)
 	Delete(ulid.ULID, *gorm.DB) error
 }
 
@@ -29,7 +29,7 @@ func NewInvitationRepository(db *gorm.DB) InvitationRepository {
 	return &invitationRepository{db: db}
 }
 
-func (repo *invitationRepository) Add(invitation *model.Invitation, tx *gorm.DB) (*model.Invitation, error) {
+func (repo *invitationRepository) Add(invitation *domain.Invitation, tx *gorm.DB) (*domain.Invitation, error) {
 	err := tx.Create(&invitation).Error
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (repo *invitationRepository) Add(invitation *model.Invitation, tx *gorm.DB)
 }
 
 // add batch gorm
-func (repo *invitationRepository) AddBatch(invitations []model.Invitation) error {
+func (repo *invitationRepository) AddBatch(invitations []domain.Invitation) error {
 	err := repo.db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(invitations, 1000).Error
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (repo *invitationRepository) AddBatch(invitations []model.Invitation) error
 	return nil
 }
 
-func (repo *invitationRepository) Update(invitation *model.Invitation, tx *gorm.DB) (*model.Invitation, error) {
+func (repo *invitationRepository) Update(invitation *domain.Invitation, tx *gorm.DB) (*domain.Invitation, error) {
 	err := tx.Save(&invitation).Error
 	if err != nil {
 		return nil, err
@@ -54,8 +54,8 @@ func (repo *invitationRepository) Update(invitation *model.Invitation, tx *gorm.
 	return invitation, nil
 }
 
-func (repo *invitationRepository) Get(id ulid.ULID) (*model.Invitation, error) {
-	var invitation model.Invitation
+func (repo *invitationRepository) Get(id ulid.ULID) (*domain.Invitation, error) {
+	var invitation domain.Invitation
 	err := repo.db.Where("id = ?", id).Preload("Role").Preload("Team").First(&invitation).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -66,7 +66,7 @@ func (repo *invitationRepository) Get(id ulid.ULID) (*model.Invitation, error) {
 	return &invitation, nil
 }
 
-func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.Invitation, error) {
+func (repo *invitationRepository) List(opts *domain.InvitationOptions) ([]domain.Invitation, error) {
 	db := repo.db.Preload("Role")
 
 	if len(opts.Statuses) > 0 {
@@ -88,7 +88,7 @@ func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.I
 		db = db.Limit(opts.Limit)
 	}
 
-	var invitations []model.Invitation
+	var invitations []domain.Invitation
 	err := db.Find(&invitations).Error
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (repo *invitationRepository) List(opts *model.InvitationOptions) ([]model.I
 }
 
 func (repo *invitationRepository) Delete(id ulid.ULID, tx *gorm.DB) error {
-	err := tx.Where("id = ?", id).Delete(&model.Invitation{}).Error
+	err := tx.Where("id = ?", id).Delete(&domain.Invitation{}).Error
 	if err != nil {
 		return err
 	}

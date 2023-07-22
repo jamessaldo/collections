@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	"authorization/domain/model"
+	"authorization/domain"
 	"authorization/infrastructure/persistence"
 	"authorization/infrastructure/worker"
 	"authorization/service"
@@ -15,7 +15,7 @@ import (
 type Bootstraps struct {
 	Bus       *service.MessageBus
 	mailer    worker.WorkerInterface
-	Endpoints map[string]*model.Endpoint
+	Endpoints map[string]*domain.Endpoint
 }
 
 func NewBootstraps() (*asynq.Client, *Bootstraps) {
@@ -27,13 +27,13 @@ func NewBootstraps() (*asynq.Client, *Bootstraps) {
 	persistence.ConnectRedis()
 
 	err = persistence.DBConnection.AutoMigrate(
-		&model.User{},
-		&model.Endpoint{},
-		&model.Role{},
-		&model.Access{},
-		&model.Membership{},
-		&model.Team{},
-		&model.Invitation{})
+		&domain.User{},
+		&domain.Endpoint{},
+		&domain.Role{},
+		&domain.Access{},
+		&domain.Membership{},
+		&domain.Team{},
+		&domain.Invitation{})
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to migrate database")
 	}
@@ -51,7 +51,7 @@ func NewBootstraps() (*asynq.Client, *Bootstraps) {
 	}
 
 	messagebus := service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer)
-	endpoints := make(map[string]*model.Endpoint)
+	endpoints := make(map[string]*domain.Endpoint)
 
 	return asynqClient, &Bootstraps{
 		Bus:       messagebus,

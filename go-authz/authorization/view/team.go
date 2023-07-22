@@ -2,8 +2,8 @@ package view
 
 import (
 	"authorization/controller/exception"
+	"authorization/domain"
 	"authorization/domain/dto"
-	"authorization/domain/model"
 	"authorization/service"
 	"errors"
 	"time"
@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func Team(id uuid.UUID, user *model.User, uow *service.UnitOfWork) (*dto.TeamRetrievalSchema, error) {
+func Team(id uuid.UUID, user *domain.User, uow *service.UnitOfWork) (*dto.TeamRetrievalSchema, error) {
 	team, err := uow.Team.Get(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -20,7 +20,7 @@ func Team(id uuid.UUID, user *model.User, uow *service.UnitOfWork) (*dto.TeamRet
 		}
 		return nil, err
 	}
-	opts := &model.MembershipOptions{
+	opts := &domain.MembershipOptions{
 		TeamID:       id,
 		IsSelectUser: true,
 		IsSelectRole: true,
@@ -58,11 +58,11 @@ func Team(id uuid.UUID, user *model.User, uow *service.UnitOfWork) (*dto.TeamRet
 	}, nil
 }
 
-func Teams(uow *service.UnitOfWork, user *model.User, name string, page, pageSize int) (dto.Pagination, error) {
+func Teams(uow *service.UnitOfWork, user *domain.User, name string, page, pageSize int) (dto.Pagination, error) {
 	var teams []interface{}
 	var totalMemberships int64
 
-	membershipOpts := &model.MembershipOptions{
+	membershipOpts := &domain.MembershipOptions{
 		UserID:       user.ID,
 		IsSelectTeam: true,
 		Limit:        pageSize,
@@ -79,7 +79,7 @@ func Teams(uow *service.UnitOfWork, user *model.User, name string, page, pageSiz
 		return dto.Pagination{}, err
 	}
 	for _, membership := range memberships {
-		opts := &model.MembershipOptions{
+		opts := &domain.MembershipOptions{
 			TeamID:       membership.TeamID,
 			Limit:        3,
 			IsSelectUser: true,

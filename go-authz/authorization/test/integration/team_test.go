@@ -1,8 +1,8 @@
 package integration
 
 import (
+	"authorization/domain"
 	"authorization/domain/command"
-	"authorization/domain/model"
 	"authorization/view"
 	"time"
 
@@ -12,7 +12,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func createTeam(cmd *command.CreateTeam, user *model.User) {
+func createTeam(cmd *command.CreateTeam, user *domain.User) {
 	err := Bus.Handle(cmd)
 	Ω(err).To(Succeed())
 
@@ -28,8 +28,8 @@ var _ = Describe("Team Testing", Ordered, func() {
 	var (
 		johnUserId uuid.UUID
 		janeUserId uuid.UUID
-		john       *model.User
-		jane       *model.User
+		john       *domain.User
+		jane       *domain.User
 		cmdA       *command.CreateTeam
 		cmdB       *command.CreateTeam
 	)
@@ -40,7 +40,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 		now := time.Now()
 		johnUserId = uuid.NewV4()
 		janeUserId = uuid.NewV4()
-		john = &model.User{
+		john = &domain.User{
 			ID:        johnUserId,
 			FirstName: "John",
 			LastName:  "Doe",
@@ -55,7 +55,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 		err := createUser(john, uow)
 		Ω(err).To(Succeed())
 
-		jane = &model.User{
+		jane = &domain.User{
 			ID:        janeUserId,
 			FirstName: "Jane",
 			LastName:  "Doe",
@@ -141,7 +141,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 				Invitees: []command.Invitee{
 					{
 						Email: "james@mail.com",
-						Role:  model.Member,
+						Role:  domain.Member,
 					},
 				},
 				Sender: jane,
@@ -149,7 +149,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			err := Bus.Handle(&cmd)
 			Ω(err).To(Succeed())
 
-			var invitation model.Invitation
+			var invitation domain.Invitation
 			err = Bus.UoW.DB.First(&invitation).Error
 			Ω(err).To(Succeed())
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
@@ -161,7 +161,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 				Invitees: []command.Invitee{
 					{
 						Email: "james@mail.com",
-						Role:  model.Member,
+						Role:  domain.Member,
 					},
 				},
 				Sender: jane,
@@ -169,21 +169,21 @@ var _ = Describe("Team Testing", Ordered, func() {
 			err := Bus.Handle(&cmd)
 			Ω(err).To(Succeed())
 
-			var invitation *model.Invitation
+			var invitation *domain.Invitation
 			err = Bus.UoW.DB.First(&invitation).Error
 			Ω(err).To(Succeed())
 
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
 			Ω(invitation.Email).To(Equal("james@mail.com"))
-			Ω(invitation.Status).To(Equal(model.InvitationStatusPending))
+			Ω(invitation.Status).To(Equal(domain.InvitationStatusPending))
 
-			invitation.Status = model.InvitationStatusSent
+			invitation.Status = domain.InvitationStatusSent
 			invitation, _ = Bus.UoW.Invitation.Update(invitation, Bus.UoW.DB)
-			Ω(invitation.Status).To(Equal(model.InvitationStatusSent))
+			Ω(invitation.Status).To(Equal(domain.InvitationStatusSent))
 
 			now := time.Now()
 
-			james := &model.User{
+			james := &domain.User{
 				ID:        uuid.NewV4(),
 				FirstName: "James",
 				LastName:  "Doe",
@@ -210,7 +210,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(err).To(Succeed())
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
 			Ω(invitation.Email).To(Equal("james@mail.com"))
-			Ω(invitation.Status).To(Equal(model.InvitationStatusAccepted))
+			Ω(invitation.Status).To(Equal(domain.InvitationStatusAccepted))
 		})
 	})
 })

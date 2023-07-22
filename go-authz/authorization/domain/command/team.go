@@ -1,7 +1,7 @@
 package command
 
 import (
-	"authorization/domain/model"
+	"authorization/domain"
 	"mime/multipart"
 
 	uuid "github.com/satori/go.uuid"
@@ -11,7 +11,7 @@ type CreateTeam struct {
 	TeamID      uuid.UUID
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	User        *model.User
+	User        *domain.User
 	Command
 }
 
@@ -19,35 +19,35 @@ type UpdateTeam struct {
 	TeamID      uuid.UUID
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	User        *model.User
+	User        *domain.User
 	Command
 }
 
 type UpdateLastActiveTeam struct {
 	TeamID uuid.UUID
-	User   *model.User
+	User   *domain.User
 	Command
 }
 
 type SendInvitation struct {
 	Members []Invitee `json:"members"`
 	TeamID  uuid.UUID
-	User    *model.User
+	User    *domain.User
 	Command
 }
 
 type DeleteTeamMember struct {
 	TeamID       uuid.UUID
 	MembershipID uuid.UUID `json:"membership_id"`
-	User         *model.User
+	User         *domain.User
 	Command
 }
 
 type ChangeMemberRole struct {
 	TeamID       uuid.UUID
-	MembershipID uuid.UUID      `json:"membership_id"`
-	Role         model.RoleType `json:"role"`
-	User         *model.User
+	MembershipID uuid.UUID       `json:"membership_id"`
+	Role         domain.RoleType `json:"role"`
+	User         *domain.User
 	Command
 }
 

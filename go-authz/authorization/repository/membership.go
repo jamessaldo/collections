@@ -2,7 +2,7 @@ package repository
 
 import (
 	"authorization/controller/exception"
-	"authorization/domain/model"
+	"authorization/domain"
 	"errors"
 
 	uuid "github.com/satori/go.uuid"
@@ -15,13 +15,13 @@ type membershipRepository struct {
 }
 
 type MembershipRepository interface {
-	Add(*model.Membership, *gorm.DB) (*model.Membership, error)
-	AddBatch([]model.Membership) error
-	Update(*model.Membership, *gorm.DB) (*model.Membership, error)
-	Get(uuid.UUID) (*model.Membership, error)
-	List(opts *model.MembershipOptions) ([]model.Membership, error)
+	Add(*domain.Membership, *gorm.DB) (*domain.Membership, error)
+	AddBatch([]domain.Membership) error
+	Update(*domain.Membership, *gorm.DB) (*domain.Membership, error)
+	Get(uuid.UUID) (*domain.Membership, error)
+	List(opts *domain.MembershipOptions) ([]domain.Membership, error)
 	Delete(uuid.UUID, *gorm.DB) error
-	Count(opts *model.MembershipOptions) (int64, error)
+	Count(opts *domain.MembershipOptions) (int64, error)
 }
 
 // membershipRepository implements the MembershipRepository interface
@@ -29,7 +29,7 @@ func NewMembershipRepository(db *gorm.DB) MembershipRepository {
 	return &membershipRepository{db: db}
 }
 
-func (repo *membershipRepository) Add(membership *model.Membership, tx *gorm.DB) (*model.Membership, error) {
+func (repo *membershipRepository) Add(membership *domain.Membership, tx *gorm.DB) (*domain.Membership, error) {
 	err := tx.Omit("Team.Creator").Create(&membership).Error
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (repo *membershipRepository) Add(membership *model.Membership, tx *gorm.DB)
 }
 
 // add batch gorm
-func (repo *membershipRepository) AddBatch(memberships []model.Membership) error {
+func (repo *membershipRepository) AddBatch(memberships []domain.Membership) error {
 	err := repo.db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(memberships, 1000).Error
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (repo *membershipRepository) AddBatch(memberships []model.Membership) error
 	return nil
 }
 
-func (repo *membershipRepository) Update(membership *model.Membership, tx *gorm.DB) (*model.Membership, error) {
+func (repo *membershipRepository) Update(membership *domain.Membership, tx *gorm.DB) (*domain.Membership, error) {
 	err := tx.Save(&membership).Error
 	if err != nil {
 		return nil, err
@@ -54,8 +54,8 @@ func (repo *membershipRepository) Update(membership *model.Membership, tx *gorm.
 	return membership, nil
 }
 
-func (repo *membershipRepository) Get(id uuid.UUID) (*model.Membership, error) {
-	var membership model.Membership
+func (repo *membershipRepository) Get(id uuid.UUID) (*domain.Membership, error) {
+	var membership domain.Membership
 	err := repo.db.Preload("Role").Where("id = ?", id).First(&membership).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -66,7 +66,7 @@ func (repo *membershipRepository) Get(id uuid.UUID) (*model.Membership, error) {
 	return &membership, nil
 }
 
-func (repo *membershipRepository) List(opts *model.MembershipOptions) ([]model.Membership, error) {
+func (repo *membershipRepository) List(opts *domain.MembershipOptions) ([]domain.Membership, error) {
 	db := repo.db
 
 	if opts.IsSelectTeam {
@@ -96,7 +96,7 @@ func (repo *membershipRepository) List(opts *model.MembershipOptions) ([]model.M
 		db = db.Offset(offset)
 	}
 
-	var memberships []model.Membership
+	var memberships []domain.Membership
 	err := db.Order("last_active_at DESC").Find(&memberships).Error
 	if err != nil {
 		return nil, err
@@ -105,15 +105,15 @@ func (repo *membershipRepository) List(opts *model.MembershipOptions) ([]model.M
 }
 
 func (repo *membershipRepository) Delete(id uuid.UUID, tx *gorm.DB) error {
-	err := tx.Where("id = ?", id).Delete(&model.Membership{}).Error
+	err := tx.Where("id = ?", id).Delete(&domain.Membership{}).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (repo *membershipRepository) Count(opts *model.MembershipOptions) (int64, error) {
-	db := repo.db.Model(&model.Membership{})
+func (repo *membershipRepository) Count(opts *domain.MembershipOptions) (int64, error) {
+	db := repo.db.Model(&domain.Membership{})
 
 	if opts.TeamID != uuid.Nil && opts.Name == "" {
 		db = db.Where("team_id = ?", opts.TeamID)

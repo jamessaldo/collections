@@ -1,9 +1,9 @@
 package integration
 
 import (
+	"authorization/domain"
 	"authorization/domain/command"
 	"authorization/domain/dto"
-	"authorization/domain/model"
 	"authorization/service"
 	"authorization/view"
 	"errors"
@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func createUser(user *model.User, uow *service.UnitOfWork) error {
+func createUser(user *domain.User, uow *service.UnitOfWork) error {
 	tx, txErr := uow.Begin(&gorm.Session{})
 	Ω(txErr).To(Succeed())
 
@@ -29,16 +29,16 @@ func createUser(user *model.User, uow *service.UnitOfWork) error {
 		return err
 	}
 
-	ownerRole, err := uow.Role.Get(model.Owner)
+	ownerRole, err := uow.Role.Get(domain.Owner)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Fatalf("Role with name %s is not exist! Detail: %s", model.Owner, err.Error())
+			log.Fatalf("Role with name %s is not exist! Detail: %s", domain.Owner, err.Error())
 			return err
 		}
 		return err
 	}
 
-	team := model.NewTeam(user, ownerRole.ID, "", "", true)
+	team := domain.NewTeam(user, ownerRole.ID, "", "", true)
 
 	_, err = uow.Team.Add(team, tx)
 	if err != nil {
@@ -58,7 +58,7 @@ var _ = Describe("User Testing", func() {
 
 		now := time.Now()
 		johnUserId = uuid.NewV4()
-		user := &model.User{
+		user := &domain.User{
 			ID:        johnUserId,
 			FirstName: "John",
 			LastName:  "Doe",
@@ -105,7 +105,7 @@ var _ = Describe("User Testing", func() {
 
 			now := time.Now()
 			janeUserId := uuid.NewV4()
-			user := &model.User{
+			user := &domain.User{
 				ID:        janeUserId,
 				FirstName: "Jane",
 				LastName:  "Doe",

@@ -2,7 +2,7 @@ package repository
 
 import (
 	"authorization/controller/exception"
-	"authorization/domain/model"
+	"authorization/domain"
 	"errors"
 	"fmt"
 
@@ -16,17 +16,17 @@ type roleRepository struct {
 
 // roleRepository implements the RoleRepository interface
 type RoleRepository interface {
-	Add(*model.Role, *gorm.DB) (*model.Role, error)
-	Update(*model.Role, *gorm.DB) (*model.Role, error)
-	Get(model.RoleType) (*model.Role, error)
-	List() ([]model.Role, error)
+	Add(*domain.Role, *gorm.DB) (*domain.Role, error)
+	Update(*domain.Role, *gorm.DB) (*domain.Role, error)
+	Get(domain.RoleType) (*domain.Role, error)
+	List() ([]domain.Role, error)
 }
 
 func NewRoleRepository(db *gorm.DB) RoleRepository {
 	return &roleRepository{db: db}
 }
 
-func (repo *roleRepository) Add(role *model.Role, tx *gorm.DB) (*model.Role, error) {
+func (repo *roleRepository) Add(role *domain.Role, tx *gorm.DB) (*domain.Role, error) {
 	err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&role).Error
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (repo *roleRepository) Add(role *model.Role, tx *gorm.DB) (*model.Role, err
 	return role, nil
 }
 
-func (repo *roleRepository) Update(role *model.Role, tx *gorm.DB) (*model.Role, error) {
+func (repo *roleRepository) Update(role *domain.Role, tx *gorm.DB) (*domain.Role, error) {
 	err := tx.Save(&role).Error
 	if err != nil {
 		return nil, err
@@ -43,8 +43,8 @@ func (repo *roleRepository) Update(role *model.Role, tx *gorm.DB) (*model.Role, 
 	return role, nil
 }
 
-func (repo *roleRepository) Get(name model.RoleType) (*model.Role, error) {
-	var role model.Role
+func (repo *roleRepository) Get(name domain.RoleType) (*domain.Role, error) {
+	var role domain.Role
 	err := repo.db.Where("name = ?", name).First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -55,8 +55,8 @@ func (repo *roleRepository) Get(name model.RoleType) (*model.Role, error) {
 	return &role, nil
 }
 
-func (repo *roleRepository) List() ([]model.Role, error) {
-	var roles []model.Role
+func (repo *roleRepository) List() ([]domain.Role, error) {
+	var roles []domain.Role
 	err := repo.db.Find(&roles).Error
 	if err != nil {
 		return nil, err

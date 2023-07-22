@@ -1,4 +1,4 @@
-package model
+package domain
 
 import (
 	"authorization/domain/dto"

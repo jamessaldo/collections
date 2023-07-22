@@ -9,7 +9,7 @@ definitions:
       phone_number:
         type: string
       user:
-        $ref: '#/definitions/model.User'
+        $ref: "#/definitions/domain.User"
     type: object
   dto.InvitationRetreivalSchema:
     properties:
@@ -28,7 +28,7 @@ definitions:
       status:
         type: string
       team:
-        $ref: '#/definitions/dto.TeamRetrievalSchema'
+        $ref: "#/definitions/dto.TeamRetrievalSchema"
     type: object
   dto.MembershipRetrievalSchema:
     properties:
@@ -113,7 +113,7 @@ definitions:
         type: string
       memberships:
         items:
-          $ref: '#/definitions/dto.MembershipRetrievalSchema'
+          $ref: "#/definitions/dto.MembershipRetrievalSchema"
         type: array
       name:
         type: string
@@ -122,7 +122,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  model.User:
+  domain.User:
     properties:
       avatarURL:
         type: string
@@ -164,16 +164,16 @@ paths:
   /invitations/{id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete invitation data by ID
       parameters:
-      - description: Invitation ID
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Invitation ID
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -181,41 +181,41 @@ paths:
             type: string
       summary: Delete invitation by ID
       tags:
-      - Membership
+        - Membership
   /invitations/{id}/check:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get invitation data by ID
       parameters:
-      - description: Invitation ID
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Invitation ID
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.InvitationRetreivalSchema'
+            $ref: "#/definitions/dto.InvitationRetreivalSchema"
       summary: Get invitation by ID
       tags:
-      - Membership
+        - Membership
   /invitations/verify:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Verify invitation data by ID
       parameters:
-      - description: Team ID
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Team ID
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -223,64 +223,64 @@ paths:
             type: string
       summary: Verify invitation by ID
       tags:
-      - Membership
+        - Membership
   /teams:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get all teams data
       parameters:
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Page size
-        in: query
-        name: pageSize
-        type: integer
-      - description: Team name
-        in: query
-        name: name
-        type: string
+        - description: Page number
+          in: query
+          name: page
+          type: integer
+        - description: Page size
+          in: query
+          name: pageSize
+          type: integer
+        - description: Team name
+          in: query
+          name: name
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.Pagination'
+            $ref: "#/definitions/dto.Pagination"
       summary: Get all teams
       tags:
-      - Team
+        - Team
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create team data
       parameters:
-      - description: Team ID
-        in: body
-        name: team_id
-        required: true
-        schema:
-          type: string
-      - description: Team name
-        in: body
-        name: name
-        required: true
-        schema:
-          type: string
-      - description: Is personal team
-        in: body
-        name: is_personal
-        schema:
-          type: boolean
-      - description: Team description
-        in: body
-        name: description
-        schema:
-          type: string
+        - description: Team ID
+          in: body
+          name: team_id
+          required: true
+          schema:
+            type: string
+        - description: Team name
+          in: body
+          name: name
+          required: true
+          schema:
+            type: string
+        - description: Is personal team
+          in: body
+          name: is_personal
+          schema:
+            type: boolean
+        - description: Team description
+          in: body
+          name: description
+          schema:
+            type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: OK
@@ -288,50 +288,50 @@ paths:
             type: string
       summary: Create team
       tags:
-      - Team
+        - Team
   /teams/{id}:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get team data by ID
       parameters:
-      - description: Team ID
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Team ID
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.TeamRetrievalSchema'
+            $ref: "#/definitions/dto.TeamRetrievalSchema"
       summary: Get team by ID
       tags:
-      - Team
+        - Team
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update team data
       parameters:
-      - description: Team ID
-        in: path
-        name: team_id
-        required: true
-        type: string
-      - description: Team name
-        in: body
-        name: name
-        schema:
+        - description: Team ID
+          in: path
+          name: team_id
+          required: true
           type: string
-      - description: Team description
-        in: body
-        name: description
-        schema:
-          type: string
+        - description: Team name
+          in: body
+          name: name
+          schema:
+            type: string
+        - description: Team description
+          in: body
+          name: description
+          schema:
+            type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -339,20 +339,20 @@ paths:
             type: string
       summary: Update team
       tags:
-      - Team
+        - Team
   /teams/{id}/invitation:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Send invitation to join team
       parameters:
-      - description: Team ID
-        in: path
-        name: team_id
-        required: true
-        type: string
+        - description: Team ID
+          in: path
+          name: team_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -360,25 +360,25 @@ paths:
             type: string
       summary: Send invitation
       tags:
-      - Membership
+        - Membership
   /teams/{id}/invitation/{invitation_id}:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Resend invitation to join team
       parameters:
-      - description: Team ID
-        in: path
-        name: team_id
-        required: true
-        type: string
-      - description: Invitation ID
-        in: path
-        name: invitation_id
-        required: true
-        type: string
+        - description: Team ID
+          in: path
+          name: team_id
+          required: true
+          type: string
+        - description: Invitation ID
+          in: path
+          name: invitation_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -386,20 +386,20 @@ paths:
             type: string
       summary: Resend Invitation
       tags:
-      - Membership
+        - Membership
   /teams/{id}/last-active:
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update last active team date
       parameters:
-      - description: Team ID
-        in: path
-        name: team_id
-        required: true
-        type: string
+        - description: Team ID
+          in: path
+          name: team_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -407,25 +407,25 @@ paths:
             type: string
       summary: Update last active team date
       tags:
-      - Team
+        - Team
   /teams/{id}/members/{membership_id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete team member
       parameters:
-      - description: Team ID
-        in: path
-        name: team_id
-        required: true
-        type: string
-      - description: Membership ID
-        in: path
-        name: membership_id
-        required: true
-        type: string
+        - description: Team ID
+          in: path
+          name: team_id
+          required: true
+          type: string
+        - description: Membership ID
+          in: path
+          name: membership_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -433,24 +433,24 @@ paths:
             type: string
       summary: Delete team member
       tags:
-      - Membership
+        - Membership
     put:
       consumes:
-      - application/json
+        - application/json
       description: Change team member role
       parameters:
-      - description: Team ID
-        in: path
-        name: team_id
-        required: true
-        type: string
-      - description: Membership ID
-        in: path
-        name: membership_id
-        required: true
-        type: string
+        - description: Team ID
+          in: path
+          name: team_id
+          required: true
+          type: string
+        - description: Membership ID
+          in: path
+          name: membership_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -458,20 +458,20 @@ paths:
             type: string
       summary: Change team member role
       tags:
-      - Membership
+        - Membership
   /teams/{team_id}/avatar:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete team avatar
       parameters:
-      - description: Team ID
-        in: path
-        name: id
-        required: true
-        type: integer
+        - description: Team ID
+          in: path
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -479,24 +479,24 @@ paths:
             type: string
       summary: Delete team avatar
       tags:
-      - Team
+        - Team
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update team avatar
       parameters:
-      - description: Team ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: avatar
-        in: formData
-        name: avatar
-        required: true
-        type: file
+        - description: Team ID
+          in: path
+          name: id
+          required: true
+          type: integer
+        - description: avatar
+          in: formData
+          name: avatar
+          required: true
+          type: file
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -504,14 +504,14 @@ paths:
             type: string
       summary: Update team avatar
       tags:
-      - Team
+        - Team
   /users:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete user data
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -519,48 +519,48 @@ paths:
             type: string
       summary: Delete user
       tags:
-      - User
+        - User
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get all users data
       parameters:
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Page size
-        in: query
-        name: pageSize
-        type: integer
+        - description: Page number
+          in: query
+          name: page
+          type: integer
+        - description: Page size
+          in: query
+          name: pageSize
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.PublicUser'
+            $ref: "#/definitions/dto.PublicUser"
       summary: Get all users
       tags:
-      - User
+        - User
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update user data
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: User data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/command.UpdateUser'
+        - description: User ID
+          in: path
+          name: id
+          required: true
+          type: integer
+        - description: User data
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/command.UpdateUser"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -568,35 +568,35 @@ paths:
             type: string
       summary: Update user
       tags:
-      - User
+        - User
   /users/{id}:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get user data by ID
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
+        - description: User ID
+          in: path
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.PublicUser'
+            $ref: "#/definitions/dto.PublicUser"
       summary: Get user by ID
       tags:
-      - User
+        - User
   /users/avatar:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete user avatar
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -604,19 +604,19 @@ paths:
             type: string
       summary: Delete user avatar
       tags:
-      - User
+        - User
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update user avatar
       parameters:
-      - description: User avatar
-        in: formData
-        name: avatar
-        required: true
-        type: file
+        - description: User avatar
+          in: formData
+          name: avatar
+          required: true
+          type: file
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -624,20 +624,20 @@ paths:
             type: string
       summary: Update user avatar
       tags:
-      - User
+        - User
   /users/me:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get current user data from context
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.ProfileUser'
+            $ref: "#/definitions/dto.ProfileUser"
       summary: Get current user
       tags:
-      - User
+        - User
 swagger: "2.0"

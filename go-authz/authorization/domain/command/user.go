@@ -1,7 +1,7 @@
 package command
 
 import (
-	"authorization/domain/model"
+	"authorization/domain"
 	"mime/multipart"
 )
 
@@ -10,20 +10,20 @@ type UpdateUser struct {
 	FirstName   string `json:"first_name"`
 	LastName    string `json:"last_name"`
 	PhoneNumber string `json:"phone_number"`
-	User        *model.User
+	User        *domain.User
 	Command
 }
 
 type DeleteUser struct {
-	User *model.User
+	User *domain.User
 	Command
 }
 
 type UpdateUserAvatar struct {
 	File *multipart.FileHeader `form:"avatar" binding:"required"`
-	User *model.User
+	User *domain.User
 }
 
 type DeleteUserAvatar struct {
-	User *model.User
+	User *domain.User
 }

@@ -2,7 +2,7 @@ package integration
 
 import (
 	"authorization/config"
-	"authorization/domain/model"
+	"authorization/domain"
 	"authorization/infrastructure/persistence"
 	"authorization/infrastructure/worker"
 	"authorization/service"
@@ -62,13 +62,13 @@ var _ = BeforeEach(func() {
 	}
 
 	err = Db.AutoMigrate(
-		&model.User{},
-		&model.Endpoint{},
-		&model.Role{},
-		&model.Access{},
-		&model.Team{},
-		&model.Membership{},
-		&model.Invitation{})
+		&domain.User{},
+		&domain.Endpoint{},
+		&domain.Role{},
+		&domain.Access{},
+		&domain.Team{},
+		&domain.Membership{},
+		&domain.Invitation{})
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to migrate database")
 	}

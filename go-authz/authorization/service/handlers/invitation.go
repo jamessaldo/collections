@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"authorization/controller/exception"
+	"authorization/domain"
 	"authorization/domain/command"
-	"authorization/domain/model"
 	"authorization/infrastructure/worker"
 	"authorization/service"
 
@@ -38,7 +38,7 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 		return exception.NewForbiddenException(fmt.Sprintf("you can't invite a member to personal team with ID %s", cmd.TeamID))
 	}
 
-	membershipOpts := &model.MembershipOptions{
+	membershipOpts := &domain.MembershipOptions{
 		TeamID:       cmd.TeamID,
 		IsSelectUser: true,
 		IsSelectRole: true,
@@ -64,11 +64,11 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 			return err
 		}
 
-		inviteesOpts := &model.InvitationOptions{
+		inviteesOpts := &domain.InvitationOptions{
 			Email:    invitee.Email,
 			TeamID:   cmd.TeamID,
 			RoleID:   role.ID,
-			Statuses: []model.InvitationStatus{model.InvitationStatusPending, model.InvitationStatusSent},
+			Statuses: []domain.InvitationStatus{domain.InvitationStatusPending, domain.InvitationStatusSent},
 		}
 
 		activeInvitees, err := uow.Invitation.List(inviteesOpts)
@@ -80,7 +80,7 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 			continue
 		}
 
-		invitation := model.NewInvitation(invitee.Email, model.InvitationStatusPending, cmd.TeamID, cmd.Sender.ID, role.ID)
+		invitation := domain.NewInvitation(invitee.Email, domain.InvitationStatusPending, cmd.TeamID, cmd.Sender.ID, role.ID)
 		_, err = uow.Invitation.Add(invitation, tx)
 		if err != nil {
 			return err
@@ -186,11 +186,11 @@ func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) er
 		return err
 	}
 
-	if invitation.Status == model.InvitationStatusAccepted {
+	if invitation.Status == domain.InvitationStatusAccepted {
 		return exception.NewBadRequestException("invitation already accepted")
 	}
 
-	if invitation.Status == model.InvitationStatusDeclined {
+	if invitation.Status == domain.InvitationStatusDeclined {
 		return exception.NewBadRequestException("invitation already declined")
 	}
 
@@ -239,7 +239,7 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 	}
 
 	// update invitation
-	invitation.Status = model.InvitationStatus(cmd.Status)
+	invitation.Status = domain.InvitationStatus(cmd.Status)
 	invitation.IsActive = false
 	invitation, err = uow.Invitation.Update(invitation, tx)
 	if err != nil {
@@ -247,7 +247,7 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 	}
 
 	// add team member
-	if cmd.Status == string(model.InvitationStatusAccepted) {
+	if cmd.Status == string(domain.InvitationStatusAccepted) {
 		role, err := uow.Role.Get(invitation.Role.Name)
 		if err != nil {
 			return err

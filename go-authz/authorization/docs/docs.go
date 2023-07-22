@@ -762,7 +762,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/model.User"
+                    "$ref": "#/definitions/domain.User"
                 }
             }
         },
@@ -934,7 +934,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.User": {
+        "domain.User": {
             "type": "object",
             "properties": {
                 "avatarURL": {

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"authorization/domain"
 	"context"
 	"strings"
 	"time"
@@ -8,7 +9,6 @@ import (
 	"authorization/config"
 	"authorization/controller/exception"
 	"authorization/domain/command"
-	"authorization/domain/model"
 	"authorization/infrastructure/persistence"
 	"authorization/infrastructure/worker"
 	"authorization/service"
@@ -52,7 +52,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 	email := strings.ToLower(googleUser.Email)
 	user, userErr := uow.User.GetByEmail(email)
 	if userErr != nil {
-		user = model.NewUser(googleUser.GivenName, googleUser.FamilyName, googleUser.Email, googleUser.Picture, GoogleProvider, googleUser.VerifiedEmail)
+		user = domain.NewUser(googleUser.GivenName, googleUser.FamilyName, googleUser.Email, googleUser.Picture, GoogleProvider, googleUser.VerifiedEmail)
 
 		existUser, userErr := uow.User.GetByUsername(user.Username)
 		if userErr == nil {
@@ -65,12 +65,12 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 			return userErr
 		}
 
-		ownerRole, roleErr := uow.Role.Get(model.Owner)
+		ownerRole, roleErr := uow.Role.Get(domain.Owner)
 		if roleErr != nil {
 			return roleErr
 		}
 
-		team := model.NewTeam(user, ownerRole.ID, "", "", true)
+		team := domain.NewTeam(user, ownerRole.ID, "", "", true)
 		_, err := uow.Team.Add(team, tx)
 		if err != nil {
 			return err
@@ -111,7 +111,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 	return nil
 }
 
-func sendWelcomeEmail(mailer worker.WorkerInterface, user *model.User) error {
+func sendWelcomeEmail(mailer worker.WorkerInterface, user *domain.User) error {
 	data := map[string]interface{}{
 		"FullName": user.FullName(),
 	}

@@ -2,8 +2,8 @@ package view
 
 import (
 	"authorization/controller/exception"
+	"authorization/domain"
 	"authorization/domain/dto"
-	"authorization/domain/model"
 	"authorization/service"
 	"errors"
 
@@ -28,7 +28,7 @@ func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreival
 		return nil, err
 	}
 
-	membershipOpts := &model.MembershipOptions{
+	membershipOpts := &domain.MembershipOptions{
 		TeamID:       team.ID,
 		IsSelectUser: true,
 		IsSelectRole: true,

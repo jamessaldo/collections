@@ -3,8 +3,8 @@ package handlers
 import (
 	"authorization/config"
 	"authorization/controller/exception"
+	"authorization/domain"
 	"authorization/domain/command"
-	"authorization/domain/model"
 	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/util"
@@ -34,12 +34,12 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 		tx.Rollback()
 	}()
 
-	ownerRole, err := uow.Role.Get(model.Owner)
+	ownerRole, err := uow.Role.Get(domain.Owner)
 	if err != nil {
 		return err
 	}
 
-	team := model.NewTeam(cmd.User, ownerRole.ID, cmd.Name, cmd.Description, false)
+	team := domain.NewTeam(cmd.User, ownerRole.ID, cmd.Name, cmd.Description, false)
 	_, err = uow.Team.Add(team, tx)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActive
 		tx.Rollback()
 	}()
 
-	opts := &model.MembershipOptions{
+	opts := &domain.MembershipOptions{
 		TeamID:       cmd.TeamID,
 		UserID:       cmd.User.ID,
 		Limit:        1,

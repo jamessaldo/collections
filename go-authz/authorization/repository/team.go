@@ -2,7 +2,7 @@ package repository
 
 import (
 	"authorization/controller/exception"
-	"authorization/domain/model"
+	"authorization/domain"
 	"errors"
 
 	uuid "github.com/satori/go.uuid"
@@ -15,16 +15,16 @@ type teamRepository struct {
 
 // teamRepository implements the TeamRepository interface
 type TeamRepository interface {
-	Add(*model.Team, *gorm.DB) (*model.Team, error)
-	Update(*model.Team, *gorm.DB) (*model.Team, error)
-	Get(uuid.UUID) (*model.Team, error)
+	Add(*domain.Team, *gorm.DB) (*domain.Team, error)
+	Update(*domain.Team, *gorm.DB) (*domain.Team, error)
+	Get(uuid.UUID) (*domain.Team, error)
 }
 
 func NewTeamRepository(db *gorm.DB) TeamRepository {
 	return &teamRepository{db: db}
 }
 
-func (repo *teamRepository) Add(team *model.Team, tx *gorm.DB) (*model.Team, error) {
+func (repo *teamRepository) Add(team *domain.Team, tx *gorm.DB) (*domain.Team, error) {
 	err := tx.Preload("Creator").Create(&team).Error
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (repo *teamRepository) Add(team *model.Team, tx *gorm.DB) (*model.Team, err
 	return team, nil
 }
 
-func (repo *teamRepository) Update(team *model.Team, tx *gorm.DB) (*model.Team, error) {
+func (repo *teamRepository) Update(team *domain.Team, tx *gorm.DB) (*domain.Team, error) {
 	err := tx.Save(&team).Error
 	if err != nil {
 		return nil, err
@@ -40,8 +40,8 @@ func (repo *teamRepository) Update(team *model.Team, tx *gorm.DB) (*model.Team, 
 	return team, nil
 }
 
-func (repo *teamRepository) Get(id uuid.UUID) (*model.Team, error) {
-	var team model.Team
+func (repo *teamRepository) Get(id uuid.UUID) (*domain.Team, error) {
+	var team domain.Team
 	err := repo.db.Preload("Creator").Where("id = ?", id).First(&team).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

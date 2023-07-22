@@ -2,7 +2,7 @@ package util
 
 import (
 	"authorization/config"
-	"authorization/domain/model"
+	"authorization/domain"
 	"fmt"
 	"time"
 
@@ -13,7 +13,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func CreateToken(userID uuid.UUID, ttl time.Duration, privateKey string) (*model.TokenDetails, error) {
+func CreateToken(userID uuid.UUID, ttl time.Duration, privateKey string) (*domain.TokenDetails, error) {
 	now := time.Now().UTC()
 
 	decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
@@ -41,11 +41,11 @@ func CreateToken(userID uuid.UUID, ttl time.Duration, privateKey string) (*model
 		return nil, fmt.Errorf("create: sign token: %w", err)
 	}
 
-	td := model.NewTokenDetails(token, atClaims["token_ulid"].(ulid.ULID), userID, atClaims["exp"].(int64))
+	td := domain.NewTokenDetails(token, atClaims["token_ulid"].(ulid.ULID), userID, atClaims["exp"].(int64))
 	return td, nil
 }
 
-func ValidateToken(token string, publicKey string) (*model.TokenDetails, error) {
+func ValidateToken(token string, publicKey string) (*domain.TokenDetails, error) {
 	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode: %w", err)
@@ -82,12 +82,12 @@ func ValidateToken(token string, publicKey string) (*model.TokenDetails, error) 
 		return nil, fmt.Errorf("validate: get expiration time: %w", err)
 	}
 
-	td := model.NewTokenDetails(token, tokenUlid, uuid.FromStringOrNil(fmt.Sprint(claims["sub"])), expirationIn.Unix())
+	td := domain.NewTokenDetails(token, tokenUlid, uuid.FromStringOrNil(fmt.Sprint(claims["sub"])), expirationIn.Unix())
 
 	return td, nil
 }
 
-func GenerateTokens(user *model.User) (*model.TokenDetails, *model.TokenDetails, error) {
+func GenerateTokens(user *domain.User) (*domain.TokenDetails, *domain.TokenDetails, error) {
 	token, err := CreateToken(user.ID, config.AppConfig.AccessTokenExpiresIn, config.AppConfig.AccessTokenPrivateKey)
 	if err != nil {
 		return nil, nil, err
