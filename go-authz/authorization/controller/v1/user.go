@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"authorization/domain"
 	"authorization/domain/command"
 	"authorization/domain/dto"
 	"authorization/infrastructure/persistence"

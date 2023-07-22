@@ -2,6 +2,7 @@ package v1
 
 import (
 	"authorization/controller/exception"
+	"authorization/domain"
 	"authorization/domain/command"
 	"authorization/middleware"
 	"authorization/service"
