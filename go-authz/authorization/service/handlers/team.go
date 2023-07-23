@@ -8,13 +8,13 @@ import (
 	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/util"
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	"gorm.io/gorm"
 )
 
 func CreateTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
@@ -25,16 +25,17 @@ func CreateTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, c
 }
 
 func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
-	ownerRole, err := uow.Role.Get(domain.Owner)
+	ownerRole, err := uow.Role.Get(ctx, domain.Owner)
 	if err != nil {
 		return err
 	}
@@ -45,7 +46,7 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 		return err
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
 	cmd.TeamID = team.ID
 	return nil
@@ -59,13 +60,14 @@ func UpdateTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, c
 }
 
 func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	team, err := uow.Team.Get(cmd.TeamID)
@@ -83,7 +85,7 @@ func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
 		return err
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
 	return nil
 }
@@ -96,13 +98,14 @@ func UpdateLastActiveTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerIn
 }
 
 func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActiveTeam) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	opts := &domain.MembershipOptions{
@@ -129,7 +132,7 @@ func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActive
 		return err
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
 	return nil
 }
@@ -142,13 +145,14 @@ func DeleteTeamMemberWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterf
 }
 
 func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	membership, err := uow.Membership.Get(cmd.MembershipID)
@@ -166,7 +170,7 @@ func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) er
 		return err
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
 	return nil
 }
@@ -179,13 +183,14 @@ func ChangeMemberRoleWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterf
 }
 
 func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	membership, err := uow.Membership.Get(cmd.MembershipID)
@@ -198,7 +203,7 @@ func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) er
 		return err
 	}
 
-	role, err := uow.Role.Get(cmd.Role)
+	role, err := uow.Role.Get(ctx, cmd.Role)
 	if err != nil {
 		return err
 	}
@@ -210,7 +215,7 @@ func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) er
 		return err
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
 	return nil
 }
@@ -223,13 +228,14 @@ func UpdateTeamAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterf
 }
 
 func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	team, err := uow.Team.Get(cmd.TeamID)
@@ -273,8 +279,7 @@ func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) er
 		return err
 	}
 
-	tx.Commit()
-
+	tx.Commit(ctx)
 	return nil
 }
 
@@ -286,13 +291,14 @@ func DeleteTeamAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterf
 }
 
 func DeleteTeamAvatar(uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	team, err := uow.Team.Get(cmd.TeamID)
@@ -312,7 +318,7 @@ func DeleteTeamAvatar(uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) er
 		if err != nil {
 			return err
 		}
-		tx.Commit()
+		tx.Commit(ctx)
 	}
 
 	return nil

@@ -3,51 +3,113 @@ package repository
 import (
 	"authorization/controller/exception"
 	"authorization/domain"
+
+	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 )
 
 type teamRepository struct {
-	db *gorm.DB
+	pool *pgxpool.Pool
 }
 
 // teamRepository implements the TeamRepository interface
 type TeamRepository interface {
-	Add(*domain.Team, *gorm.DB) (*domain.Team, error)
-	Update(*domain.Team, *gorm.DB) (*domain.Team, error)
+	Add(*domain.Team, pgx.Tx) (*domain.Team, error)
+	Update(*domain.Team, pgx.Tx) (*domain.Team, error)
 	Get(uuid.UUID) (*domain.Team, error)
 }
 
-func NewTeamRepository(db *gorm.DB) TeamRepository {
-	return &teamRepository{db: db}
+func NewTeamRepository(pool *pgxpool.Pool) TeamRepository {
+	return &teamRepository{pool: pool}
 }
 
-func (repo *teamRepository) Add(team *domain.Team, tx *gorm.DB) (*domain.Team, error) {
-	err := tx.Preload("Creator").Create(&team).Error
+func (repo *teamRepository) Add(team *domain.Team, tx pgx.Tx) (*domain.Team, error) {
+	query := `
+		INSERT INTO teams (id, name, description, is_personal, avatar_url, creator_id, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id
+	`
+
+	_, err := tx.Exec(
+		context.Background(),
+		query,
+		team.ID,
+		team.Name,
+		team.Description,
+		team.IsPersonal,
+		team.AvatarURL,
+		team.CreatorID,
+		team.CreatedAt,
+		team.UpdatedAt,
+	)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return team, nil
 }
 
-func (repo *teamRepository) Update(team *domain.Team, tx *gorm.DB) (*domain.Team, error) {
-	err := tx.Save(&team).Error
+func (repo *teamRepository) Update(team *domain.Team, tx pgx.Tx) (*domain.Team, error) {
+	query := `
+		UPDATE teams
+		SET name = $2, description = $3, is_personal = $4, avatar_url = $5, creator_id = $6, updated_at = $7
+		WHERE id = $1
+	`
+
+	_, err := tx.Exec(
+		context.Background(),
+		query,
+		team.ID,
+		team.Name,
+		team.Description,
+		team.IsPersonal,
+		team.AvatarURL,
+		team.CreatorID,
+		team.UpdatedAt,
+	)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return team, nil
 }
 
 func (repo *teamRepository) Get(id uuid.UUID) (*domain.Team, error) {
+	query := `
+		SELECT id, name, description, is_personal, avatar_url, creator_id, created_at, updated_at
+		FROM teams
+		WHERE id = $1
+	`
+
 	var team domain.Team
-	err := repo.db.Preload("Creator").Where("id = ?", id).First(&team).Error
+
+	err := repo.pool.QueryRow(
+		context.Background(),
+		query,
+		id,
+	).Scan(
+		&team.ID,
+		&team.Name,
+		&team.Description,
+		&team.IsPersonal,
+		&team.AvatarURL,
+		&team.CreatorID,
+		&team.CreatedAt,
+		&team.UpdatedAt,
+	)
+
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, exception.NewNotFoundException(err.Error())
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, exception.NewNotFoundException("team not found")
 		}
 		return nil, err
 	}
+
 	return &team, nil
 }

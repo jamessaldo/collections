@@ -70,7 +70,7 @@ func DeserializeUser() gin.HandlerFunc {
 		if err == nil {
 			err = json.Unmarshal(userBytes, user)
 			if err != nil {
-				log.Error().Err(err).Msg("error unmarshalling user")
+				log.Error().Caller().Err(err).Msg("error unmarshalling user")
 				ctx.Abort()
 				return
 			}
@@ -88,7 +88,7 @@ func DeserializeUser() gin.HandlerFunc {
 			}
 			json, err := json.Marshal(user)
 			if err != nil {
-				log.Error().Err(err).Msg("error marshalling user")
+				log.Error().Caller().Err(err).Msg("error marshalling user")
 				ctx.Abort()
 				return
 			}
@@ -100,7 +100,7 @@ func DeserializeUser() gin.HandlerFunc {
 				return
 			}
 
-			log.Info().Str("userId", user.ID.String()).Msg("ga cached!")
+			log.Info().Caller().Str("userId", user.ID.String()).Msg("ga cached!")
 		}
 
 		if !user.IsActive {

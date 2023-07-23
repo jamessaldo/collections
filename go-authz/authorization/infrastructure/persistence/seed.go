@@ -3,6 +3,7 @@ package persistence
 import (
 	"authorization/domain"
 	"authorization/service"
+	"context"
 	"fmt"
 	"math"
 	"os"
@@ -12,24 +13,23 @@ import (
 	"time"
 
 	"github.com/bxcodec/faker/v3"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 
 	"gopkg.in/yaml.v3"
-	"gorm.io/gorm"
 )
 
 type Seed struct {
-	db *gorm.DB
+	pool *pgxpool.Pool
 }
 
 type EndpointYAML struct {
 	Endpoints []struct {
-		ID     ulid.ULID `yaml:"id"`
-		Name   string    `yaml:"name"`
-		Path   string    `yaml:"path"`
-		Method string    `yaml:"method"`
+		Name   string `yaml:"name"`
+		Path   string `yaml:"path"`
+		Method string `yaml:"method"`
 	} `yaml:"endpoints"`
 }
 
@@ -42,14 +42,14 @@ type RoleYAML struct {
 }
 
 // Execute will executes the given seeder method
-func Execute(db *gorm.DB, seedMethodNames ...string) {
-	s := Seed{db}
+func Execute(pool *pgxpool.Pool, seedMethodNames ...string) {
+	s := Seed{pool}
 
 	seedType := reflect.TypeOf(s)
 
 	// Execute all seeders if no method name is given
 	if len(seedMethodNames) == 0 {
-		log.Info().Msg("Seeding database...")
+		log.Info().Caller().Msg("Seeding database...")
 		// We are looping over the method on a Seed struct
 		for i := 0; i < seedType.NumMethod(); i++ {
 			// Get the method in the current iteration
@@ -71,13 +71,13 @@ func seed(s Seed, seedMethodName string) {
 	m := reflect.ValueOf(s).MethodByName(seedMethodName)
 	// Exit if the method doesn't exist
 	if !m.IsValid() {
-		log.Fatal().Err(fmt.Errorf("method %s does not exist", seedMethodName)).Msg("Failed to seed database")
+		log.Fatal().Caller().Err(fmt.Errorf("method %s does not exist", seedMethodName)).Msg("Failed to seed database")
 	}
 	// Execute the method
-	log.Info().Str("method name", seedMethodName).Msg("Seeding database...")
+	log.Info().Caller().Str("method name", seedMethodName).Msg("Seeding database...")
 	m.Call(nil)
 	duration := time.Since(start)
-	log.Info().Int("duration", int(math.Ceil(duration.Seconds()))).Msg("Successfully seeded database")
+	log.Info().Caller().Int("duration", int(math.Ceil(duration.Seconds()))).Msg("Successfully seeded database")
 }
 
 func generateUsers(jobs chan<- domain.User) {
@@ -103,10 +103,10 @@ func generateUsers(jobs chan<- domain.User) {
 	}
 }
 
-func dispatchWorkers(db *gorm.DB, jobs <-chan domain.User, wg *sync.WaitGroup) {
+func dispatchWorkers(pool *pgxpool.Pool, jobs <-chan domain.User, wg *sync.WaitGroup) {
 	for workerIndex := 0; workerIndex < 100; workerIndex++ {
 		wg.Add(1)
-		go func(workerIndex int, db *gorm.DB, jobs <-chan domain.User, wg *sync.WaitGroup) {
+		go func(workerIndex int, pool *pgxpool.Pool, jobs <-chan domain.User, wg *sync.WaitGroup) {
 			counter := 0
 			var users []domain.User
 			for {
@@ -121,9 +121,9 @@ func dispatchWorkers(db *gorm.DB, jobs <-chan domain.User, wg *sync.WaitGroup) {
 				}
 				break
 			}
-			userSeedBatchRoutine(db, users, counter, workerIndex)
+			userSeedBatchRoutine(pool, users, counter, workerIndex)
 			wg.Done()
-		}(workerIndex, db, jobs, wg)
+		}(workerIndex, pool, jobs, wg)
 		time.Sleep(25 * time.Millisecond)
 	}
 }
@@ -134,110 +134,122 @@ func (s Seed) UserSeed() {
 	jobs := make(chan domain.User, maxJobBuffer)
 	wg := new(sync.WaitGroup)
 
-	go dispatchWorkers(s.db, jobs, wg)
+	go dispatchWorkers(s.pool, jobs, wg)
 	generateUsers(jobs)
 
 	close(jobs)
 	wg.Wait()
 }
 
-func userSeedBatchRoutine(db *gorm.DB, user_list []domain.User, counter, workerIndex int) {
-	uow, err := service.NewUnitOfWork(db)
+func userSeedBatchRoutine(pool *pgxpool.Pool, user_list []domain.User, counter, workerIndex int) {
+	uow, err := service.NewUnitOfWork(pool)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create unit of work")
+		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
 	}
+	ctx := context.Background()
+	tx, err := uow.Begin(ctx)
 
-	userErr := uow.User.AddBatch(user_list)
-	if userErr != nil {
-		log.Error().Err(err).Msg("Failed to insert users")
+	for _, user := range user_list {
+		_, userErr := uow.User.Add(&user, tx)
+		if userErr != nil {
+			log.Error().Caller().Err(err).Msg("Failed to insert users")
+		}
 	}
+	// userErr := uow.User.AddBatch(user_list)
+	// if userErr != nil {
+	// 	log.Error().Caller().Err(err).Msg("Failed to insert users")
+	// }
 
-	log.Info().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
+	log.Info().Caller().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
 }
 
-func _(db *gorm.DB, user_data *domain.User, counter, workerIndex int) {
-	uow, err := service.NewUnitOfWork(db)
+func _(pool *pgxpool.Pool, user_data *domain.User, counter, workerIndex int) {
+	uow, err := service.NewUnitOfWork(pool)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create unit of work")
+		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
 	}
 
-	tx, err := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, err := uow.Begin(ctx)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to begin transaction")
+		log.Fatal().Caller().Err(err).Msg("Failed to begin transaction")
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	_, userErr := uow.User.Add(user_data, tx)
 	if userErr != nil {
-		log.Error().Err(err).Msg("Failed to insert user")
-		tx.Rollback()
+		log.Error().Caller().Err(err).Msg("Failed to insert user")
+		tx.Rollback(ctx)
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
-	log.Info().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
+	log.Info().Caller().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
 }
 
 func (s Seed) AccessSeed() {
-	uow, err := service.NewUnitOfWork(s.db)
+	uow, err := service.NewUnitOfWork(s.pool)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create unit of work")
+		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
 	}
 
-	tx, err := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, err := uow.Begin(ctx)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to begin transaction")
+		log.Fatal().Caller().Err(err).Msg("Failed to begin transaction")
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	endpointDatas := readYAML("endpoints.yml")
 	var endpointYAML EndpointYAML
 	err = yaml.Unmarshal(endpointDatas, &endpointYAML)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to unmarshal endpoint data")
+		log.Fatal().Caller().Err(err).Msg("Failed to unmarshal endpoint data")
 	}
 
 	roleDatas := readYAML("roles.yml")
 	var roleYAML []RoleYAML
 	err = yaml.Unmarshal(roleDatas, &roleYAML)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to unmarshal role data")
+		log.Fatal().Caller().Err(err).Msg("Failed to unmarshal role data")
 	}
 
-	cacheEndpoint := make(map[string]*domain.Endpoint)
+	cachedEndpoint := make(map[string]domain.Endpoint)
 
 	for _, endpoint := range endpointYAML.Endpoints {
-		endpointData := domain.NewEndpoint(endpoint.ID, endpoint.Name, endpoint.Path, endpoint.Method)
-		cacheEndpoint[endpoint.Name] = endpointData
+		endpointData := domain.NewEndpoint(endpoint.Name, endpoint.Path, endpoint.Method)
+		cachedEndpoint[endpoint.Name] = endpointData
 	}
 
 	for _, role := range roleYAML {
 		roleData := domain.NewRole(role.ID, role.Name)
 		for _, endpoint := range role.Endpoints {
-			if val, ok := cacheEndpoint[endpoint.Name]; ok {
-				roleData.AddEndpoints(val)
+			if val, ok := cachedEndpoint[endpoint.Name]; ok {
+				roleData.Endpoints.Add(val)
 			}
 		}
-		_, roleErr := uow.Role.Add(roleData, tx)
+		log.Info().Caller().Msg(fmt.Sprintf("=> inserting role %s", roleData.Name))
+		log.Info().Caller().Msg(fmt.Sprintf("=> inserting role %s", roleData.Endpoints))
+		roleErr := uow.Role.Save(ctx, tx, roleData)
 		if roleErr != nil {
-			log.Error().Err(roleErr).Msg("Failed to insert role")
+			log.Error().Caller().Err(roleErr).Msg("Failed to insert role")
 		}
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 }
 
 func readYAML(filename string) []byte {
 	filePath := filepath.Join("data", filename)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Fatal().Err(err).Msg(fmt.Sprintf("Failed to read role data %s", filename))
+		log.Fatal().Caller().Err(err).Msg(fmt.Sprintf("Failed to read role data %s", filename))
 	}
 	return data
 }

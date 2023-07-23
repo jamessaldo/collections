@@ -8,9 +8,9 @@ import (
 	"flag"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 )
 
 // @title           Authorization API
@@ -44,27 +44,27 @@ func main() {
 	// create a directory for avatars if it doesn't exist
 	if config.StorageConfig.StaticDriver == "local" {
 		if err := os.MkdirAll(config.StorageConfig.StaticRoot+config.StorageConfig.StaticAvatarPath, 0755); err != nil {
-			log.Fatal().Err(err).Msg("Cannot start the server, reason: cannot create avatar directory")
+			log.Fatal().Caller().Err(err).Msg("Cannot start the server, reason: cannot create avatar directory")
 		}
 	}
 
 	asynqClient, bootstrap := infrastructure.NewBootstraps()
 	defer asynqClient.Close()
 
-	handleArgs(bootstrap.Bus.UoW.DB)
+	handleArgs(bootstrap.Bus.UoW.GetDB())
 
 	server := controller.Server{}
 	server.InitializeApp(bootstrap.BootstrapMiddleware())
 }
 
-func handleArgs(db *gorm.DB) {
+func handleArgs(pool *pgxpool.Pool) {
 	flag.Parse()
 	args := flag.Args()
 
 	if len(args) >= 1 {
 		switch args[0] {
 		case "seed":
-			persistence.Execute(db, args[1:]...)
+			persistence.Execute(pool, args[1:]...)
 			os.Exit(0)
 		}
 	}

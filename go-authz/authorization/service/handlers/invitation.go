@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 
 	"authorization/controller/exception"
@@ -8,8 +9,6 @@ import (
 	"authorization/domain/command"
 	"authorization/infrastructure/worker"
 	"authorization/service"
-
-	"gorm.io/gorm"
 )
 
 func InviteMemberWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
@@ -21,13 +20,14 @@ func InviteMemberWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface,
 
 // create inviteMember function
 func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.InviteMember) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	// get team
@@ -59,7 +59,7 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 			continue
 		}
 
-		role, err := uow.Role.Get(invitee.Role)
+		role, err := uow.Role.Get(ctx, invitee.Role)
 		if err != nil {
 			return err
 		}
@@ -102,7 +102,8 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 			return errSendMail
 		}
 	}
-	tx.Commit()
+
+	tx.Commit(ctx)
 	return nil
 }
 
@@ -115,13 +116,14 @@ func ResendInvitationWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterf
 
 // create ResendInvitation function
 func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.ResendInvitation) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	// get team
@@ -159,6 +161,12 @@ func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cm
 		return errSendMail
 	}
 
+	invitation, err = uow.Invitation.Update(invitation, tx)
+	if err != nil {
+		return err
+	}
+
+	tx.Commit(ctx)
 	return nil
 }
 
@@ -171,13 +179,14 @@ func DeleteInvitationWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterf
 
 // create DeleteInvitation function
 func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	// get invitation
@@ -200,6 +209,7 @@ func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) er
 		return err
 	}
 
+	tx.Commit(ctx)
 	return nil
 }
 
@@ -212,13 +222,14 @@ func UpdateInvitationStatusWrapper(uow *service.UnitOfWork, mailer worker.Worker
 
 // create UpdateInvitationStatus function
 func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitationStatus) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	// get invitation
@@ -227,7 +238,10 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 		return err
 	}
 
-	team := &invitation.Team
+	team, err := uow.Team.Get(invitation.TeamID)
+	if err != nil {
+		return err
+	}
 
 	// check if user is team owner
 	if invitation.Email != cmd.User.Email {
@@ -248,7 +262,7 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 
 	// add team member
 	if cmd.Status == string(domain.InvitationStatusAccepted) {
-		role, err := uow.Role.Get(invitation.Role.Name)
+		role, err := uow.Role.Get(ctx, invitation.Role.Name)
 		if err != nil {
 			return err
 		}
@@ -260,6 +274,6 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 		}
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 	return nil
 }

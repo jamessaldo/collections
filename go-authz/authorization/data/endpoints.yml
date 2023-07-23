@@ -1,41 +1,31 @@
 endpoints:
-  - id: 1H3NAA4S4C8TFV3X10Z8T1CWD7
-    path: "/auth/v1/team/:id/invite-members"
+  - path: "/auth/v1/team/:id/invite-members"
     method: POST
     name: invite-member
-  - id: 14R5E50B9B81B9MMP9CSBTTNJ3
-    path: "/auth/v1/team/:id"
+  - path: "/auth/v1/team/:id"
     method: PUT
     name: update-team
-  - id: 2RQYHZJHN58E184RFZZ3VCRGQM
-    path: "/auth/v1/team/:id/member/:id"
+  - path: "/auth/v1/team/:id/member/:id"
     method: DELETE
     name: delete-member
-  - id: 5759HF57PP84R93Z6PV6V5ZR90
-    path: "/auth/v1/team/:id/member/:id"
+  - path: "/auth/v1/team/:id/member/:id"
     method: PUT
     name: change-role-member
-  - id: 0DBW3QY2R28EWVT97EE4654T89
-    path: "/auth/v1/team/:id/avatar"
+  - path: "/auth/v1/team/:id/avatar"
     method: PUT
     name: update-avatar-team
-  - id: 4S2267X5EY8ASVSXFW843M1GC6
-    path: "/auth/v1/team/:id"
+  - path: "/auth/v1/team/:id"
     method: GET
     name: get-team
-  - id: 22G2CHBN249W2AP4NK9EDA6PST
-    path: "/auth/v1/team/:id/application"
+  - path: "/auth/v1/team/:id/application"
     method: GET
     name: get-applications-team
-  - id: 1HCT0A6H2296PSZW8T85W3MCD0
-    path: "/auth/v1/team/:id/application"
+  - path: "/auth/v1/team/:id/application"
     method: POST
     name: create-application-team
-  - id: 76Y7JVMVRS9W18K20W8V80HRX0
-    path: "/auth/v1/application/:id"
+  - path: "/auth/v1/application/:id"
     method: GET
     name: get-application-team-detail
-  - id: 4SKDHPWPVR8YPSPMR9YMP36ZCT
-    path: "/auth/v1/application/:id"
+  - path: "/auth/v1/application/:id"
     method: PUT
     name: update-application-team

@@ -1,47 +1,41 @@
 package service
 
 import (
+	"authorization/repository"
 	"context"
 
-	"authorization/repository"
-
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5"         // Import the pgx package for working with pgx transactions
+	"github.com/jackc/pgx/v5/pgxpool" // Import pgxpool for connection pooling
 )
 
 type UnitOfWork struct {
-	DB         *gorm.DB
-	ctx        context.Context
+	pool       *pgxpool.Pool // Use pgxpool for connection pooling
 	User       repository.UserRepository
 	Role       repository.RoleRepository
-	Endpoint   repository.EndpointRepository
 	Team       repository.TeamRepository
 	Membership repository.MembershipRepository
 	Invitation repository.InvitationRepository
 }
 
-func NewUnitOfWork(db *gorm.DB) (*UnitOfWork, error) {
-	ctx := context.Background()
-
+func NewUnitOfWork(pool *pgxpool.Pool) (*UnitOfWork, error) {
 	return &UnitOfWork{
-		DB:         db,
-		ctx:        ctx,
-		User:       repository.NewUserRepository(db),
-		Role:       repository.NewRoleRepository(db),
-		Endpoint:   repository.NewEndpointRepository(db),
-		Team:       repository.NewTeamRepository(db),
-		Membership: repository.NewMembershipRepository(db),
-		Invitation: repository.NewInvitationRepository(db),
+		pool:       pool,
+		User:       repository.NewUserRepository(pool),
+		Role:       repository.NewRoleRepository(pool),
+		Team:       repository.NewTeamRepository(pool),
+		Membership: repository.NewMembershipRepository(pool),
+		Invitation: repository.NewInvitationRepository(pool),
 	}, nil
 }
 
-func (u *UnitOfWork) GetDB() *gorm.DB {
-	return u.DB
+func (u *UnitOfWork) GetDB() *pgxpool.Pool {
+	return u.pool
 }
 
-func (u *UnitOfWork) Begin(sessionConfig *gorm.Session) (*gorm.DB, error) {
-	tx := u.DB.Session(sessionConfig).Begin()
-	if tx.Error != nil {
-		return nil, tx.Error
+func (u *UnitOfWork) Begin(ctx context.Context) (pgx.Tx, error) {
+	tx, err := u.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return tx, nil
 }

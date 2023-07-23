@@ -38,7 +38,7 @@ func newEmailTask(data *Payload) *asynq.Task {
 
 	b, err := json.Marshal(data)
 	if err != nil {
-		log.Error().Err(err).Any("data", data).Msg("Failed to marshal payload data for email task")
+		log.Error().Caller().Err(err).Any("data", data).Msg("Failed to marshal payload data for email task")
 	}
 
 	// Return a new task with given type and payload.

@@ -3,6 +3,7 @@ package view
 import (
 	"authorization/domain"
 	"authorization/service"
+	"context"
 	"regexp"
 	"strings"
 
@@ -11,17 +12,18 @@ import (
 
 var uuidPattern = regexp.MustCompile(`\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b`)
 
-func Authorization(userID string, method string, path string, uow *service.UnitOfWork, endpoints map[string]*domain.Endpoint) (bool, error) {
+func Authorization(userID string, method string, path string, uow *service.UnitOfWork, endpoints map[string]domain.Endpoint) (bool, error) {
 	rePath := uuidPattern.ReplaceAllString(path, ":id")
 
 	if endpoint, ok := endpoints[rePath+"_"+method]; ok {
 		if strings.Contains(path, "/v1/team") {
 			teamID := strings.Split(path, "/")[4]
-			grantedEndpoints, err := uow.Endpoint.ListFilteredBy(uuid.FromStringOrNil(teamID), uuid.FromStringOrNil(userID))
+			ctx := context.Background()
+			access, err := uow.Role.GetAccess(ctx, uuid.FromStringOrNil(teamID), uuid.FromStringOrNil(userID), endpoint)
 			if err != nil {
 				return false, err
 			}
-			return containsEndpoint(grantedEndpoints, endpoint), nil
+			return access.IsAllowed, nil
 		}
 		return true, nil
 	}
@@ -29,9 +31,9 @@ func Authorization(userID string, method string, path string, uow *service.UnitO
 	return true, nil
 }
 
-func containsEndpoint(endpoints []domain.Endpoint, endpoint *domain.Endpoint) bool {
+func containsEndpoint(endpoints []*domain.Endpoint, endpoint *domain.Endpoint) bool {
 	for _, e := range endpoints {
-		if e == *endpoint {
+		if e == endpoint {
 			return true
 		}
 	}

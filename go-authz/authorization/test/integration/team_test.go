@@ -4,6 +4,7 @@ import (
 	"authorization/domain"
 	"authorization/domain/command"
 	"authorization/view"
+	"context"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -150,7 +151,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(err).To(Succeed())
 
 			var invitation domain.Invitation
-			err = Bus.UoW.DB.First(&invitation).Error
+			err = Bus.UoW.GetDB().QueryRow(context.Background(), "SELECT * FROM invitations WHERE team_id = ? AND email = ?", janeTeam.TeamID, "james@mail.com").Scan(&invitation)
 			Ω(err).To(Succeed())
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
 			Ω(invitation.Email).To(Equal("james@mail.com"))
@@ -170,7 +171,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(err).To(Succeed())
 
 			var invitation *domain.Invitation
-			err = Bus.UoW.DB.First(&invitation).Error
+			err = Bus.UoW.GetDB().QueryRow(context.Background(), "SELECT * FROM invitations WHERE team_id = ? AND email = ?", janeTeam.TeamID, "james@mail.com").Scan(&invitation)
 			Ω(err).To(Succeed())
 
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
@@ -178,7 +179,9 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(invitation.Status).To(Equal(domain.InvitationStatusPending))
 
 			invitation.Status = domain.InvitationStatusSent
-			invitation, _ = Bus.UoW.Invitation.Update(invitation, Bus.UoW.DB)
+			tx, err := Bus.UoW.Begin(context.Background())
+			Ω(err).To(Succeed())
+			invitation, _ = Bus.UoW.Invitation.Update(invitation, tx)
 			Ω(invitation.Status).To(Equal(domain.InvitationStatusSent))
 
 			now := time.Now()
@@ -206,7 +209,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			err = Bus.Handle(&cmdVerify)
 			Ω(err).To(Succeed())
 
-			err = Bus.UoW.DB.First(&invitation).Error
+			err = Bus.UoW.GetDB().QueryRow(context.Background(), "SELECT * FROM invitations WHERE team_id = ? AND email = ?", janeTeam.TeamID, "james@mail.com").Scan(&invitation)
 			Ω(err).To(Succeed())
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
 			Ω(invitation.Email).To(Equal("james@mail.com"))

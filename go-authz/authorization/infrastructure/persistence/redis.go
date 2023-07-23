@@ -21,13 +21,13 @@ func ConnectRedis() {
 	})
 
 	if _, err := RedisClient.Ping(ctx).Result(); err != nil {
-		log.Fatal().Err(err).Msg("❌ Redis client is not connected")
+		log.Fatal().Caller().Err(err).Msg("❌ Redis client is not connected")
 	}
 
 	err := RedisClient.Set(ctx, "connection", "test connection", 0).Err()
 	if err != nil {
-		log.Fatal().Err(err).Msg("❌ Redis client connection failed")
+		log.Fatal().Caller().Err(err).Msg("❌ Redis client connection failed")
 	}
 
-	log.Info().Msg("✅ Redis client connected successfully...")
+	log.Info().Caller().Msg("✅ Redis client connected successfully...")
 }

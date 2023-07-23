@@ -17,7 +17,6 @@ import (
 	"fmt"
 
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 )
 
 const (
@@ -33,19 +32,20 @@ func LoginByGoogleWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface
 }
 
 func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.LoginByGoogle) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	googleUser, err := util.GetGoogleUser(cmd.Code)
 	if err != nil {
 		err = exception.NewBadGatewayException(err.Error())
-		log.Error().Err(err).Msg("could not get google user")
+		log.Error().Caller().Err(err).Msg("could not get google user")
 		return err
 	}
 
@@ -56,7 +56,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 
 		existUser, userErr := uow.User.GetByUsername(user.Username)
 		if userErr == nil {
-			log.Info().Msg(fmt.Sprintf("username %s already exist, generating random username", user.Username))
+			log.Info().Caller().Msg(fmt.Sprintf("username %s already exist, generating random username", user.Username))
 			existUser.RegenerateUsername()
 		}
 
@@ -65,7 +65,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 			return userErr
 		}
 
-		ownerRole, roleErr := uow.Role.Get(domain.Owner)
+		ownerRole, roleErr := uow.Role.Get(ctx, domain.Owner)
 		if roleErr != nil {
 			return roleErr
 		}
@@ -81,27 +81,26 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 			return errSendMail
 		}
 
-		tx.Commit()
+		tx.Commit(ctx)
 	}
 
 	accessToken, refreshToken, err := util.GenerateTokens(user)
 	if err != nil {
-		log.Error().Err(err).Msg("could not generate token")
+		log.Error().Caller().Err(err).Msg("could not generate token")
 		return err
 	}
 
-	ctx := context.TODO()
 	now := time.Now()
 
 	errAccess := persistence.RedisClient.Set(ctx, *accessToken.Token, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
 	if errAccess != nil {
-		log.Error().Err(err).Msg("could not set token to redis")
+		log.Error().Caller().Err(err).Msg("could not set token to redis")
 		return errAccess
 	}
 
 	errRefresh := persistence.RedisClient.Set(ctx, *refreshToken.Token, user.ID.String(), time.Unix(*refreshToken.ExpiresIn, 0).Sub(now)).Err()
 	if errRefresh != nil {
-		log.Error().Err(err).Msg("could not set refresh token to redis")
+		log.Error().Caller().Err(err).Msg("could not set refresh token to redis")
 		return errRefresh
 	}
 

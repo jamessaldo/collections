@@ -64,12 +64,12 @@ func (ctrl *teamController) GetTeamById(ctx *gin.Context) {
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Get team data by ID")
+	log.Debug().Caller().Str("id", id).Msg("Get team data by ID")
 
 	// Get team data from database
 	team, err := view.Team(uuid.FromStringOrNil(id), currentUser, uow)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get team data by ID")
+		log.Error().Caller().Err(err).Msg("Failed to get team data by ID")
 		_ = ctx.Error(err)
 		return
 	}
@@ -90,20 +90,20 @@ func (ctrl *teamController) GetTeamById(ctx *gin.Context) {
 // @Success 200 {object} dto.Pagination
 // @Router /teams [get]
 func (ctrl *teamController) GetTeams(ctx *gin.Context) {
-	log.Debug().Msg("Get all team data")
+	log.Debug().Caller().Msg("Get all team data")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	uow := bus.UoW
 	currentUser := ctx.MustGet("currentUser").(*domain.User)
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {
-		log.Error().Err(err).Msg("failed to parse page query")
+		log.Error().Caller().Err(err).Msg("failed to parse page query")
 		_ = ctx.Error(err)
 	}
 
 	pageSize, err := strconv.Atoi(ctx.DefaultQuery("pageSize", "10"))
 	if err != nil {
-		log.Error().Err(err).Msg("failed to parse page size query")
+		log.Error().Caller().Err(err).Msg("failed to parse page size query")
 		_ = ctx.Error(err)
 	}
 
@@ -120,7 +120,7 @@ func (ctrl *teamController) GetTeams(ctx *gin.Context) {
 	// Get team data from database
 	teams, err := view.Teams(uow, currentUser, name, page, pageSize)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get all team data")
+		log.Error().Caller().Err(err).Msg("failed to get all team data")
 		_ = ctx.Error(err)
 		return
 	}
@@ -142,7 +142,7 @@ func (ctrl *teamController) GetTeams(ctx *gin.Context) {
 // @Success 201 {string} string "OK"
 // @Router /teams [post]
 func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
-	log.Debug().Msg("Create team data")
+	log.Debug().Caller().Msg("Create team data")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*domain.User)
 
@@ -157,7 +157,7 @@ func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create team data")
+		log.Error().Caller().Err(err).Msg("Failed to create team data")
 		_ = ctx.Error(err)
 		return
 	}
@@ -178,13 +178,13 @@ func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /teams/{id} [put]
 func (ctrl *teamController) UpdateTeam(ctx *gin.Context) {
-	log.Debug().Msg("Update team data")
+	log.Debug().Caller().Msg("Update team data")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(*domain.User)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Get team data by ID")
+	log.Debug().Caller().Str("id", id).Msg("Get team data by ID")
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateTeam
@@ -198,7 +198,7 @@ func (ctrl *teamController) UpdateTeam(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to update team data")
+		log.Error().Caller().Err(err).Msg("Failed to update team data")
 		_ = ctx.Error(err)
 		return
 	}
@@ -222,7 +222,7 @@ func (ctrl *teamController) UpdateLastActiveTeam(ctx *gin.Context) {
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Update last active team data")
+	log.Debug().Caller().Str("id", id).Msg("Update last active team data")
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateLastActiveTeam
@@ -232,7 +232,7 @@ func (ctrl *teamController) UpdateLastActiveTeam(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to update last active team data")
+		log.Error().Caller().Err(err).Msg("Failed to update last active team data")
 		_ = ctx.Error(err)
 		return
 	}
@@ -257,11 +257,11 @@ func (ctrl *teamController) DeleteTeamMember(ctx *gin.Context) {
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Delete team member data")
+	log.Debug().Caller().Str("id", id).Msg("Delete team member data")
 
 	// Get membership ID from request parameter
 	membershipID := ctx.Param("membership_id")
-	log.Debug().Str("membership_id", membershipID).Msg("Delete team member data")
+	log.Debug().Caller().Str("membership_id", membershipID).Msg("Delete team member data")
 
 	var cmd command.DeleteTeamMember
 
@@ -271,7 +271,7 @@ func (ctrl *teamController) DeleteTeamMember(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to delete team member data")
+		log.Error().Caller().Err(err).Msg("Failed to delete team member data")
 		_ = ctx.Error(err)
 		return
 	}
@@ -296,11 +296,11 @@ func (ctrl *teamController) ChangeMemberRole(ctx *gin.Context) {
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Change team member role")
+	log.Debug().Caller().Str("id", id).Msg("Change team member role")
 
 	// Get membership ID from request parameter
 	membershipID := ctx.Param("membership_id")
-	log.Debug().Str("membership_id", membershipID).Msg("Change team member role")
+	log.Debug().Caller().Str("membership_id", membershipID).Msg("Change team member role")
 
 	// Parse the request body into a ChangeMemberRole struct
 	var cmd command.ChangeMemberRole
@@ -315,7 +315,7 @@ func (ctrl *teamController) ChangeMemberRole(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to change team member role")
+		log.Error().Caller().Err(err).Msg("Failed to change team member role")
 		_ = ctx.Error(err)
 		return
 	}
@@ -339,7 +339,7 @@ func (ctrl *teamController) SendInvitation(ctx *gin.Context) {
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Send invitation to join team")
+	log.Debug().Caller().Str("id", id).Msg("Send invitation to join team")
 
 	// Parse the request body into a User struct
 	var cmd command.InviteMember
@@ -351,11 +351,11 @@ func (ctrl *teamController) SendInvitation(ctx *gin.Context) {
 	cmd.TeamID = uuid.FromStringOrNil(id)
 	cmd.Sender = currentUser
 
-	log.Debug().Any("Invitees data", cmd.Invitees).Msg("Send invitation to join team")
+	log.Debug().Caller().Any("Invitees data", cmd.Invitees).Msg("Send invitation to join team")
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to send invitation to join team")
+		log.Error().Caller().Err(err).Msg("Failed to send invitation to join team")
 		_ = ctx.Error(err)
 		return
 	}
@@ -380,11 +380,11 @@ func (ctrl *teamController) ResendInvitation(ctx *gin.Context) {
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Resend invitation to join team")
+	log.Debug().Caller().Str("id", id).Msg("Resend invitation to join team")
 
 	// Get invitation ID from request parameter
 	invitationIDString := ctx.Param("invitation_id")
-	log.Debug().Str("invitation_id", invitationIDString).Msg("Resend invitation with ID")
+	log.Debug().Caller().Str("invitation_id", invitationIDString).Msg("Resend invitation with ID")
 
 	// Parse the request body into a User struct
 	var cmd command.ResendInvitation
@@ -407,7 +407,7 @@ func (ctrl *teamController) ResendInvitation(ctx *gin.Context) {
 
 	err = bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to resend invitation to join team")
+		log.Error().Caller().Err(err).Msg("Failed to resend invitation to join team")
 		_ = ctx.Error(err)
 		return
 	}
@@ -431,7 +431,7 @@ func (ctrl *teamController) UpdateTeamAvatar(ctx *gin.Context) {
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Update team avatar")
+	log.Debug().Caller().Str("id", id).Msg("Update team avatar")
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateTeamAvatar
@@ -444,7 +444,7 @@ func (ctrl *teamController) UpdateTeamAvatar(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to update team avatar")
+		log.Error().Caller().Err(err).Msg("Failed to update team avatar")
 		_ = ctx.Error(err)
 		return
 	}
@@ -467,7 +467,7 @@ func (ctrl *teamController) DeleteTeamAvatar(ctx *gin.Context) {
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Delete team avatar")
+	log.Debug().Caller().Str("id", id).Msg("Delete team avatar")
 
 	var cmd command.DeleteTeamAvatar
 
@@ -475,7 +475,7 @@ func (ctrl *teamController) DeleteTeamAvatar(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to delete team avatar")
+		log.Error().Caller().Err(err).Msg("Failed to delete team avatar")
 		_ = ctx.Error(err)
 		return
 	}

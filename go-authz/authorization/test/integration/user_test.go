@@ -6,9 +6,11 @@ import (
 	"authorization/domain/dto"
 	"authorization/service"
 	"authorization/view"
+	"context"
 	"errors"
-	"log"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,11 +19,12 @@ import (
 )
 
 func createUser(user *domain.User, uow *service.UnitOfWork) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	Ω(txErr).To(Succeed())
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	_, err := uow.User.Add(user, tx)
@@ -29,10 +32,10 @@ func createUser(user *domain.User, uow *service.UnitOfWork) error {
 		return err
 	}
 
-	ownerRole, err := uow.Role.Get(domain.Owner)
+	ownerRole, err := uow.Role.Get(ctx, domain.Owner)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Fatalf("Role with name %s is not exist! Detail: %s", domain.Owner, err.Error())
+			log.Fatal().Err(err).Msgf("Role with name %s is not exist! Detail: %s", domain.Owner, err.Error())
 			return err
 		}
 		return err
@@ -44,7 +47,7 @@ func createUser(user *domain.User, uow *service.UnitOfWork) error {
 	if err != nil {
 		return err
 	}
-	tx.Commit()
+	tx.Commit(ctx)
 
 	return nil
 }

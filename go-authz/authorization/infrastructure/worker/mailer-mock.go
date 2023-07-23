@@ -1,7 +1,7 @@
 package worker
 
 type ClientMock struct {
-	// db *gorm.DB
+	// pool *pgxpool.Pool
 }
 
 type AsynqClientMock struct {

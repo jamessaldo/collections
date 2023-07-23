@@ -7,12 +7,12 @@ import (
 	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/util"
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/oklog/ulid/v2"
-	"gorm.io/gorm"
 )
 
 func UpdateUserWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
@@ -23,13 +23,14 @@ func UpdateUserWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, c
 }
 
 func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	payload := map[string]interface{}{
@@ -45,7 +46,7 @@ func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) error {
 		return err
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
 	return nil
 }
@@ -58,13 +59,14 @@ func DeleteUserWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, c
 }
 
 func DeleteUser(uow *service.UnitOfWork, cmd *command.DeleteUser) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	cmd.User.IsActive = false
@@ -74,7 +76,7 @@ func DeleteUser(uow *service.UnitOfWork, cmd *command.DeleteUser) error {
 		return err
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
 	return nil
 }
@@ -87,13 +89,14 @@ func UpdateUserAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterf
 }
 
 func UpdateUserAvatar(uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	fileContentType := cmd.File.Header.Get("Content-Type")
@@ -133,7 +136,7 @@ func UpdateUserAvatar(uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) er
 		return err
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 
 	return nil
 }
@@ -146,13 +149,14 @@ func DeleteUserAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterf
 }
 
 func DeleteUserAvatar(uow *service.UnitOfWork, cmd *command.DeleteUserAvatar) error {
-	tx, txErr := uow.Begin(&gorm.Session{})
+	ctx := context.Background()
+	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
 
 	defer func() {
-		tx.Rollback()
+		tx.Rollback(ctx)
 	}()
 
 	if cmd.User.AvatarURL != "" {
@@ -167,7 +171,7 @@ func DeleteUserAvatar(uow *service.UnitOfWork, cmd *command.DeleteUserAvatar) er
 		if err != nil {
 			return err
 		}
-		tx.Commit()
+		tx.Commit(ctx)
 	}
 
 	return nil

@@ -38,7 +38,7 @@ func (ac *AsynqClient) SendEmail(payload *Payload) error {
 		asynq.Queue("critical"), // set queue for task
 		asynq.ProcessIn(delay),
 	); err != nil {
-		log.Error().Err(err).Msg("Failed to enqueue a task")
+		log.Error().Caller().Err(err).Msg("Failed to enqueue a task")
 		return err
 	}
 	return nil

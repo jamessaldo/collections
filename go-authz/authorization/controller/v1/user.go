@@ -74,7 +74,7 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 
 	// Get user ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Get user data by ID")
+	log.Debug().Caller().Str("id", id).Msg("Get user data by ID")
 
 	var user *dto.PublicUser = &dto.PublicUser{}
 
@@ -92,7 +92,7 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 		// Get user data from database
 		user, err = view.User(uuid.FromStringOrNil(id), uow)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to get user data")
+			log.Error().Caller().Err(err).Msg("Failed to get user data")
 			_ = ctx.Error(err)
 			return
 		}
@@ -117,13 +117,13 @@ func (ctrl *userController) GetUsers(ctx *gin.Context) {
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get page number")
+		log.Error().Caller().Err(err).Msg("Failed to get page number")
 		_ = ctx.Error(err)
 	}
 
 	pageSize, err := strconv.Atoi(ctx.DefaultQuery("pageSize", "10"))
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get page size")
+		log.Error().Caller().Err(err).Msg("Failed to get page size")
 		_ = ctx.Error(err)
 	}
 
@@ -138,7 +138,7 @@ func (ctrl *userController) GetUsers(ctx *gin.Context) {
 	// Get user data from database
 	users, err := view.Users(uow, page, pageSize)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get users data")
+		log.Error().Caller().Err(err).Msg("Failed to get users data")
 		_ = ctx.Error(err)
 		return
 	}
@@ -171,7 +171,7 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to update user data")
+		log.Error().Caller().Err(err).Msg("Failed to update user data")
 		_ = ctx.Error(err)
 		return
 	}
@@ -199,7 +199,7 @@ func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to delete user data")
+		log.Error().Caller().Err(err).Msg("Failed to delete user data")
 		_ = ctx.Error(err)
 		return
 	}
@@ -231,7 +231,7 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to update user avatar")
+		log.Error().Caller().Err(err).Msg("Failed to update user avatar")
 		_ = ctx.Error(err)
 		return
 	}
@@ -259,7 +259,7 @@ func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to delete user avatar")
+		log.Error().Caller().Err(err).Msg("Failed to delete user avatar")
 		_ = ctx.Error(err)
 		return
 	}

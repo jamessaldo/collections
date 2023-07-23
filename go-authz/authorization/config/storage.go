@@ -14,7 +14,7 @@ func init() {
 	var err error
 	StorageConfig, err = loadStorageConfig("./env")
 	if err != nil {
-		log.Fatal().Err(err).Msg("Cannot load storage configuration")
+		log.Fatal().Caller().Err(err).Msg("Cannot load storage configuration")
 	}
 }
 
@@ -32,8 +32,8 @@ type StorageConfiguration struct {
 	RedisPort string `mapstructure:"REDIS_PORT"`
 
 	// Connection Pool
-	MaxIdleConns    int   `mapstructure:"MAX_IDLE_CONNS"`
-	MaxOpenConns    int   `mapstructure:"MAX_OPEN_CONNS"`
+	MaxIdleConns    int32 `mapstructure:"MAX_IDLE_CONNS"`
+	MaxOpenConns    int32 `mapstructure:"MAX_OPEN_CONNS"`
 	ConnMaxLifetime int64 `mapstructure:"CONN_MAX_LIFETIME"`
 
 	// Static Storage

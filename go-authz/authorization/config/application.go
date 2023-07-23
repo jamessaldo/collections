@@ -15,7 +15,7 @@ func init() {
 	var err error
 	AppConfig, err = loadAppConfig("./env")
 	if err != nil {
-		log.Fatal().Err(err).Msg("Cannot load application configuration")
+		log.Fatal().Caller().Err(err).Msg("Cannot load application configuration")
 	}
 }
 

@@ -45,7 +45,7 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 
 	if code == "" {
 		err := exception.NewBadGatewayException("authorization code not provided")
-		log.Error().Err(err).Msg("authorization code not provided")
+		log.Error().Caller().Err(err).Msg("authorization code not provided")
 		_ = ctx.Error(err)
 		return
 	}
@@ -57,7 +57,7 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("could not login by google")
+		log.Error().Caller().Err(err).Msg("could not login by google")
 		_ = ctx.Error(err)
 		return
 	}
@@ -77,14 +77,14 @@ func (ctrl *authController) RefreshAccessToken(ctx *gin.Context) {
 	refresh_token, err := ctx.Cookie("refresh_token")
 
 	if err != nil {
-		log.Error().Err(err).Msg("refresh token is required")
+		log.Error().Caller().Err(err).Msg("refresh token is required")
 		_ = ctx.Error(exception.NewUnauthorizedException("refresh token is required: " + err.Error()))
 		return
 	}
 
 	accessToken, err := view.RefreshAccessToken(refresh_token, uow)
 	if err != nil {
-		log.Error().Err(err).Msg("could not refresh access token")
+		log.Error().Caller().Err(err).Msg("could not refresh access token")
 		_ = ctx.Error(exception.NewUnauthorizedException(message))
 		return
 	}

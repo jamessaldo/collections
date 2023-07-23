@@ -15,43 +15,43 @@ import (
 type Bootstraps struct {
 	Bus       *service.MessageBus
 	mailer    worker.WorkerInterface
-	Endpoints map[string]*domain.Endpoint
+	Endpoints map[string]domain.Endpoint
 }
 
 func NewBootstraps() (*asynq.Client, *Bootstraps) {
 	err := persistence.CreateDBConnection()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to connect to database")
+		log.Fatal().Caller().Err(err).Msg("Failed to connect to database")
 	}
 
 	persistence.ConnectRedis()
 
-	err = persistence.DBConnection.AutoMigrate(
-		&domain.User{},
-		&domain.Endpoint{},
-		&domain.Role{},
-		&domain.Access{},
-		&domain.Membership{},
-		&domain.Team{},
-		&domain.Invitation{})
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to migrate database")
-	}
+	// err = persistence.DBConnection.AutoMigrate(
+	// 	&domain.User{},
+	// 	&domain.Endpoint{},
+	// 	&domain.Role{},
+	// 	&domain.Access{},
+	// 	&domain.Membership{},
+	// 	&domain.Team{},
+	// 	&domain.Invitation{})
+	// if err != nil {
+	// 	log.Fatal().Caller().Err(err).Msg("Failed to migrate database")
+	// }
 
 	uow, err := service.NewUnitOfWork(persistence.DBConnection)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create unit of work")
+		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
 	}
 
 	asynqClient := worker.CreateAsynqClient()
 
 	mailer := worker.NewMailer(asynqClient)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create mailer")
+		log.Fatal().Caller().Err(err).Msg("Failed to create mailer")
 	}
 
 	messagebus := service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer)
-	endpoints := make(map[string]*domain.Endpoint)
+	endpoints := make(map[string]domain.Endpoint)
 
 	return asynqClient, &Bootstraps{
 		Bus:       messagebus,

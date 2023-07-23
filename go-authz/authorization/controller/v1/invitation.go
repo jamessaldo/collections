@@ -61,7 +61,7 @@ func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 
 	err := bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("could not verify invitation")
+		log.Error().Caller().Err(err).Msg("could not verify invitation")
 		_ = ctx.Error(err)
 		return
 	}
@@ -85,7 +85,7 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 
 	// Get invitation ID from request parameter
 	id := ctx.Param("id")
-	log.Debug().Str("id", id).Msg("Get invitation data by ID")
+	log.Debug().Caller().Str("id", id).Msg("Get invitation data by ID")
 
 	idParsed, err := ulid.Parse(id)
 	if err != nil {
@@ -97,7 +97,7 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 	// Get invitation data from database
 	invitation, err := view.Invitation(idParsed, uow)
 	if err != nil {
-		log.Error().Err(err).Msg("could not get invitation")
+		log.Error().Caller().Err(err).Msg("could not get invitation")
 		_ = ctx.Error(err)
 		return
 	}
@@ -121,7 +121,7 @@ func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 
 	// Get invitation ID from request parameter
 	invitationIDString := ctx.Param("id")
-	log.Debug().Str("id", invitationIDString).Msg("Delete invitation data by ID")
+	log.Debug().Caller().Str("id", invitationIDString).Msg("Delete invitation data by ID")
 
 	var cmd command.DeleteInvitation
 
@@ -137,7 +137,7 @@ func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 
 	err = bus.Handle(&cmd)
 	if err != nil {
-		log.Error().Err(err).Msg("could not delete invitation")
+		log.Error().Caller().Err(err).Msg("could not delete invitation")
 		_ = ctx.Error(err)
 		return
 	}
