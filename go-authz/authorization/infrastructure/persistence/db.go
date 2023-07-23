@@ -24,15 +24,15 @@ func CreateDBConnection() error {
 	// )
 
 	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.StorageConfig.DBDriver, config.StorageConfig.DBUser, config.StorageConfig.DBPassword, config.StorageConfig.DBHost, config.StorageConfig.DBPort, config.StorageConfig.DBName)
-
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, dsn)
+	var err error
+
+	DBConnection, err = pgxpool.New(ctx, dsn)
 
 	if err != nil {
 		return err
 	}
 
-	DBConnection = pool
 	// connection, err := gorm.Open(postgres.New(postgres.Config{
 	// 	DriverName: "pgx",
 	// 	DSN:        dsn,
@@ -59,6 +59,5 @@ func CreateDBConnection() error {
 	// duration := time.Duration(config.StorageConfig.ConnMaxLifetime * int64(time.Minute))
 	// pgDB.SetConnMaxLifetime(duration)
 
-	// DBConnection = connection
 	return nil
 }

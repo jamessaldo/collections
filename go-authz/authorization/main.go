@@ -50,6 +50,7 @@ func main() {
 
 	asynqClient, bootstrap := infrastructure.NewBootstraps()
 	defer asynqClient.Close()
+	defer persistence.DBConnection.Close()
 
 	handleArgs(bootstrap.Bus.UoW.GetDB())
 

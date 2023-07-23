@@ -234,8 +234,7 @@ func (s Seed) AccessSeed() {
 				roleData.Endpoints.Add(val)
 			}
 		}
-		log.Info().Caller().Msg(fmt.Sprintf("=> inserting role %s", roleData.Name))
-		log.Info().Caller().Msg(fmt.Sprintf("=> inserting role %s", roleData.Endpoints))
+		log.Info().Caller().Msg(fmt.Sprintf("=> inserting role %s with endpoints size %d", roleData.Name, len(roleData.Endpoints)))
 		roleErr := uow.Role.Save(ctx, tx, roleData)
 		if roleErr != nil {
 			log.Error().Caller().Err(roleErr).Msg("Failed to insert role")
