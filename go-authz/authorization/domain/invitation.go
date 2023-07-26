@@ -67,8 +67,8 @@ type InvitationOptions struct {
 	Limit     int
 }
 
-func NewInvitation(email string, status InvitationStatus, teamID, senderID uuid.UUID, roleID ulid.ULID) *Invitation {
-	return &Invitation{
+func NewInvitation(email string, status InvitationStatus, teamID, senderID uuid.UUID, roleID ulid.ULID) Invitation {
+	return Invitation{
 		ID:        ulid.Make(),
 		Email:     email,
 		ExpiresAt: util.GetTimestampUTC().Add(time.Hour * 24 * 7),

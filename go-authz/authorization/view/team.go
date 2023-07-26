@@ -20,7 +20,7 @@ func Team(id uuid.UUID, user domain.User, uow *service.UnitOfWork) (*dto.TeamRet
 		}
 		return nil, err
 	}
-	opts := &domain.MembershipOptions{
+	opts := domain.MembershipOptions{
 		TeamID:       id,
 		IsSelectUser: true,
 		IsSelectRole: true,
@@ -34,7 +34,7 @@ func Team(id uuid.UUID, user domain.User, uow *service.UnitOfWork) (*dto.TeamRet
 		return nil, err
 	}
 	var lastActiveAt time.Time
-	var membershipsList []*dto.MembershipRetrievalSchema
+	var membershipsList []dto.MembershipRetrievalSchema
 
 	for _, membership := range memberships {
 		if membership.User.ID == user.ID {
@@ -62,7 +62,7 @@ func Teams(uow *service.UnitOfWork, user domain.User, name string, page, pageSiz
 	var teams []interface{}
 	var totalMemberships int64
 
-	membershipOpts := &domain.MembershipOptions{
+	membershipOpts := domain.MembershipOptions{
 		UserID:       user.ID,
 		IsSelectTeam: true,
 		Limit:        pageSize,
@@ -79,7 +79,7 @@ func Teams(uow *service.UnitOfWork, user domain.User, name string, page, pageSiz
 		return dto.Pagination{}, err
 	}
 	for _, membership := range memberships {
-		opts := &domain.MembershipOptions{
+		opts := domain.MembershipOptions{
 			TeamID:       membership.TeamID,
 			Limit:        3,
 			IsSelectUser: true,
@@ -94,16 +94,16 @@ func Teams(uow *service.UnitOfWork, user domain.User, name string, page, pageSiz
 			return dto.Pagination{}, err
 		}
 
-		var memberList []*dto.MembershipRetrievalSchema
+		var memberList []dto.MembershipRetrievalSchema
 		for _, member := range members {
 			data := dto.MembershipRetrievalSchema{
 				ID:   member.ID,
 				Role: string(member.Role.Name),
 				User: member.User.PublicUser(),
 			}
-			memberList = append(memberList, &data)
+			memberList = append(memberList, data)
 		}
-		teams = append(teams, &dto.TeamRetrievalSchema{
+		teams = append(teams, dto.TeamRetrievalSchema{
 			ID:           membership.Team.ID,
 			Name:         membership.Team.Name,
 			Description:  membership.Team.Description,

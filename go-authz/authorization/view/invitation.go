@@ -28,7 +28,7 @@ func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreival
 		return nil, err
 	}
 
-	membershipOpts := &domain.MembershipOptions{
+	membershipOpts := domain.MembershipOptions{
 		TeamID:       team.ID,
 		IsSelectUser: true,
 		IsSelectRole: true,
@@ -45,7 +45,7 @@ func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreival
 		return nil, err
 	}
 
-	var membershipsList []*dto.MembershipRetrievalSchema
+	var membershipsList []dto.MembershipRetrievalSchema
 
 	for _, membership := range memberships {
 		membershipsList = append(membershipsList, membership.Parse())

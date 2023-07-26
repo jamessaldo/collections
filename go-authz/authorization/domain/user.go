@@ -131,6 +131,7 @@ func NewUser(firstName, lastName, email, avatarURL, provider string, isVerified 
 		AvatarURL:   avatarURL,
 		Provider:    provider,
 		Verified:    isVerified,
+		IsActive:    true,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}

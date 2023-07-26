@@ -16,11 +16,11 @@ type invitationRepository struct {
 }
 
 type InvitationRepository interface {
-	Add(*domain.Invitation, pgx.Tx) (*domain.Invitation, error)
+	Add(domain.Invitation, pgx.Tx) (domain.Invitation, error)
 	AddBatch([]domain.Invitation) error
-	Update(*domain.Invitation, pgx.Tx) (*domain.Invitation, error)
-	Get(ulid.ULID) (*domain.Invitation, error)
-	List(opts *domain.InvitationOptions) ([]*domain.Invitation, error)
+	Update(domain.Invitation, pgx.Tx) (domain.Invitation, error)
+	Get(ulid.ULID) (domain.Invitation, error)
+	List(opts domain.InvitationOptions) ([]domain.Invitation, error)
 	Delete(ulid.ULID, pgx.Tx) error
 }
 
@@ -29,7 +29,7 @@ func NewInvitationRepository(pool *pgxpool.Pool) InvitationRepository {
 	return &invitationRepository{pool: pool}
 }
 
-func (repo *invitationRepository) Add(invitation *domain.Invitation, tx pgx.Tx) (*domain.Invitation, error) {
+func (repo *invitationRepository) Add(invitation domain.Invitation, tx pgx.Tx) (domain.Invitation, error) {
 	query := `
 		INSERT INTO invitations (id, email, expires_at, status, team_id, role_id, sender_id, is_active)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -40,7 +40,7 @@ func (repo *invitationRepository) Add(invitation *domain.Invitation, tx pgx.Tx) 
 		invitation.TeamID, invitation.RoleID, invitation.SenderID, invitation.IsActive,
 	)
 	if err != nil {
-		return nil, err
+		return domain.Invitation{}, err
 	}
 	return invitation, nil
 }
@@ -76,7 +76,7 @@ func (repo *invitationRepository) AddBatch(invitations []domain.Invitation) erro
 	return nil
 }
 
-func (repo *invitationRepository) Update(invitation *domain.Invitation, tx pgx.Tx) (*domain.Invitation, error) {
+func (repo *invitationRepository) Update(invitation domain.Invitation, tx pgx.Tx) (domain.Invitation, error) {
 	query := `
 		UPDATE invitations
 		SET email = $1, expires_at = $2, status = $3, team_id = $4, role_id = $5, sender_id = $6, is_active = $7
@@ -88,12 +88,12 @@ func (repo *invitationRepository) Update(invitation *domain.Invitation, tx pgx.T
 		invitation.ID,
 	)
 	if err != nil {
-		return nil, err
+		return domain.Invitation{}, err
 	}
 	return invitation, nil
 }
 
-func (repo *invitationRepository) Get(id ulid.ULID) (*domain.Invitation, error) {
+func (repo *invitationRepository) Get(id ulid.ULID) (domain.Invitation, error) {
 	var invitation domain.Invitation
 	query := `
 		SELECT i.id, i.email, i.expires_at, i.status, i.team_id, i.role_id, i.sender_id, i.is_active,
@@ -106,14 +106,14 @@ func (repo *invitationRepository) Get(id ulid.ULID) (*domain.Invitation, error) 
 		)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, exception.NewNotFoundException(err.Error())
+			return domain.Invitation{}, exception.NewNotFoundException(err.Error())
 		}
-		return nil, err
+		return domain.Invitation{}, err
 	}
-	return &invitation, nil
+	return invitation, nil
 }
 
-func (repo *invitationRepository) List(opts *domain.InvitationOptions) ([]*domain.Invitation, error) {
+func (repo *invitationRepository) List(opts domain.InvitationOptions) ([]domain.Invitation, error) {
 	query := `
 		SELECT id, email, expires_at, status, team_id, role_id, sender_id, is_active
 		FROM invitations
@@ -152,7 +152,7 @@ func (repo *invitationRepository) List(opts *domain.InvitationOptions) ([]*domai
 	}
 	defer rows.Close()
 
-	var invitations []*domain.Invitation
+	var invitations []domain.Invitation
 	for rows.Next() {
 		var invitation domain.Invitation
 		err := rows.Scan(&invitation.ID, &invitation.Email, &invitation.ExpiresAt, &invitation.Status,
@@ -160,7 +160,7 @@ func (repo *invitationRepository) List(opts *domain.InvitationOptions) ([]*domai
 		if err != nil {
 			return nil, err
 		}
-		invitations = append(invitations, &invitation)
+		invitations = append(invitations, invitation)
 	}
 	return invitations, nil
 }

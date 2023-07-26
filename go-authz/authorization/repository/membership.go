@@ -3,6 +3,7 @@ package repository
 import (
 	"authorization/controller/exception"
 	"authorization/domain"
+	"fmt"
 
 	"context"
 	"errors"
@@ -17,13 +18,13 @@ type membershipRepository struct {
 }
 
 type MembershipRepository interface {
-	Add(*domain.Membership, pgx.Tx) (*domain.Membership, error)
+	Add(domain.Membership, pgx.Tx) (domain.Membership, error)
 	AddBatch([]domain.Membership) error
-	Update(*domain.Membership, pgx.Tx) (*domain.Membership, error)
-	Get(uuid.UUID) (*domain.Membership, error)
-	List(opts *domain.MembershipOptions) ([]domain.Membership, error)
+	Update(domain.Membership, pgx.Tx) (domain.Membership, error)
+	Get(uuid.UUID) (domain.Membership, error)
+	List(opts domain.MembershipOptions) ([]domain.Membership, error)
 	Delete(uuid.UUID, pgx.Tx) error
-	Count(opts *domain.MembershipOptions) (int64, error)
+	Count(opts domain.MembershipOptions) (int64, error)
 }
 
 // membershipRepository implements the MembershipRepository interface
@@ -31,7 +32,7 @@ func NewMembershipRepository(pool *pgxpool.Pool) MembershipRepository {
 	return &membershipRepository{pool: pool}
 }
 
-func (repo *membershipRepository) Add(membership *domain.Membership, tx pgx.Tx) (*domain.Membership, error) {
+func (repo *membershipRepository) Add(membership domain.Membership, tx pgx.Tx) (domain.Membership, error) {
 	query := `
 		INSERT INTO memberships (id, team_id, user_id, role_id, last_active_at, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -51,7 +52,7 @@ func (repo *membershipRepository) Add(membership *domain.Membership, tx pgx.Tx) 
 	).Scan(&membership.ID)
 
 	if err != nil {
-		return nil, err
+		return domain.Membership{}, err
 	}
 
 	return membership, nil
@@ -93,7 +94,7 @@ func (repo *membershipRepository) AddBatch(memberships []domain.Membership) erro
 	return nil
 }
 
-func (repo *membershipRepository) Update(membership *domain.Membership, tx pgx.Tx) (*domain.Membership, error) {
+func (repo *membershipRepository) Update(membership domain.Membership, tx pgx.Tx) (domain.Membership, error) {
 	query := `
 		UPDATE memberships
 		SET team_id = $2, user_id = $3, role_id = $4, last_active_at = $5, updated_at = $6
@@ -112,13 +113,13 @@ func (repo *membershipRepository) Update(membership *domain.Membership, tx pgx.T
 	)
 
 	if err != nil {
-		return nil, err
+		return domain.Membership{}, err
 	}
 
 	return membership, nil
 }
 
-func (repo *membershipRepository) Get(id uuid.UUID) (*domain.Membership, error) {
+func (repo *membershipRepository) Get(id uuid.UUID) (domain.Membership, error) {
 	query := `
 		SELECT id, team_id, user_id, role_id, last_active_at, created_at, updated_at
 		FROM memberships
@@ -143,29 +144,43 @@ func (repo *membershipRepository) Get(id uuid.UUID) (*domain.Membership, error) 
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, exception.NewNotFoundException("membership not found")
+			return domain.Membership{}, exception.NewNotFoundException("membership not found")
 		}
-		return nil, err
+		return domain.Membership{}, err
 	}
 
-	return &membership, nil
+	return membership, nil
 }
 
-func (repo *membershipRepository) List(opts *domain.MembershipOptions) ([]domain.Membership, error) {
+func (repo *membershipRepository) List(opts domain.MembershipOptions) ([]domain.Membership, error) {
 	query := `
 		SELECT id, team_id, user_id, role_id, last_active_at, created_at, updated_at
 		FROM memberships
-		WHERE team_id = $1
+		WHERE
 	`
+
+	argsNumber := 1
+	args := make([]interface{}, 0)
+
+	if opts.TeamID != uuid.Nil {
+		query += fmt.Sprintf("team_id = $%d", argsNumber)
+		argsNumber++
+		args = append(args, opts.TeamID)
+	}
+
+	if opts.UserID != uuid.Nil {
+		query += fmt.Sprintf("user_id = $%d", argsNumber)
+		argsNumber++
+		args = append(args, opts.UserID)
+	}
 
 	var memberships []domain.Membership
 
 	rows, err := repo.pool.Query(
 		context.Background(),
 		query,
-		opts.TeamID,
+		args...,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -211,19 +226,34 @@ func (repo *membershipRepository) Delete(id uuid.UUID, tx pgx.Tx) error {
 	return nil
 }
 
-func (repo *membershipRepository) Count(opts *domain.MembershipOptions) (int64, error) {
+func (repo *membershipRepository) Count(opts domain.MembershipOptions) (int64, error) {
 	query := `
-		SELECT COUNT(*)
+		SELECT COUNT(id)
 		FROM memberships
-		WHERE team_id = $1
+		WHERE 
 	`
+
+	argsNumber := 1
+	args := make([]interface{}, 0)
+
+	if opts.TeamID != uuid.Nil {
+		query += fmt.Sprintf("team_id = $%d", argsNumber)
+		argsNumber++
+		args = append(args, opts.TeamID)
+	}
+
+	if opts.UserID != uuid.Nil {
+		query += fmt.Sprintf("user_id = $%d", argsNumber)
+		argsNumber++
+		args = append(args, opts.UserID)
+	}
 
 	var count int64
 
 	err := repo.pool.QueryRow(
 		context.Background(),
 		query,
-		opts.TeamID,
+		args...,
 	).Scan(&count)
 
 	if err != nil {

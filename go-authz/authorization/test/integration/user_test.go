@@ -5,7 +5,6 @@ import (
 	"authorization/domain/command"
 	"authorization/domain/dto"
 	"authorization/service"
-	"authorization/util"
 	"authorization/view"
 	"context"
 	"errors"
@@ -46,8 +45,11 @@ func createUser(user domain.User, uow *service.UnitOfWork) error {
 	if err != nil {
 		return err
 	}
-	tx.Commit(ctx)
 
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -58,22 +60,10 @@ var _ = Describe("User Testing", func() {
 	BeforeEach(func() {
 		uow := Bus.UoW
 
-		now := util.GetTimestampUTC()
-		johnUserId = uuid.NewV4()
-		user := domain.User{
-			ID:        johnUserId,
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "johndoe@example.com",
-			Username:  "johndoe",
-			Provider:  "Google",
-			Verified:  true,
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
-
-		err := createUser(user, uow)
+		john := domain.NewUser("John", "Doe", "johndoe@example.com", "", "Google", true)
+		err := createUser(john, uow)
 		Ω(err).To(Succeed())
+		johnUserId = john.ID
 
 	})
 	Context("Load", func() {
@@ -105,21 +95,8 @@ var _ = Describe("User Testing", func() {
 		It("Create", func() {
 			uow := Bus.UoW
 
-			now := util.GetTimestampUTC()
-			janeUserId := uuid.NewV4()
-			user := domain.User{
-				ID:        janeUserId,
-				FirstName: "Jane",
-				LastName:  "Doe",
-				Email:     "janedoe@example.com",
-				Username:  "janedoe",
-				Provider:  "Google",
-				Verified:  true,
-				CreatedAt: now,
-				UpdatedAt: now,
-			}
-
-			err := createUser(user, uow)
+			jane := domain.NewUser("Jane", "Doe", "janedoe@example.com", "", "Google", true)
+			err := createUser(jane, uow)
 			Ω(err).To(Succeed())
 
 			respPaginated, err := view.Users(Bus.UoW, 1, 10)

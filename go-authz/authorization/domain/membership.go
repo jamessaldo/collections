@@ -17,7 +17,7 @@ type Team struct {
 	IsPersonal  bool
 	AvatarURL   string
 	CreatorID   uuid.UUID
-	Creator     *User
+	Creator     User
 	Memberships []Membership
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -26,19 +26,19 @@ type Team struct {
 type Membership struct {
 	ID     uuid.UUID
 	TeamID uuid.UUID
-	Team   *Team
+	Team   Team
 	UserID uuid.UUID
-	User   *User
+	User   User
 	RoleID ulid.ULID
-	Role   *Role
+	Role   Role
 
 	LastActiveAt time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
 
-func (m *Membership) Parse() *dto.MembershipRetrievalSchema {
-	return &dto.MembershipRetrievalSchema{
+func (m Membership) Parse() dto.MembershipRetrievalSchema {
+	return dto.MembershipRetrievalSchema{
 		ID:   m.ID,
 		User: m.User.PublicUser(),
 		Role: string(m.Role.Name),
@@ -101,7 +101,7 @@ func (m *Membership) Validation(userID, teamID uuid.UUID, requestedRole RoleType
 	return nil
 }
 
-func NewTeam(user User, roleID ulid.ULID, name, description string, isPersonal bool) *Team {
+func NewTeam(user User, roleID ulid.ULID, name, description string, isPersonal bool) Team {
 	teamID := uuid.NewV4()
 
 	membership := Membership{
@@ -111,7 +111,7 @@ func NewTeam(user User, roleID ulid.ULID, name, description string, isPersonal b
 		RoleID: roleID,
 	}
 
-	team := &Team{
+	team := Team{
 		ID:          teamID,
 		Name:        name,
 		Description: description,

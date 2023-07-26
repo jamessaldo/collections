@@ -45,7 +45,10 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 
 	cmd.TeamID = team.ID
 	return nil
@@ -84,7 +87,10 @@ func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -107,7 +113,7 @@ func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActive
 		tx.Rollback(ctx)
 	}()
 
-	opts := &domain.MembershipOptions{
+	opts := domain.MembershipOptions{
 		TeamID:       cmd.TeamID,
 		UserID:       cmd.User.ID,
 		Limit:        1,
@@ -126,12 +132,15 @@ func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActive
 	membership := memberships[0]
 	membership.LastActiveAt = lastActiveAt
 
-	_, err = uow.Membership.Update(&membership, tx)
+	_, err = uow.Membership.Update(membership, tx)
 	if err != nil {
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -169,7 +178,10 @@ func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) er
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -214,7 +226,10 @@ func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) er
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -278,7 +293,10 @@ func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) er
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -317,7 +335,11 @@ func DeleteTeamAvatar(uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) er
 		if err != nil {
 			return err
 		}
-		tx.Commit(ctx)
+
+		err = tx.Commit(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

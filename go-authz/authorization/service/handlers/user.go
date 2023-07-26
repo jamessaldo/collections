@@ -46,7 +46,10 @@ func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) error {
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -76,7 +79,10 @@ func DeleteUser(uow *service.UnitOfWork, cmd *command.DeleteUser) error {
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -136,7 +142,10 @@ func UpdateUserAvatar(uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) er
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -171,7 +180,11 @@ func DeleteUserAvatar(uow *service.UnitOfWork, cmd *command.DeleteUserAvatar) er
 		if err != nil {
 			return err
 		}
-		tx.Commit(ctx)
+
+		err = tx.Commit(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

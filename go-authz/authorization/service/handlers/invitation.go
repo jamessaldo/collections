@@ -38,7 +38,7 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 		return exception.NewForbiddenException(fmt.Sprintf("you can't invite a member to personal team with ID %s", cmd.TeamID))
 	}
 
-	membershipOpts := &domain.MembershipOptions{
+	membershipOpts := domain.MembershipOptions{
 		TeamID:       cmd.TeamID,
 		IsSelectUser: true,
 		IsSelectRole: true,
@@ -64,7 +64,7 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 			return err
 		}
 
-		inviteesOpts := &domain.InvitationOptions{
+		inviteesOpts := domain.InvitationOptions{
 			Email:    invitee.Email,
 			TeamID:   cmd.TeamID,
 			RoleID:   role.ID,
@@ -103,7 +103,10 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 		}
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -166,7 +169,10 @@ func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cm
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -209,7 +215,10 @@ func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) er
 		return err
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -274,6 +283,9 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 		}
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }

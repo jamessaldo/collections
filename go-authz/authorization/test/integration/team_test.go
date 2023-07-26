@@ -27,47 +27,20 @@ func createTeam(cmd *command.CreateTeam, user domain.User) {
 var _ = Describe("Team Testing", Ordered, func() {
 	format.MaxLength = 0
 	var (
-		johnUserId uuid.UUID
-		janeUserId uuid.UUID
-		john       domain.User
-		jane       domain.User
-		cmdA       *command.CreateTeam
-		cmdB       *command.CreateTeam
+		john domain.User
+		jane domain.User
+		cmdA *command.CreateTeam
+		cmdB *command.CreateTeam
 	)
 
 	BeforeEach(func() {
 		uow := Bus.UoW
 
-		now := util.GetTimestampUTC()
-		johnUserId = uuid.NewV4()
-		janeUserId = uuid.NewV4()
-		john = domain.User{
-			ID:        johnUserId,
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "johndoe@example.com",
-			Username:  "johndoe",
-			Provider:  "Google",
-			Verified:  true,
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
-
+		john = domain.NewUser("John", "Doe", "johndoe@example.com", "", "Google", true)
 		err := createUser(john, uow)
 		Ω(err).To(Succeed())
 
-		jane = domain.User{
-			ID:        janeUserId,
-			FirstName: "Jane",
-			LastName:  "Doe",
-			Email:     "janedoe@example.com",
-			Username:  "janedoe",
-			Provider:  "Google",
-			Verified:  true,
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
-
+		jane = domain.NewUser("Jane", "Doe", "janedoe@example.com", "", "Google", true)
 		err = createUser(jane, uow)
 		Ω(err).To(Succeed())
 
@@ -170,7 +143,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			err := Bus.Handle(&cmd)
 			Ω(err).To(Succeed())
 
-			var invitation *domain.Invitation
+			var invitation domain.Invitation
 			err = Bus.UoW.GetDB().QueryRow(context.Background(), "SELECT * FROM invitations WHERE team_id = ? AND email = ?", janeTeam.TeamID, "james@mail.com").Scan(&invitation)
 			Ω(err).To(Succeed())
 
