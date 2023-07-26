@@ -84,13 +84,13 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 		tx.Commit(ctx)
 	}
 
-	accessToken, refreshToken, err := util.GenerateTokens(user)
+	accessToken, refreshToken, err := user.GenerateTokens()
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not generate token")
 		return err
 	}
 
-	now := time.Now()
+	now := util.GetTimestampUTC()
 
 	errAccess := persistence.RedisClient.Set(ctx, *accessToken.Token, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
 	if errAccess != nil {
@@ -110,7 +110,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 	return nil
 }
 
-func sendWelcomeEmail(mailer worker.WorkerInterface, user *domain.User) error {
+func sendWelcomeEmail(mailer worker.WorkerInterface, user domain.User) error {
 	data := map[string]interface{}{
 		"FullName": user.FullName(),
 	}

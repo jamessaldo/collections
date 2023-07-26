@@ -1,5 +1,4 @@
-- id: 4881SR9KAW8KQSVTXQVMMFY9ET
-  name: owner
+- name: owner
   endpoints:
     - name: invite-member
     - name: update-team
@@ -11,8 +10,7 @@
     - name: create-application-team
     - name: get-application-team-detail
     - name: update-application-team
-- id: 61RDT2WPHB884B7H60E01272BH
-  name: admin
+- name: admin
   endpoints:
     - name: invite-member
     - name: update-team
@@ -22,8 +20,7 @@
     - name: get-team
     - name: get-applications-team
     - name: get-application-team-detail
-- id: 4RPNSQD1RY8MBBHEJZT8B7WD1F
-  name: member
+- name: member
   endpoints:
     - name: get-team
     - name: get-applications-team

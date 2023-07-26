@@ -48,7 +48,7 @@ func (ctrl *invitationController) Routes(route *gin.RouterGroup) {
 // @Router /invitations/verify [post]
 func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateInvitationStatus
@@ -117,7 +117,7 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 // @Router /invitations/{id} [delete]
 func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get invitation ID from request parameter
 	invitationIDString := ctx.Param("id")

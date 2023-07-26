@@ -3,61 +3,101 @@ package persistence
 import (
 	"authorization/config"
 	"context"
+	"database/sql"
 	"fmt"
+	"os"
 
+	zerologadapter "github.com/jackc/pgx-zerolog"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
+	"github.com/rs/zerolog/log"
+
+	"github.com/golang-migrate/migrate/v4"
+	pgxadapter "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 var (
-	DBConnection *pgxpool.Pool
+	Pool *pgxpool.Pool
 )
 
+type myQueryTracer struct {
+	log *zerologadapter.Logger
+}
+
+func (tracer *myQueryTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	tracer.log.Log(ctx, tracelog.LogLevelInfo, "executing query", map[string]interface{}{
+		"sql":  data.SQL,
+		"args": data.Args,
+	})
+	return ctx
+}
+
+func (tracer *myQueryTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
+}
+
 func CreateDBConnection() error {
-	// newLogger := logger.New(
-	// 	log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-	// 	logger.Config{
-	// 		SlowThreshold:             time.Second, // Slow SQL threshold
-	// 		LogLevel:                  logger.Info, // Log level
-	// 		IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-	// 		Colorful:                  false,       // Disable color
-	// 	},
-	// )
+	logger := zerologadapter.NewLogger(log.Logger)
 
 	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.StorageConfig.DBDriver, config.StorageConfig.DBUser, config.StorageConfig.DBPassword, config.StorageConfig.DBHost, config.StorageConfig.DBPort, config.StorageConfig.DBName)
 	ctx := context.Background()
 	var err error
 
-	DBConnection, err = pgxpool.New(ctx, dsn)
+	config, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return err
+	}
+
+	config.ConnConfig.Tracer = &myQueryTracer{
+		log: logger,
+	}
+
+	Pool, err = pgxpool.NewWithConfig(ctx, config)
 
 	if err != nil {
 		return err
 	}
 
-	// connection, err := gorm.Open(postgres.New(postgres.Config{
-	// 	DriverName: "pgx",
-	// 	DSN:        dsn,
-	// }), &gorm.Config{
-	// 	PrepareStmt: true,
-	// 	Logger:      newLogger,
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-
-	// pgDB, err := connection.DB()
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
-	// pgDB.SetMaxIdleConns(config.StorageConfig.MaxIdleConns)
-
-	// // SetMaxOpenConns sets the maximum number of open connections to the database.
-	// pgDB.SetMaxOpenConns(config.StorageConfig.MaxOpenConns)
-
-	// // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
-	// duration := time.Duration(config.StorageConfig.ConnMaxLifetime * int64(time.Minute))
-	// pgDB.SetConnMaxLifetime(duration)
-
 	return nil
+}
+
+func Migration(newPool *pgxpool.Pool) {
+	if newPool != nil {
+		Pool = newPool
+	}
+
+	conn, err := sql.Open("pgx", Pool.Config().ConnString())
+	if err != nil {
+		log.Fatal().Caller().Err(err).Msg("Failed to connect to database")
+	}
+
+	driver, err := pgxadapter.WithInstance(conn, &pgxadapter.Config{})
+	if err != nil {
+		log.Fatal().Caller().Err(err).Msg("Failed to create migration driver")
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal().Caller().Err(err).Msg("Failed to get working directory")
+	}
+
+	path := fmt.Sprintf("%s%s%s", "file://", wd, "/infrastructure/persistence/migrations")
+	m, err := migrate.NewWithDatabaseInstance(path, "pgx", driver)
+	if err != nil {
+		log.Fatal().Caller().Err(err).Msg("Failed to find migration files")
+	}
+
+	err = m.Up()
+	if err != nil {
+		if err.Error() != "no change" {
+			log.Fatal().Caller().Err(err).Msg("Failed to migrate database")
+		}
+		log.Info().Caller().Msg("No database changes")
+	} else {
+		log.Info().Caller().Msg("Migrated database")
+
+	}
+
+	conn.Close() // close sql connection since we use pgxpool pgxv5
 }

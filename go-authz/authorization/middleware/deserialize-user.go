@@ -15,10 +15,10 @@ import (
 	"authorization/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 )
 
 func DeserializeUser() gin.HandlerFunc {
@@ -64,11 +64,11 @@ func DeserializeUser() gin.HandlerFunc {
 			return
 		}
 
-		var user *domain.User = &domain.User{}
+		var user domain.User
 
 		userBytes, err := persistence.RedisClient.Get(_ctx, util.UserCachePrefix+userId).Bytes()
 		if err == nil {
-			err = json.Unmarshal(userBytes, user)
+			err = json.Unmarshal(userBytes, &user)
 			if err != nil {
 				log.Error().Caller().Err(err).Msg("error unmarshalling user")
 				ctx.Abort()
@@ -78,7 +78,7 @@ func DeserializeUser() gin.HandlerFunc {
 			userId, _ := uuid.FromString(userId)
 			user, err = uow.User.Get(userId)
 			if err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
+				if errors.Is(err, pgx.ErrNoRows) {
 					_ = ctx.Error(exception.NewNotFoundException("the user belonging to this token no logger exists"))
 				} else {
 					_ = ctx.Error(err)
@@ -93,7 +93,7 @@ func DeserializeUser() gin.HandlerFunc {
 				return
 			}
 
-			expiredDate := time.Now().Add(10 * time.Minute)
+			expiredDate := util.GetTimestampUTC().Add(10 * time.Minute)
 			errCache := persistence.RedisClient.Set(ctx, util.UserCachePrefix+userId.String(), json, time.Until(expiredDate)).Err()
 			if errCache != nil {
 				ctx.Abort()

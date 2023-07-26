@@ -3,6 +3,7 @@ package persistence
 import (
 	"authorization/domain"
 	"authorization/service"
+	"authorization/util"
 	"context"
 	"fmt"
 	"math"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/bxcodec/faker/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 
@@ -34,7 +34,6 @@ type EndpointYAML struct {
 }
 
 type RoleYAML struct {
-	ID        ulid.ULID       `yaml:"id"`
 	Name      domain.RoleType `yaml:"name"`
 	Endpoints []struct {
 		Name string `yaml:"name"`
@@ -66,7 +65,7 @@ func Execute(pool *pgxpool.Pool, seedMethodNames ...string) {
 }
 
 func seed(s Seed, seedMethodName string) {
-	start := time.Now()
+	start := util.GetTimestampUTC()
 	// Get the reflect value of the method
 	m := reflect.ValueOf(s).MethodByName(seedMethodName)
 	// Exit if the method doesn't exist
@@ -81,7 +80,7 @@ func seed(s Seed, seedMethodName string) {
 }
 
 func generateUsers(jobs chan<- domain.User) {
-	now := time.Now()
+	now := util.GetTimestampUTC()
 	for i := 0; i < 1_111_111; i++ {
 		userId := uuid.NewV4()
 		user_data := domain.User{
@@ -150,7 +149,7 @@ func userSeedBatchRoutine(pool *pgxpool.Pool, user_list []domain.User, counter, 
 	tx, err := uow.Begin(ctx)
 
 	for _, user := range user_list {
-		_, userErr := uow.User.Add(&user, tx)
+		_, userErr := uow.User.Add(user, tx)
 		if userErr != nil {
 			log.Error().Caller().Err(err).Msg("Failed to insert users")
 		}
@@ -163,7 +162,7 @@ func userSeedBatchRoutine(pool *pgxpool.Pool, user_list []domain.User, counter, 
 	log.Info().Caller().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
 }
 
-func _(pool *pgxpool.Pool, user_data *domain.User, counter, workerIndex int) {
+func _(pool *pgxpool.Pool, user_data domain.User, counter, workerIndex int) {
 	uow, err := service.NewUnitOfWork(pool)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
@@ -228,7 +227,7 @@ func (s Seed) AccessSeed() {
 	}
 
 	for _, role := range roleYAML {
-		roleData := domain.NewRole(role.ID, role.Name)
+		roleData := domain.NewRole(role.Name)
 		for _, endpoint := range role.Endpoints {
 			if val, ok := cachedEndpoint[endpoint.Name]; ok {
 				roleData.Endpoints.Add(val)

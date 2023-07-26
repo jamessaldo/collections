@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func SaveFileToLocal(fileName string, file *multipart.FileHeader) error {
+func SaveFileToLocal(fileName string, file multipart.FileHeader) error {
 	// create a new file for the avatar
 	filePath := filepath.Join(config.StorageConfig.StaticRoot, config.StorageConfig.StaticAvatarPath, fileName)
 	avatarFile, err := os.Create(filePath)

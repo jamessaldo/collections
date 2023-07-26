@@ -2,7 +2,6 @@ package util
 
 import (
 	"authorization/config"
-	"authorization/domain"
 	"fmt"
 	"time"
 
@@ -13,8 +12,24 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func CreateToken(userID uuid.UUID, ttl time.Duration, privateKey string) (*domain.TokenDetails, error) {
-	now := time.Now().UTC()
+type TokenDetails struct {
+	Token     *string
+	TokenUlid ulid.ULID
+	UserID    uuid.UUID
+	ExpiresIn *int64
+}
+
+func NewTokenDetails(token string, tokenUlid ulid.ULID, userID uuid.UUID, expiresIn int64) *TokenDetails {
+	return &TokenDetails{
+		Token:     &token,
+		TokenUlid: tokenUlid,
+		UserID:    userID,
+		ExpiresIn: &expiresIn,
+	}
+}
+
+func CreateToken(userID uuid.UUID, ttl time.Duration, privateKey string) (*TokenDetails, error) {
+	now := GetTimestampUTC()
 
 	decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
@@ -41,11 +56,11 @@ func CreateToken(userID uuid.UUID, ttl time.Duration, privateKey string) (*domai
 		return nil, fmt.Errorf("create: sign token: %w", err)
 	}
 
-	td := domain.NewTokenDetails(token, atClaims["token_ulid"].(ulid.ULID), userID, atClaims["exp"].(int64))
+	td := NewTokenDetails(token, atClaims["token_ulid"].(ulid.ULID), userID, atClaims["exp"].(int64))
 	return td, nil
 }
 
-func ValidateToken(token string, publicKey string) (*domain.TokenDetails, error) {
+func ValidateToken(token string, publicKey string) (*TokenDetails, error) {
 	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode: %w", err)
@@ -82,21 +97,7 @@ func ValidateToken(token string, publicKey string) (*domain.TokenDetails, error)
 		return nil, fmt.Errorf("validate: get expiration time: %w", err)
 	}
 
-	td := domain.NewTokenDetails(token, tokenUlid, uuid.FromStringOrNil(fmt.Sprint(claims["sub"])), expirationIn.Unix())
+	td := NewTokenDetails(token, tokenUlid, uuid.FromStringOrNil(fmt.Sprint(claims["sub"])), expirationIn.Unix())
 
 	return td, nil
-}
-
-func GenerateTokens(user *domain.User) (*domain.TokenDetails, *domain.TokenDetails, error) {
-	token, err := CreateToken(user.ID, config.AppConfig.AccessTokenExpiresIn, config.AppConfig.AccessTokenPrivateKey)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	refreshToken, err := CreateToken(user.ID, config.AppConfig.RefreshTokenExpiresIn, config.AppConfig.RefreshTokenPrivateKey)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return token, refreshToken, nil
 }

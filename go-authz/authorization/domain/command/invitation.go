@@ -10,7 +10,7 @@ import (
 type InviteMember struct {
 	TeamID   uuid.UUID `json:"team_id"`
 	Invitees []Invitee `json:"invitees"`
-	Sender   *domain.User
+	Sender   domain.User
 	Command
 }
 
@@ -23,19 +23,19 @@ type Invitee struct {
 type UpdateInvitationStatus struct {
 	InvitationID ulid.ULID `json:"invitation_id"`
 	Status       string    `json:"status"`
-	User         *domain.User
+	User         domain.User
 	Command
 }
 
 type DeleteInvitation struct {
 	InvitationID ulid.ULID `json:"invitation_id"`
-	User         *domain.User
+	User         domain.User
 	Command
 }
 
 type ResendInvitation struct {
 	InvitationID ulid.ULID `json:"invitation_id"`
 	TeamID       uuid.UUID `json:"team_id"`
-	Sender       *domain.User
+	Sender       domain.User
 	Command
 }

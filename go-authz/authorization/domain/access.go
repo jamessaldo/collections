@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"authorization/util"
 	"encoding/json"
 	"time"
 
@@ -83,8 +84,9 @@ type Access struct {
 	Endpoint  Endpoint
 }
 
-func NewRole(id ulid.ULID, name RoleType) *Role {
-	return &Role{ID: id, Name: name}
+func NewRole(name RoleType) Role {
+	now := util.GetTimestampUTC()
+	return Role{ID: ulid.Make(), Name: name, CreatedAt: now, UpdatedAt: now}
 }
 
 func NewEndpoint(name, path, method string) Endpoint {

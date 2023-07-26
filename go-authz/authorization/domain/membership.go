@@ -11,30 +11,30 @@ import (
 )
 
 type Team struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;"`
-	Name        string    `gorm:"size:100;not null;"`
-	Description string    `gorm:"size:100;not null;"`
-	IsPersonal  bool      `gorm:"default:false;"`
-	AvatarURL   string    `gorm:"default:'';"`
-	CreatorID   uuid.UUID `gorm:"type:uuid;not null"`
-	Creator     *User     `gorm:"foreignkey:CreatorID;references:ID"`
+	ID          uuid.UUID
+	Name        string
+	Description string
+	IsPersonal  bool
+	AvatarURL   string
+	CreatorID   uuid.UUID
+	Creator     *User
 	Memberships []Membership
-	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP"`
-	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Membership struct {
-	ID     uuid.UUID `gorm:"type:uuid;primary_key;"`
-	TeamID uuid.UUID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:membership_idx"`
+	ID     uuid.UUID
+	TeamID uuid.UUID
 	Team   *Team
-	UserID uuid.UUID `gorm:"type:uuid;not null;primaryKey;uniqueIndex:membership_idx"`
+	UserID uuid.UUID
 	User   *User
-	RoleID ulid.ULID `gorm:"type:bytea;not null;primaryKey;uniqueIndex:membership_idx"`
+	RoleID ulid.ULID
 	Role   *Role
 
-	LastActiveAt *time.Time `gorm:"default:CURRENT_TIMESTAMP"`
-	CreatedAt    time.Time  `gorm:"default:CURRENT_TIMESTAMP"`
-	UpdatedAt    time.Time  `gorm:"default:CURRENT_TIMESTAMP"`
+	LastActiveAt time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 func (m *Membership) Parse() *dto.MembershipRetrievalSchema {
@@ -101,7 +101,7 @@ func (m *Membership) Validation(userID, teamID uuid.UUID, requestedRole RoleType
 	return nil
 }
 
-func NewTeam(user *User, roleID ulid.ULID, name, description string, isPersonal bool) *Team {
+func NewTeam(user User, roleID ulid.ULID, name, description string, isPersonal bool) *Team {
 	teamID := uuid.NewV4()
 
 	membership := Membership{

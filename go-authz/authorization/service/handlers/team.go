@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/oklog/ulid/v2"
 )
@@ -123,9 +122,9 @@ func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActive
 		return exception.NewNotFoundException("Team is not found")
 	}
 
-	lastActiveAt := time.Now()
+	lastActiveAt := util.GetTimestampUTC()
 	membership := memberships[0]
-	membership.LastActiveAt = &lastActiveAt
+	membership.LastActiveAt = lastActiveAt
 
 	_, err = uow.Membership.Update(&membership, tx)
 	if err != nil {

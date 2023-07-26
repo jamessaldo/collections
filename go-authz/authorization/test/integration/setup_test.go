@@ -29,7 +29,7 @@ func TestDocker(t *testing.T) {
 }
 
 var (
-	Db            *pgxpool.Pool
+	Pool          *pgxpool.Pool
 	cleanupDocker func()
 	Bus           *service.MessageBus
 )
@@ -37,7 +37,7 @@ var (
 var _ = BeforeSuite(func() {
 	zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	// setup *pgxpool.Pool with docker
-	Db, cleanupDocker = setupGormWithDocker()
+	Pool, cleanupDocker = setupPoolWithDocker()
 })
 
 var _ = AfterSuite(func() {
@@ -47,31 +47,22 @@ var _ = AfterSuite(func() {
 
 var _ = BeforeEach(func() {
 	// clear db tables before each test
-	// err := Db.Exec(`DROP SCHEMA public CASCADE;`).Error
-	// Ω(err).To(Succeed())
-	// err = Db.Exec(`CREATE SCHEMA public;`).Error
-	// Ω(err).To(Succeed())
+	ctx := context.Background()
+	_, err := Pool.Exec(ctx, `DROP SCHEMA public CASCADE;`)
+	Ω(err).To(Succeed())
+	_, err = Pool.Exec(ctx, `CREATE SCHEMA public;`)
+	Ω(err).To(Succeed())
 
 	_, filename, _, _ := runtime.Caller(0)
 	dir := path.Join(path.Dir(filename), "..", "..")
-	err := os.Chdir(dir)
+	err = os.Chdir(dir)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to change directory")
 	}
 
-	// err = Db.AutoMigrate(
-	// 	&domain.User{},
-	// 	&domain.Endpoint{},
-	// 	&domain.Role{},
-	// 	&domain.Access{},
-	// 	&domain.Team{},
-	// 	&domain.Membership{},
-	// 	&domain.Invitation{})
-	// if err != nil {
-	// 	log.Fatal().Caller().Err(err).Msg("Failed to migrate database")
-	// }
+	persistence.Migration(Pool)
 
-	uow, err := service.NewUnitOfWork(Db)
+	uow, err := service.NewUnitOfWork(Pool)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
 	}
@@ -87,10 +78,10 @@ var _ = BeforeEach(func() {
 
 	Bus = service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer)
 
-	persistence.Execute(Db, "AccessSeed")
+	persistence.Execute(Pool, "AccessSeed")
 })
 
-func setupGormWithDocker() (*pgxpool.Pool, func()) {
+func setupPoolWithDocker() (*pgxpool.Pool, func()) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
@@ -119,17 +110,13 @@ func setupGormWithDocker() (*pgxpool.Pool, func()) {
 	var gpool *pgxpool.Pool
 	// retry until db server is ready
 	err = pool.Retry(func() error {
-		gpool, err = pgxpool.New(context.Background(), dsn)
+		ctx := context.Background()
+		gpool, err = pgxpool.New(ctx, dsn)
 		if err != nil {
 			return err
 		}
-		return nil
 
-		// db, err := gdb.DB()
-		// if err != nil {
-		// 	return err
-		// }
-		// return db.Ping()
+		return gpool.Ping(ctx)
 	})
 	chk(err)
 

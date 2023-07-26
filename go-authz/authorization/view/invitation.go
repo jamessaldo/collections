@@ -7,14 +7,14 @@ import (
 	"authorization/service"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/oklog/ulid/v2"
-	"gorm.io/gorm"
 )
 
 func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreivalSchema, error) {
 	invitation, err := uow.Invitation.Get(id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
 		}
 		return nil, err
@@ -22,7 +22,7 @@ func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreival
 
 	team, err := uow.Team.Get(invitation.TeamID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
 		}
 		return nil, err

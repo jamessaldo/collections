@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"context"
 
@@ -22,8 +21,8 @@ type roleRepository struct {
 
 // roleRepository implements the RoleRepository interface
 type RoleRepository interface {
-	Save(context.Context, pgx.Tx, *domain.Role) error
-	Get(context.Context, domain.RoleType) (*domain.Role, error)
+	Save(context.Context, pgx.Tx, domain.Role) error
+	Get(context.Context, domain.RoleType) (domain.Role, error)
 	GetAccess(context.Context, uuid.UUID, uuid.UUID, domain.Endpoint) (domain.Access, error)
 }
 
@@ -31,11 +30,11 @@ func NewRoleRepository(pool *pgxpool.Pool) RoleRepository {
 	return &roleRepository{pool: pool}
 }
 
-func (repo *roleRepository) Save(ctx context.Context, tx pgx.Tx, role *domain.Role) error {
+func (repo *roleRepository) Save(ctx context.Context, tx pgx.Tx, role domain.Role) error {
 	query := `
 		INSERT INTO roles (id, name, endpoints, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT (id) DO UPDATE SET
+		ON CONFLICT (name) DO UPDATE SET
 			name = $2,
 			endpoints = $3,
 			updated_at = $5
@@ -52,8 +51,8 @@ func (repo *roleRepository) Save(ctx context.Context, tx pgx.Tx, role *domain.Ro
 		role.ID,
 		role.Name,
 		endpoints,
-		time.Now(),
-		time.Now(),
+		role.CreatedAt,
+		role.UpdatedAt,
 	)
 	if err != nil {
 		return err
@@ -62,39 +61,33 @@ func (repo *roleRepository) Save(ctx context.Context, tx pgx.Tx, role *domain.Ro
 	return nil
 }
 
-func (repo *roleRepository) Get(ctx context.Context, name domain.RoleType) (*domain.Role, error) {
+func (repo *roleRepository) Get(ctx context.Context, name domain.RoleType) (domain.Role, error) {
 	query := `
-		SELECT id, name, endpoints, created_at, updated_at
+		SELECT id, name, created_at, updated_at, endpoints
 		FROM roles
 		WHERE name = $1
 	`
 
-	var role *domain.Role
+	var role domain.Role
 	var endpointsJSON []byte
 
-	err := repo.pool.QueryRow(
+	row := repo.pool.QueryRow(
 		ctx,
 		query,
 		name,
-	).Scan(
-		role.ID,
-		role.Name,
-		endpointsJSON,
-		role.CreatedAt,
-		role.UpdatedAt,
 	)
 
-	if err != nil {
+	if err := row.Scan(&role.ID, &role.Name, &role.CreatedAt, &role.UpdatedAt, &endpointsJSON); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, exception.NewNotFoundException(fmt.Sprintf("Role with name %s does not exist", name))
+			return domain.Role{}, exception.NewNotFoundException(fmt.Sprintf("Role with name %s does not exist", name))
 		}
-		return nil, err
+		return domain.Role{}, err
 	}
 
-	err = json.Unmarshal(endpointsJSON, role.Endpoints)
+	err := json.Unmarshal(endpointsJSON, &role.Endpoints)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to unmarshal endpoints")
-		return nil, err
+		return domain.Role{}, err
 	}
 
 	return role, nil
@@ -123,7 +116,7 @@ func (repo *roleRepository) GetAccess(ctx context.Context, teamID, userID uuid.U
 		return domain.Access{}, err
 	}
 
-	err = json.Unmarshal(endpointsJSON, endpoints)
+	err = json.Unmarshal(endpointsJSON, &endpoints)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to unmarshal endpoints")

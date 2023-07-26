@@ -26,19 +26,9 @@ func NewBootstraps() (*asynq.Client, *Bootstraps) {
 
 	persistence.ConnectRedis()
 
-	// err = persistence.DBConnection.AutoMigrate(
-	// 	&domain.User{},
-	// 	&domain.Endpoint{},
-	// 	&domain.Role{},
-	// 	&domain.Access{},
-	// 	&domain.Membership{},
-	// 	&domain.Team{},
-	// 	&domain.Invitation{})
-	// if err != nil {
-	// 	log.Fatal().Caller().Err(err).Msg("Failed to migrate database")
-	// }
+	persistence.Migration(nil)
 
-	uow, err := service.NewUnitOfWork(persistence.DBConnection)
+	uow, err := service.NewUnitOfWork(persistence.Pool)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
 	}

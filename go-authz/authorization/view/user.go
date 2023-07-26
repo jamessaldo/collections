@@ -11,9 +11,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/redis/go-redis/v9"
 	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 )
 
 func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, error) {
@@ -31,7 +31,7 @@ func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, e
 
 	user, err := uow.User.Get(uuid.FromStringOrNil(userId))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return "", exception.NewNotFoundException(err.Error())
 		}
 		return "", err
@@ -42,7 +42,7 @@ func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, e
 		return "", err
 	}
 
-	now := time.Now()
+	now := util.GetTimestampUTC()
 
 	errAccess := persistence.RedisClient.Set(ctx, *accessToken.Token, user.ID.String(), time.Unix(*accessToken.ExpiresIn, 0).Sub(now)).Err()
 	if errAccess != nil {
@@ -55,7 +55,7 @@ func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, e
 func User(id uuid.UUID, uow *service.UnitOfWork) (*dto.PublicUser, error) {
 	user, err := uow.User.Get(id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
 		}
 		return nil, err

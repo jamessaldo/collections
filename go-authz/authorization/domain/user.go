@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"authorization/config"
 	"authorization/domain/dto"
+	"authorization/util"
 	"fmt"
 	"html"
 	"math/rand"
@@ -12,21 +14,21 @@ import (
 )
 
 type User struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;"`
-	FirstName   string    `gorm:"size:100;not null;"`
-	LastName    string    `gorm:"size:100;not null;"`
-	Email       string    `gorm:"size:100;not null;unique"`
-	Username    string    `gorm:"size:100;not null;unique"`
-	Password    string    `gorm:"size:100;not null;"`
-	PhoneNumber string    `gorm:"size:20;default:''"`
-	AvatarURL   string    `gorm:"default:'';"`
+	ID          uuid.UUID
+	FirstName   string
+	LastName    string
+	Email       string
+	Username    string
+	Password    string
+	PhoneNumber string
+	AvatarURL   string
 
-	IsActive bool   `gorm:"default:true;"`
-	Verified bool   `gorm:"default:false;"`
-	Provider string `gorm:"default:'local';"`
+	IsActive bool
+	Verified bool
+	Provider string
 
-	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
-	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Users []User
@@ -71,8 +73,6 @@ func (u *User) Prepare() {
 	u.LastName = html.EscapeString(strings.TrimSpace(u.LastName))
 	u.Email = html.EscapeString(strings.TrimSpace(u.Email))
 	u.Username = html.EscapeString(strings.TrimSpace(u.Username))
-	u.CreatedAt = time.Now()
-	u.UpdatedAt = time.Now()
 }
 
 func (u *User) FullName() string {
@@ -102,11 +102,25 @@ func (u *User) RegenerateUsername() {
 	u.Username = fmt.Sprintf("%s%d", u.Username, number)
 }
 
-func NewUser(firstName, lastName, email, avatarURL, provider string, isVerified bool) *User {
-	now := time.Now()
+func (user *User) GenerateTokens() (*util.TokenDetails, *util.TokenDetails, error) {
+	token, err := util.CreateToken(user.ID, config.AppConfig.AccessTokenExpiresIn, config.AppConfig.AccessTokenPrivateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	refreshToken, err := util.CreateToken(user.ID, config.AppConfig.RefreshTokenExpiresIn, config.AppConfig.RefreshTokenPrivateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return token, refreshToken, nil
+}
+
+func NewUser(firstName, lastName, email, avatarURL, provider string, isVerified bool) User {
+	now := util.GetTimestampUTC()
 	username := strings.ToLower(strings.Split(email, "@")[0])
 
-	return &User{
+	return User{
 		ID:          uuid.NewV4(),
 		FirstName:   firstName,
 		LastName:    lastName,

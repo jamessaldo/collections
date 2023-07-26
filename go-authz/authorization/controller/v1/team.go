@@ -60,7 +60,7 @@ func (ctrl *teamController) Routes(route *gin.RouterGroup) {
 func (ctrl *teamController) GetTeamById(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	uow := bus.UoW
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
@@ -93,7 +93,7 @@ func (ctrl *teamController) GetTeams(ctx *gin.Context) {
 	log.Debug().Caller().Msg("Get all team data")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 	uow := bus.UoW
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {
@@ -144,7 +144,7 @@ func (ctrl *teamController) GetTeams(ctx *gin.Context) {
 func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
 	log.Debug().Caller().Msg("Create team data")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Parse the request body into a User struct
 	var cmd command.CreateTeam
@@ -180,7 +180,7 @@ func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
 func (ctrl *teamController) UpdateTeam(ctx *gin.Context) {
 	log.Debug().Caller().Msg("Update team data")
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
@@ -218,7 +218,7 @@ func (ctrl *teamController) UpdateTeam(ctx *gin.Context) {
 // @Router /teams/{id}/last-active [put]
 func (ctrl *teamController) UpdateLastActiveTeam(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
@@ -253,7 +253,7 @@ func (ctrl *teamController) UpdateLastActiveTeam(ctx *gin.Context) {
 // @Router /teams/{id}/members/{membership_id} [delete]
 func (ctrl *teamController) DeleteTeamMember(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
@@ -292,7 +292,7 @@ func (ctrl *teamController) DeleteTeamMember(ctx *gin.Context) {
 // @Router /teams/{id}/members/{membership_id} [put]
 func (ctrl *teamController) ChangeMemberRole(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
@@ -335,7 +335,7 @@ func (ctrl *teamController) ChangeMemberRole(ctx *gin.Context) {
 // @Router /teams/{id}/invitation [post]
 func (ctrl *teamController) SendInvitation(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")
@@ -376,7 +376,7 @@ func (ctrl *teamController) SendInvitation(ctx *gin.Context) {
 // @Router /teams/{id}/invitation/{invitation_id} [post]
 func (ctrl *teamController) ResendInvitation(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get team ID from request parameter
 	id := ctx.Param("id")

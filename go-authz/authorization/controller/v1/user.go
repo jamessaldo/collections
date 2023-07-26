@@ -55,7 +55,7 @@ func (ctrl *userController) Routes(route *gin.RouterGroup) {
 // @Success 200 {object} dto.ProfileUser
 // @Router /users/me [get]
 func (ctrl *userController) GetMe(ctx *gin.Context) {
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"user": currentUser.ProfileUser()}})
 }
 
@@ -157,7 +157,7 @@ func (ctrl *userController) GetUsers(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /users [put]
 func (ctrl *userController) UpdateUser(ctx *gin.Context) {
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 	bus := ctx.MustGet("bus").(*service.MessageBus)
 
 	// Parse the request body into a User struct
@@ -191,7 +191,7 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 // @Router /users [delete]
 func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	cmd := command.DeleteUser{
 		User: currentUser,
@@ -218,7 +218,7 @@ func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 // @Router /users/avatar [put]
 func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateUserAvatar
@@ -251,7 +251,7 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 // @Router /users/avatar [delete]
 func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
 	bus := ctx.MustGet("bus").(*service.MessageBus)
-	currentUser := ctx.MustGet("currentUser").(*domain.User)
+	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	cmd := command.DeleteUserAvatar{
 		User: currentUser,

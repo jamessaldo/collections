@@ -13,7 +13,7 @@ type TeamRetrievalSchema struct {
 	AvatarURL    string                       `json:"avatar_url"`
 	IsPersonal   bool                         `json:"is_personal"`
 	Creator      interface{}                  `json:"creator"`
-	LastActiveAt *time.Time                   `json:"last_active_at,omitempty"`
+	LastActiveAt time.Time                    `json:"last_active_at,omitempty"`
 	NumOfMembers int64                        `json:"num_of_members,omitempty"`
 	Memberships  []*MembershipRetrievalSchema `json:"memberships,omitempty"`
 

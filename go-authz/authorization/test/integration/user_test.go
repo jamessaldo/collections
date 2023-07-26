@@ -5,20 +5,19 @@ import (
 	"authorization/domain/command"
 	"authorization/domain/dto"
 	"authorization/service"
+	"authorization/util"
 	"authorization/view"
 	"context"
 	"errors"
-	"time"
 
-	"github.com/rs/zerolog/log"
-
+	"github.com/jackc/pgx/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 )
 
-func createUser(user *domain.User, uow *service.UnitOfWork) error {
+func createUser(user domain.User, uow *service.UnitOfWork) error {
 	ctx := context.Background()
 	tx, txErr := uow.Begin(ctx)
 	Ω(txErr).To(Succeed())
@@ -34,7 +33,7 @@ func createUser(user *domain.User, uow *service.UnitOfWork) error {
 
 	ownerRole, err := uow.Role.Get(ctx, domain.Owner)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			log.Fatal().Err(err).Msgf("Role with name %s is not exist! Detail: %s", domain.Owner, err.Error())
 			return err
 		}
@@ -59,9 +58,9 @@ var _ = Describe("User Testing", func() {
 	BeforeEach(func() {
 		uow := Bus.UoW
 
-		now := time.Now()
+		now := util.GetTimestampUTC()
 		johnUserId = uuid.NewV4()
-		user := &domain.User{
+		user := domain.User{
 			ID:        johnUserId,
 			FirstName: "John",
 			LastName:  "Doe",
@@ -106,9 +105,9 @@ var _ = Describe("User Testing", func() {
 		It("Create", func() {
 			uow := Bus.UoW
 
-			now := time.Now()
+			now := util.GetTimestampUTC()
 			janeUserId := uuid.NewV4()
-			user := &domain.User{
+			user := domain.User{
 				ID:        janeUserId,
 				FirstName: "Jane",
 				LastName:  "Doe",

@@ -8,14 +8,14 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	uuid "github.com/satori/go.uuid"
-	"gorm.io/gorm"
 )
 
-func Team(id uuid.UUID, user *domain.User, uow *service.UnitOfWork) (*dto.TeamRetrievalSchema, error) {
+func Team(id uuid.UUID, user domain.User, uow *service.UnitOfWork) (*dto.TeamRetrievalSchema, error) {
 	team, err := uow.Team.Get(id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
 		}
 		return nil, err
@@ -33,7 +33,7 @@ func Team(id uuid.UUID, user *domain.User, uow *service.UnitOfWork) (*dto.TeamRe
 	if err != nil {
 		return nil, err
 	}
-	var lastActiveAt *time.Time
+	var lastActiveAt time.Time
 	var membershipsList []*dto.MembershipRetrievalSchema
 
 	for _, membership := range memberships {
@@ -58,7 +58,7 @@ func Team(id uuid.UUID, user *domain.User, uow *service.UnitOfWork) (*dto.TeamRe
 	}, nil
 }
 
-func Teams(uow *service.UnitOfWork, user *domain.User, name string, page, pageSize int) (dto.Pagination, error) {
+func Teams(uow *service.UnitOfWork, user domain.User, name string, page, pageSize int) (dto.Pagination, error) {
 	var teams []interface{}
 	var totalMemberships int64
 

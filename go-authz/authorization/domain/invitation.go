@@ -2,6 +2,7 @@ package domain
 
 import (
 	"authorization/controller/exception"
+	"authorization/util"
 	"time"
 
 	"github.com/badoux/checkmail"
@@ -20,19 +21,19 @@ var (
 )
 
 type Invitation struct {
-	ID        ulid.ULID        `gorm:"type:bytea;primary_key"`
-	Email     string           `gorm:"size:100;not null"`
-	ExpiresAt time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
-	Status    InvitationStatus `gorm:"size:100;not null;"`
-	TeamID    uuid.UUID        `gorm:"type:uuid;not null"`
-	Team      Team             `gorm:"foreignkey:TeamID;references:ID"`
-	RoleID    ulid.ULID        `gorm:"type:bytea;not null"`
-	Role      Role             `gorm:"foreignkey:RoleID;references:ID"`
-	SenderID  uuid.UUID        `gorm:"type:uuid;not null"`
-	Sender    User             `gorm:"foreignkey:SenderID;references:ID"`
-	IsActive  bool             `gorm:"default:true"`
-	CreatedAt time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
-	UpdatedAt time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
+	ID        ulid.ULID
+	Email     string
+	ExpiresAt time.Time
+	Status    InvitationStatus
+	TeamID    uuid.UUID
+	Team      Team
+	RoleID    ulid.ULID
+	Role      Role
+	SenderID  uuid.UUID
+	Sender    User
+	IsActive  bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (invitation *Invitation) Validate(action string) map[string]string {
@@ -48,12 +49,12 @@ func (invitation *Invitation) Validate(action string) map[string]string {
 
 func (invitation *Invitation) ResendUpdate() error {
 	// check if invitation is not expired
-	if invitation.ExpiresAt.After(time.Now()) || invitation.Status != InvitationStatusExpired {
+	if invitation.ExpiresAt.After(util.GetTimestampUTC()) || invitation.Status != InvitationStatusExpired {
 		return exception.NewBadRequestException("invitation is not expired")
 	}
 
 	invitation.Status = InvitationStatusPending
-	invitation.ExpiresAt = time.Now().Add(time.Hour * 24 * 7)
+	invitation.ExpiresAt = util.GetTimestampUTC().Add(time.Hour * 24 * 7)
 	return nil
 }
 
@@ -70,7 +71,7 @@ func NewInvitation(email string, status InvitationStatus, teamID, senderID uuid.
 	return &Invitation{
 		ID:        ulid.Make(),
 		Email:     email,
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 7),
+		ExpiresAt: util.GetTimestampUTC().Add(time.Hour * 24 * 7),
 		Status:    status,
 		TeamID:    teamID,
 		RoleID:    roleID,
