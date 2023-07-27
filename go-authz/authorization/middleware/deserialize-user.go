@@ -100,7 +100,7 @@ func DeserializeUser() gin.HandlerFunc {
 				return
 			}
 
-			log.Info().Caller().Str("userId", user.ID.String()).Msg("ga cached!")
+			log.Info().Caller().Str("userId", user.ID.String()).Msg("Cannot find user in cache, fetching from database")
 		}
 
 		if !user.IsActive {
