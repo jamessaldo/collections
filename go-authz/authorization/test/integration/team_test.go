@@ -3,7 +3,6 @@ package integration
 import (
 	"authorization/domain"
 	"authorization/domain/command"
-	"authorization/util"
 	"authorization/view"
 	"context"
 
@@ -124,12 +123,29 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(err).To(Succeed())
 
 			var invitation domain.Invitation
-			err = Bus.UoW.GetDB().QueryRow(context.Background(), "SELECT * FROM invitations WHERE team_id = ? AND email = ?", janeTeam.TeamID, "james@mail.com").Scan(&invitation)
+			row := Bus.UoW.GetDB().QueryRow(
+				context.Background(),
+				`SELECT i.id, i.email, i.expires_at, i.status, i.team_id, i.role_id, 
+				i.sender_id, i.is_active, i.created_at, i.updated_at FROM invitations i 
+				WHERE team_id = $1 AND email = $2`, janeTeam.TeamID, "james@mail.com")
+			err = row.Scan(
+				&invitation.ID,
+				&invitation.Email,
+				&invitation.ExpiresAt,
+				&invitation.Status,
+				&invitation.TeamID,
+				&invitation.RoleID,
+				&invitation.SenderID,
+				&invitation.IsActive,
+				&invitation.CreatedAt,
+				&invitation.UpdatedAt,
+			)
 			Ω(err).To(Succeed())
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
 			Ω(invitation.Email).To(Equal("james@mail.com"))
 		})
 		It("Verify invitation", func() {
+			ctx := context.Background()
 			cmd := command.InviteMember{
 				TeamID: janeTeam.TeamID,
 				Invitees: []command.Invitee{
@@ -144,7 +160,23 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(err).To(Succeed())
 
 			var invitation domain.Invitation
-			err = Bus.UoW.GetDB().QueryRow(context.Background(), "SELECT * FROM invitations WHERE team_id = ? AND email = ?", janeTeam.TeamID, "james@mail.com").Scan(&invitation)
+			row := Bus.UoW.GetDB().QueryRow(
+				ctx,
+				`SELECT i.id, i.email, i.expires_at, i.status, i.team_id, i.role_id, 
+				i.sender_id, i.is_active, i.created_at, i.updated_at FROM invitations i 
+				WHERE team_id = $1 AND email = $2`, janeTeam.TeamID, "james@mail.com")
+			err = row.Scan(
+				&invitation.ID,
+				&invitation.Email,
+				&invitation.ExpiresAt,
+				&invitation.Status,
+				&invitation.TeamID,
+				&invitation.RoleID,
+				&invitation.SenderID,
+				&invitation.IsActive,
+				&invitation.CreatedAt,
+				&invitation.UpdatedAt,
+			)
 			Ω(err).To(Succeed())
 
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
@@ -152,25 +184,36 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(invitation.Status).To(Equal(domain.InvitationStatusPending))
 
 			invitation.Status = domain.InvitationStatusSent
-			tx, err := Bus.UoW.Begin(context.Background())
+			tx, err := Bus.UoW.Begin(ctx)
 			Ω(err).To(Succeed())
-			invitation, _ = Bus.UoW.Invitation.Update(invitation, tx)
+
+			err = Bus.UoW.Invitation.Update(invitation, tx)
+			Ω(err).To(Succeed())
+			tx.Commit(ctx)
+
+			row = Bus.UoW.GetDB().QueryRow(
+				ctx,
+				`SELECT i.id, i.email, i.expires_at, i.status, i.team_id, i.role_id, 
+				i.sender_id, i.is_active, i.created_at, i.updated_at FROM invitations i 
+				WHERE team_id = $1 AND email = $2`, janeTeam.TeamID, "james@mail.com")
+			err = row.Scan(
+				&invitation.ID,
+				&invitation.Email,
+				&invitation.ExpiresAt,
+				&invitation.Status,
+				&invitation.TeamID,
+				&invitation.RoleID,
+				&invitation.SenderID,
+				&invitation.IsActive,
+				&invitation.CreatedAt,
+				&invitation.UpdatedAt,
+			)
+			Ω(err).To(Succeed())
+			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
+			Ω(invitation.Email).To(Equal("james@mail.com"))
 			Ω(invitation.Status).To(Equal(domain.InvitationStatusSent))
 
-			now := util.GetTimestampUTC()
-
-			james := domain.User{
-				ID:        uuid.NewV4(),
-				FirstName: "James",
-				LastName:  "Doe",
-				Email:     "james@mail.com",
-				Username:  "jamesdoe",
-				Provider:  "Google",
-				Verified:  true,
-				CreatedAt: now,
-				UpdatedAt: now,
-			}
-
+			james := domain.NewUser("James", "Doe", "james@mail.com", "", "Google", true)
 			err = createUser(james, Bus.UoW)
 			Ω(err).To(Succeed())
 
@@ -182,7 +225,23 @@ var _ = Describe("Team Testing", Ordered, func() {
 			err = Bus.Handle(&cmdVerify)
 			Ω(err).To(Succeed())
 
-			err = Bus.UoW.GetDB().QueryRow(context.Background(), "SELECT * FROM invitations WHERE team_id = ? AND email = ?", janeTeam.TeamID, "james@mail.com").Scan(&invitation)
+			row = Bus.UoW.GetDB().QueryRow(
+				ctx,
+				`SELECT i.id, i.email, i.expires_at, i.status, i.team_id, i.role_id,
+				i.sender_id, i.is_active, i.created_at, i.updated_at FROM invitations i
+				WHERE team_id = $1 AND email = $2`, janeTeam.TeamID, "james@mail.com")
+			err = row.Scan(
+				&invitation.ID,
+				&invitation.Email,
+				&invitation.ExpiresAt,
+				&invitation.Status,
+				&invitation.TeamID,
+				&invitation.RoleID,
+				&invitation.SenderID,
+				&invitation.IsActive,
+				&invitation.CreatedAt,
+				&invitation.UpdatedAt,
+			)
 			Ω(err).To(Succeed())
 			Ω(invitation.TeamID).To(Equal(janeTeam.TeamID))
 			Ω(invitation.Email).To(Equal("james@mail.com"))

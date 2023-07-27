@@ -30,12 +30,3 @@ func Authorization(userID string, method string, path string, uow *service.UnitO
 
 	return true, nil
 }
-
-func containsEndpoint(endpoints []*domain.Endpoint, endpoint *domain.Endpoint) bool {
-	for _, e := range endpoints {
-		if e == endpoint {
-			return true
-		}
-	}
-	return false
-}

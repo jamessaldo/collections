@@ -16,6 +16,7 @@ type userRepository struct {
 
 type UserRepository interface {
 	Add(domain.User, pgx.Tx) (domain.User, error)
+	AddBatch(domain.Users, pgx.Tx) error
 	Update(domain.User, pgx.Tx) (domain.User, error)
 	Get(uuid.UUID) (domain.User, error)
 	List(page, pageSize int) (domain.Users, error)
@@ -37,6 +38,38 @@ func (repo *userRepository) Add(user domain.User, tx pgx.Tx) (domain.User, error
 		return domain.User{}, err
 	}
 	return user, nil
+}
+
+func (repo *userRepository) AddBatch(users domain.Users, tx pgx.Tx) error {
+	// Create a slice of rows to hold the user data.
+	var rows [][]interface{}
+	for _, user := range users {
+		rows = append(rows, []interface{}{
+			user.ID,
+			user.FirstName,
+			user.LastName,
+			user.Email,
+			user.Username,
+			user.Password,
+			user.PhoneNumber,
+			user.AvatarURL,
+			user.IsActive,
+			user.Verified,
+			user.Provider,
+			user.CreatedAt,
+			user.UpdatedAt,
+		})
+	}
+
+	// Perform the bulk insert using pgx.CopyFrom.
+	_, err := tx.CopyFrom(context.Background(), pgx.Identifier{"users"}, []string{
+		"id", "first_name", "last_name", "email", "username", "password", "phone_number", "avatar_url", "is_active", "verified", "provider", "created_at", "updated_at",
+	}, pgx.CopyFromRows(rows))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repo *userRepository) Update(user domain.User, tx pgx.Tx) (domain.User, error) {

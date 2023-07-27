@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 )
@@ -22,7 +23,8 @@ type roleRepository struct {
 // roleRepository implements the RoleRepository interface
 type RoleRepository interface {
 	Save(context.Context, pgx.Tx, domain.Role) error
-	Get(context.Context, domain.RoleType) (domain.Role, error)
+	Get(context.Context, ulid.ULID) (domain.Role, error)
+	GetByName(context.Context, domain.RoleType) (domain.Role, error)
 	GetAccess(context.Context, uuid.UUID, uuid.UUID, domain.Endpoint) (domain.Access, error)
 }
 
@@ -61,7 +63,39 @@ func (repo *roleRepository) Save(ctx context.Context, tx pgx.Tx, role domain.Rol
 	return nil
 }
 
-func (repo *roleRepository) Get(ctx context.Context, name domain.RoleType) (domain.Role, error) {
+func (repo *roleRepository) Get(ctx context.Context, id ulid.ULID) (domain.Role, error) {
+	query := `
+		SELECT id, name, created_at, updated_at, endpoints
+		FROM roles
+		WHERE id = $1
+	`
+
+	var role domain.Role
+	var endpointsJSON []byte
+
+	row := repo.pool.QueryRow(
+		ctx,
+		query,
+		id,
+	)
+
+	if err := row.Scan(&role.ID, &role.Name, &role.CreatedAt, &role.UpdatedAt, &endpointsJSON); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Role{}, exception.NewNotFoundException(fmt.Sprintf("Role with id %s does not exist", id))
+		}
+		return domain.Role{}, err
+	}
+
+	err := json.Unmarshal(endpointsJSON, &role.Endpoints)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to unmarshal endpoints")
+		return domain.Role{}, err
+	}
+
+	return role, nil
+}
+
+func (repo *roleRepository) GetByName(ctx context.Context, name domain.RoleType) (domain.Role, error) {
 	query := `
 		SELECT id, name, created_at, updated_at, endpoints
 		FROM roles

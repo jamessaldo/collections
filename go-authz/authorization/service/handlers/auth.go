@@ -65,7 +65,7 @@ func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *
 			return userErr
 		}
 
-		ownerRole, roleErr := uow.Role.Get(ctx, domain.Owner)
+		ownerRole, roleErr := uow.Role.GetByName(ctx, domain.Owner)
 		if roleErr != nil {
 			return roleErr
 		}

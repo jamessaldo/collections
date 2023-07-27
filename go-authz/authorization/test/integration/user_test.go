@@ -30,7 +30,7 @@ func createUser(user domain.User, uow *service.UnitOfWork) error {
 		return err
 	}
 
-	ownerRole, err := uow.Role.Get(ctx, domain.Owner)
+	ownerRole, err := uow.Role.GetByName(ctx, domain.Owner)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			log.Fatal().Err(err).Msgf("Role with name %s is not exist! Detail: %s", domain.Owner, err.Error())

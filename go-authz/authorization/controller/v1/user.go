@@ -81,8 +81,8 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 	_ctx := context.TODO()
 	userBytes, err := persistence.RedisClient.Get(_ctx, util.UserCachePrefix+id).Bytes()
 	if err == nil {
-		var userCache *domain.User = &domain.User{}
-		err = json.Unmarshal(userBytes, userCache)
+		var userCache domain.User = domain.User{}
+		err = json.Unmarshal(userBytes, &userCache)
 		if err == nil {
 			user = userCache.PublicUser()
 		}

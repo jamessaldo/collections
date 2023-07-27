@@ -61,7 +61,7 @@ func (repo *teamRepository) Add(team domain.Team, tx pgx.Tx) (domain.Team, error
 	_, err = tx.Exec(
 		context.Background(),
 		query,
-		uuid.NewV4(),
+		team.Memberships[0].ID,
 		team.ID,
 		team.CreatorID,
 		team.Memberships[0].RoleID,
@@ -78,10 +78,11 @@ func (repo *teamRepository) Add(team domain.Team, tx pgx.Tx) (domain.Team, error
 }
 
 func (repo *teamRepository) Update(team domain.Team, tx pgx.Tx) (domain.Team, error) {
+
 	query := `
 		UPDATE teams
 		SET name = $2, description = $3, is_personal = $4, avatar_url = $5, creator_id = $6, updated_at = $7
-		WHERE id = $1
+		WHERE id = $1	
 	`
 
 	_, err := tx.Exec(
@@ -98,6 +99,30 @@ func (repo *teamRepository) Update(team domain.Team, tx pgx.Tx) (domain.Team, er
 
 	if err != nil {
 		return domain.Team{}, err
+	}
+
+	for _, membership := range team.Memberships {
+		q := `
+			INSERT INTO memberships (id, team_id, user_id, role_id, last_active_at, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			ON CONFLICT (id) DO NOTHING
+		`
+
+		_, err = tx.Exec(
+			context.Background(),
+			q,
+			membership.ID,
+			team.ID,
+			team.CreatorID,
+			membership.RoleID,
+			util.GetTimestampUTC(),
+			util.GetTimestampUTC(),
+			util.GetTimestampUTC(),
+		)
+
+		if err != nil {
+			return domain.Team{}, err
+		}
 	}
 
 	return team, nil

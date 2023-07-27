@@ -34,7 +34,7 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 		tx.Rollback(ctx)
 	}()
 
-	ownerRole, err := uow.Role.Get(ctx, domain.Owner)
+	ownerRole, err := uow.Role.GetByName(ctx, domain.Owner)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) er
 		return err
 	}
 
-	role, err := uow.Role.Get(ctx, cmd.Role)
+	role, err := uow.Role.GetByName(ctx, cmd.Role)
 	if err != nil {
 		return err
 	}

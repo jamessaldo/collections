@@ -16,7 +16,6 @@ import (
 	"github.com/bxcodec/faker/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
-	uuid "github.com/satori/go.uuid"
 
 	"gopkg.in/yaml.v3"
 )
@@ -80,24 +79,8 @@ func seed(s Seed, seedMethodName string) {
 }
 
 func generateUsers(jobs chan<- domain.User) {
-	now := util.GetTimestampUTC()
 	for i := 0; i < 1_111_111; i++ {
-		userId := uuid.NewV4()
-		user_data := domain.User{
-			ID:        userId,
-			FirstName: faker.ChineseFirstName(),
-			LastName:  faker.ChineseLastName(),
-			Email:     faker.Email(),
-			Username:  faker.Username(),
-			Password:  "",
-			AvatarURL: "",
-			Provider:  "Google",
-			Verified:  true,
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
-
-		now = now.AddDate(0, 0, 10)
+		user_data := domain.NewUser(faker.ChineseFirstName(), faker.ChineseLastName(), faker.Email(), "", "Google", true)
 		jobs <- user_data
 	}
 }
@@ -140,7 +123,7 @@ func (s Seed) UserSeed() {
 	wg.Wait()
 }
 
-func userSeedBatchRoutine(pool *pgxpool.Pool, user_list []domain.User, counter, workerIndex int) {
+func userSeedBatchRoutine(pool *pgxpool.Pool, user_list domain.Users, counter, workerIndex int) {
 	uow, err := service.NewUnitOfWork(pool)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
@@ -148,16 +131,17 @@ func userSeedBatchRoutine(pool *pgxpool.Pool, user_list []domain.User, counter, 
 	ctx := context.Background()
 	tx, err := uow.Begin(ctx)
 
-	for _, user := range user_list {
-		_, userErr := uow.User.Add(user, tx)
-		if userErr != nil {
-			log.Error().Caller().Err(err).Msg("Failed to insert users")
-		}
-	}
-	// userErr := uow.User.AddBatch(user_list)
-	// if userErr != nil {
-	// 	log.Error().Caller().Err(err).Msg("Failed to insert users")
+	// for _, user := range user_list {
+	// 	_, userErr := uow.User.Add(user, tx)
+	// 	if userErr != nil {
+	// 		log.Error().Caller().Err(err).Msg("Failed to insert users")
+	// 	}
 	// }
+	userErr := uow.User.AddBatch(user_list, tx)
+	if userErr != nil {
+		log.Error().Caller().Err(err).Msg("Failed to insert users")
+	}
+	tx.Commit(ctx)
 
 	log.Info().Caller().Msg(fmt.Sprintf("=> worker %d inserted %d data", workerIndex, counter))
 }

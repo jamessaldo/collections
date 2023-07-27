@@ -76,5 +76,8 @@ func NewInvitation(email string, status InvitationStatus, teamID, senderID uuid.
 		TeamID:    teamID,
 		RoleID:    roleID,
 		SenderID:  senderID,
+		IsActive:  true,
+		CreatedAt: util.GetTimestampUTC(),
+		UpdatedAt: util.GetTimestampUTC(),
 	}
 }

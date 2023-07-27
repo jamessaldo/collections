@@ -59,7 +59,7 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 			continue
 		}
 
-		role, err := uow.Role.Get(ctx, invitee.Role)
+		role, err := uow.Role.GetByName(ctx, invitee.Role)
 		if err != nil {
 			return err
 		}
@@ -164,7 +164,7 @@ func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cm
 		return errSendMail
 	}
 
-	invitation, err = uow.Invitation.Update(invitation, tx)
+	err = uow.Invitation.Update(invitation, tx)
 	if err != nil {
 		return err
 	}
@@ -264,14 +264,14 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 	// update invitation
 	invitation.Status = domain.InvitationStatus(cmd.Status)
 	invitation.IsActive = false
-	invitation, err = uow.Invitation.Update(invitation, tx)
+	err = uow.Invitation.Update(invitation, tx)
 	if err != nil {
 		return err
 	}
 
 	// add team member
 	if cmd.Status == string(domain.InvitationStatusAccepted) {
-		role, err := uow.Role.Get(ctx, invitation.Role.Name)
+		role, err := uow.Role.Get(ctx, invitation.RoleID)
 		if err != nil {
 			return err
 		}
@@ -287,5 +287,6 @@ func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitati
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

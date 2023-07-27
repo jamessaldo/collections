@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oklog/ulid/v2"
-	uuid "github.com/satori/go.uuid"
 )
 
 type invitationRepository struct {
@@ -18,7 +17,7 @@ type invitationRepository struct {
 type InvitationRepository interface {
 	Add(domain.Invitation, pgx.Tx) (domain.Invitation, error)
 	AddBatch([]domain.Invitation) error
-	Update(domain.Invitation, pgx.Tx) (domain.Invitation, error)
+	Update(domain.Invitation, pgx.Tx) error
 	Get(ulid.ULID) (domain.Invitation, error)
 	List(opts domain.InvitationOptions) ([]domain.Invitation, error)
 	Delete(ulid.ULID, pgx.Tx) error
@@ -31,13 +30,14 @@ func NewInvitationRepository(pool *pgxpool.Pool) InvitationRepository {
 
 func (repo *invitationRepository) Add(invitation domain.Invitation, tx pgx.Tx) (domain.Invitation, error) {
 	query := `
-		INSERT INTO invitations (id, email, expires_at, status, team_id, role_id, sender_id, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO invitations (id, email, expires_at, status, team_id, role_id, sender_id, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id
 	`
 	_, err := tx.Exec(context.Background(), query,
 		invitation.ID, invitation.Email, invitation.ExpiresAt, invitation.Status,
 		invitation.TeamID, invitation.RoleID, invitation.SenderID, invitation.IsActive,
+		invitation.CreatedAt, invitation.UpdatedAt,
 	)
 	if err != nil {
 		return domain.Invitation{}, err
@@ -76,7 +76,7 @@ func (repo *invitationRepository) AddBatch(invitations []domain.Invitation) erro
 	return nil
 }
 
-func (repo *invitationRepository) Update(invitation domain.Invitation, tx pgx.Tx) (domain.Invitation, error) {
+func (repo *invitationRepository) Update(invitation domain.Invitation, tx pgx.Tx) error {
 	query := `
 		UPDATE invitations
 		SET email = $1, expires_at = $2, status = $3, team_id = $4, role_id = $5, sender_id = $6, is_active = $7
@@ -88,15 +88,16 @@ func (repo *invitationRepository) Update(invitation domain.Invitation, tx pgx.Tx
 		invitation.ID,
 	)
 	if err != nil {
-		return domain.Invitation{}, err
+		return err
 	}
-	return invitation, nil
+
+	return nil
 }
 
 func (repo *invitationRepository) Get(id ulid.ULID) (domain.Invitation, error) {
 	var invitation domain.Invitation
 	query := `
-		SELECT i.id, i.email, i.expires_at, i.status, i.team_id, i.role_id, i.sender_id, i.is_active,
+		SELECT i.id, i.email, i.expires_at, i.status, i.team_id, i.role_id, i.sender_id, i.is_active
 		FROM invitations i
 		WHERE i.id = $1
 	`
@@ -117,36 +118,9 @@ func (repo *invitationRepository) List(opts domain.InvitationOptions) ([]domain.
 	query := `
 		SELECT id, email, expires_at, status, team_id, role_id, sender_id, is_active
 		FROM invitations
-		WHERE 1=1
+		WHERE status = ANY($1) AND email = $2 AND team_id = $3 AND role_id = $4	
 	`
-	var args []interface{}
-
-	if len(opts.Statuses) > 0 {
-		query += " AND status = ANY($1)"
-		args = append(args, opts.Statuses)
-	}
-	if opts.Email != "" {
-		query += " AND email = $2"
-		args = append(args, opts.Email)
-	}
-	if opts.TeamID != uuid.Nil {
-		query += " AND team_id = $3"
-		args = append(args, opts.TeamID)
-	}
-	if !opts.ExpiresAt.IsZero() {
-		query += " AND expires_at <= $4"
-		args = append(args, opts.ExpiresAt)
-	}
-	if opts.RoleID.String() != "" {
-		query += " AND role_id = $5"
-		args = append(args, opts.RoleID)
-	}
-	if opts.Limit > 0 {
-		query += " LIMIT $6"
-		args = append(args, opts.Limit)
-	}
-
-	rows, err := repo.pool.Query(context.Background(), query, args...)
+	rows, err := repo.pool.Query(context.Background(), query, opts.Statuses, opts.Email, opts.TeamID, opts.RoleID)
 	if err != nil {
 		return nil, err
 	}
