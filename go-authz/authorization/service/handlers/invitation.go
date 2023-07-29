@@ -11,16 +11,15 @@ import (
 	"authorization/service"
 )
 
-func InviteMemberWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func InviteMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.InviteMember); ok {
-		return InviteMember(uow, mailer, c)
+		return InviteMember(ctx, uow, mailer, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.InviteMember, got %T", cmd)
 }
 
 // create inviteMember function
-func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.InviteMember) error {
-	ctx := context.Background()
+func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.InviteMember) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -110,16 +109,15 @@ func InviteMember(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *c
 	return nil
 }
 
-func ResendInvitationWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func ResendInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.ResendInvitation); ok {
-		return ResendInvitation(uow, mailer, c)
+		return ResendInvitation(ctx, uow, mailer, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.ResendInvitation, got %T", cmd)
 }
 
 // create ResendInvitation function
-func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.ResendInvitation) error {
-	ctx := context.Background()
+func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.ResendInvitation) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -176,16 +174,15 @@ func ResendInvitation(uow *service.UnitOfWork, mailer worker.WorkerInterface, cm
 	return nil
 }
 
-func DeleteInvitationWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteInvitation); ok {
-		return DeleteInvitation(uow, c)
+		return DeleteInvitation(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.DeleteInvitation, got %T", cmd)
 }
 
 // create DeleteInvitation function
-func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) error {
-	ctx := context.Background()
+func DeleteInvitation(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteInvitation) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -222,16 +219,15 @@ func DeleteInvitation(uow *service.UnitOfWork, cmd *command.DeleteInvitation) er
 	return nil
 }
 
-func UpdateInvitationStatusWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateInvitationStatusWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateInvitationStatus); ok {
-		return UpdateInvitationStatus(uow, c)
+		return UpdateInvitationStatus(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.UpdateInvitationStatus, got %T", cmd)
 }
 
 // create UpdateInvitationStatus function
-func UpdateInvitationStatus(uow *service.UnitOfWork, cmd *command.UpdateInvitationStatus) error {
-	ctx := context.Background()
+func UpdateInvitationStatus(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateInvitationStatus) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr

@@ -13,7 +13,8 @@ import (
 )
 
 func createTeam(cmd *command.CreateTeam, user domain.User) {
-	err := Bus.Handle(cmd)
+	ctx := context.Background()
+	err := Bus.Handle(ctx, cmd)
 	Ω(err).To(Succeed())
 
 	team, err := view.Team(cmd.TeamID, user, Bus.UoW)
@@ -70,13 +71,14 @@ var _ = Describe("Team Testing", Ordered, func() {
 		})
 	})
 	It("Update", func() {
+		ctx := context.Background()
 		cmdUpdate := command.UpdateTeam{
 			TeamID:      cmdA.TeamID,
 			Name:        "Team C",
 			Description: "Team C Description",
 			User:        john,
 		}
-		err := Bus.Handle(&cmdUpdate)
+		err := Bus.Handle(ctx, &cmdUpdate)
 		Ω(err).To(Succeed())
 
 		team, err := view.Team(cmdA.TeamID, john, Bus.UoW)
@@ -109,6 +111,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			createTeam(janeTeam, jane)
 		})
 		It("Invite member", func() {
+			ctx := context.Background()
 			cmd := command.InviteMember{
 				TeamID: janeTeam.TeamID,
 				Invitees: []command.Invitee{
@@ -119,7 +122,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 				},
 				Sender: jane,
 			}
-			err := Bus.Handle(&cmd)
+			err := Bus.Handle(ctx, &cmd)
 			Ω(err).To(Succeed())
 
 			var invitation domain.Invitation
@@ -156,7 +159,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 				},
 				Sender: jane,
 			}
-			err := Bus.Handle(&cmd)
+			err := Bus.Handle(ctx, &cmd)
 			Ω(err).To(Succeed())
 
 			var invitation domain.Invitation
@@ -222,7 +225,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 				Status:       "accepted",
 				User:         james,
 			}
-			err = Bus.Handle(&cmdVerify)
+			err = Bus.Handle(ctx, &cmdVerify)
 			Ω(err).To(Succeed())
 
 			row = Bus.UoW.GetDB().QueryRow(

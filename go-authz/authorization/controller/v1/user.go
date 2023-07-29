@@ -169,7 +169,7 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to update user data")
 		_ = ctx.Error(err)
@@ -197,7 +197,7 @@ func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 		User: currentUser,
 	}
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to delete user data")
 		_ = ctx.Error(err)
@@ -229,7 +229,7 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to update user avatar")
 		_ = ctx.Error(err)
@@ -257,7 +257,7 @@ func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
 		User: currentUser,
 	}
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to delete user avatar")
 		_ = ctx.Error(err)

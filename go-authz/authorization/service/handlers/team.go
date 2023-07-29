@@ -16,15 +16,14 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-func CreateTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func CreateTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.CreateTeam); ok {
-		return CreateTeam(uow, c)
+		return CreateTeam(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.CreateTeam, got %T", cmd)
 }
 
-func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
-	ctx := context.Background()
+func CreateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -54,15 +53,14 @@ func CreateTeam(uow *service.UnitOfWork, cmd *command.CreateTeam) error {
 	return nil
 }
 
-func UpdateTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateTeam); ok {
-		return UpdateTeam(uow, c)
+		return UpdateTeam(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.UpdateTeam, got %T", cmd)
 }
 
-func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
-	ctx := context.Background()
+func UpdateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -95,15 +93,14 @@ func UpdateTeam(uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
 	return nil
 }
 
-func UpdateLastActiveTeamWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateLastActiveTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateLastActiveTeam); ok {
-		return UpdateLastActiveTeam(uow, c)
+		return UpdateLastActiveTeam(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.UpdateLastActiveTeam, got %T", cmd)
 }
 
-func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActiveTeam) error {
-	ctx := context.Background()
+func UpdateLastActiveTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateLastActiveTeam) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -145,15 +142,14 @@ func UpdateLastActiveTeam(uow *service.UnitOfWork, cmd *command.UpdateLastActive
 	return nil
 }
 
-func DeleteTeamMemberWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteTeamMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteTeamMember); ok {
-		return DeleteTeamMember(uow, c)
+		return DeleteTeamMember(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.DeleteTeamMember, got %T", cmd)
 }
 
-func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) error {
-	ctx := context.Background()
+func DeleteTeamMember(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteTeamMember) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -186,15 +182,14 @@ func DeleteTeamMember(uow *service.UnitOfWork, cmd *command.DeleteTeamMember) er
 	return nil
 }
 
-func ChangeMemberRoleWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func ChangeMemberRoleWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.ChangeMemberRole); ok {
-		return ChangeMemberRole(uow, c)
+		return ChangeMemberRole(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.ChangeMemberRole, got %T", cmd)
 }
 
-func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) error {
-	ctx := context.Background()
+func ChangeMemberRole(ctx context.Context, uow *service.UnitOfWork, cmd *command.ChangeMemberRole) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -234,15 +229,14 @@ func ChangeMemberRole(uow *service.UnitOfWork, cmd *command.ChangeMemberRole) er
 	return nil
 }
 
-func UpdateTeamAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateTeamAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateTeamAvatar); ok {
-		return UpdateTeamAvatar(uow, c)
+		return UpdateTeamAvatar(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.UpdateTeamAvatar, got %T", cmd)
 }
 
-func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) error {
-	ctx := context.Background()
+func UpdateTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -300,15 +294,14 @@ func UpdateTeamAvatar(uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) er
 	return nil
 }
 
-func DeleteTeamAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteTeamAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteTeamAvatar); ok {
-		return DeleteTeamAvatar(uow, c)
+		return DeleteTeamAvatar(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.DeleteTeamAvatar, got %T", cmd)
 }
 
-func DeleteTeamAvatar(uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) error {
-	ctx := context.Background()
+func DeleteTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr

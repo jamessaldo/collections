@@ -7,10 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	zerologadapter "github.com/jackc/pgx-zerolog"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rs/zerolog/log"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -22,24 +19,7 @@ var (
 	Pool *pgxpool.Pool
 )
 
-type myQueryTracer struct {
-	log *zerologadapter.Logger
-}
-
-func (tracer *myQueryTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
-	tracer.log.Log(ctx, tracelog.LogLevelInfo, "executing query", map[string]interface{}{
-		"sql":  data.SQL,
-		"args": data.Args,
-	})
-	return ctx
-}
-
-func (tracer *myQueryTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
-}
-
 func CreateDBConnection() error {
-	logger := zerologadapter.NewLogger(log.Logger)
-
 	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.StorageConfig.DBDriver, config.StorageConfig.DBUser, config.StorageConfig.DBPassword, config.StorageConfig.DBHost, config.StorageConfig.DBPort, config.StorageConfig.DBName)
 	ctx := context.Background()
 	var err error
@@ -47,10 +27,6 @@ func CreateDBConnection() error {
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return err
-	}
-
-	config.ConnConfig.Tracer = &myQueryTracer{
-		log: logger,
 	}
 
 	Pool, err = pgxpool.NewWithConfig(ctx, config)

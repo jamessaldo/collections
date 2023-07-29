@@ -15,15 +15,14 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-func UpdateUserWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateUserWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateUser); ok {
-		return UpdateUser(uow, c)
+		return UpdateUser(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.UpdateUser, got %T", cmd)
 }
 
-func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) error {
-	ctx := context.Background()
+func UpdateUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateUser) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -54,15 +53,14 @@ func UpdateUser(uow *service.UnitOfWork, cmd *command.UpdateUser) error {
 	return nil
 }
 
-func DeleteUserWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteUserWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteUser); ok {
-		return DeleteUser(uow, c)
+		return DeleteUser(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.DeleteUser, got %T", cmd)
 }
 
-func DeleteUser(uow *service.UnitOfWork, cmd *command.DeleteUser) error {
-	ctx := context.Background()
+func DeleteUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteUser) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -87,15 +85,14 @@ func DeleteUser(uow *service.UnitOfWork, cmd *command.DeleteUser) error {
 	return nil
 }
 
-func UpdateUserAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateUserAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateUserAvatar); ok {
-		return UpdateUserAvatar(uow, c)
+		return UpdateUserAvatar(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.UpdateUserAvatar, got %T", cmd)
 }
 
-func UpdateUserAvatar(uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) error {
-	ctx := context.Background()
+func UpdateUserAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -150,15 +147,14 @@ func UpdateUserAvatar(uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) er
 	return nil
 }
 
-func DeleteUserAvatarWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteUserAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteUserAvatar); ok {
-		return DeleteUserAvatar(uow, c)
+		return DeleteUserAvatar(ctx, uow, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.DeleteUserAvatar, got %T", cmd)
 }
 
-func DeleteUserAvatar(uow *service.UnitOfWork, cmd *command.DeleteUserAvatar) error {
-	ctx := context.Background()
+func DeleteUserAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteUserAvatar) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr

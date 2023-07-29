@@ -24,15 +24,14 @@ const (
 	FacebookProvider = "Facebook"
 )
 
-func LoginByGoogleWrapper(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func LoginByGoogleWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.LoginByGoogle); ok {
-		return LoginByGoogle(uow, mailer, c)
+		return LoginByGoogle(ctx, uow, mailer, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.LoginByGoogle, got %T", cmd)
 }
 
-func LoginByGoogle(uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.LoginByGoogle) error {
-	ctx := context.Background()
+func LoginByGoogle(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.LoginByGoogle) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr

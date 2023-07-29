@@ -104,6 +104,7 @@ var _ = Describe("User Testing", func() {
 			Ω(respPaginated.Data).To(HaveLen(2))
 		})
 		It("Update", func() {
+			ctx := context.Background()
 			user, err := Bus.UoW.User.Get(johnUserId)
 			Ω(err).To(Succeed())
 			Ω(user.FirstName).To(Equal("John"))
@@ -115,7 +116,7 @@ var _ = Describe("User Testing", func() {
 				PhoneNumber: "08123456789",
 				User:        user,
 			}
-			err = Bus.Handle(&cmd)
+			err = Bus.Handle(ctx, &cmd)
 			Ω(err).To(Succeed())
 
 			user, _ = Bus.UoW.User.Get(johnUserId)
@@ -124,12 +125,13 @@ var _ = Describe("User Testing", func() {
 		})
 	})
 	It("Delete", func() {
+		ctx := context.Background()
 		user, err := Bus.UoW.User.Get(johnUserId)
 		Ω(err).To(Succeed())
 		cmd := command.DeleteUser{
 			User: user,
 		}
-		err = Bus.Handle(&cmd)
+		err = Bus.Handle(ctx, &cmd)
 		Ω(err).To(Succeed())
 		_, err = view.User(johnUserId, Bus.UoW)
 		Ω(err).To(HaveOccurred())

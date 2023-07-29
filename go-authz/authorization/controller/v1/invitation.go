@@ -59,7 +59,7 @@ func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not verify invitation")
 		_ = ctx.Error(err)
@@ -135,7 +135,7 @@ func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 	cmd.InvitationID = invitationID
 	cmd.User = currentUser
 
-	err = bus.Handle(&cmd)
+	err = bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not delete invitation")
 		_ = ctx.Error(err)

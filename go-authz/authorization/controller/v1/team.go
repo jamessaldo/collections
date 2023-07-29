@@ -155,7 +155,7 @@ func (ctrl *teamController) CreateTeam(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to create team data")
 		_ = ctx.Error(err)
@@ -196,7 +196,7 @@ func (ctrl *teamController) UpdateTeam(ctx *gin.Context) {
 	cmd.TeamID = uuid.FromStringOrNil(id)
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to update team data")
 		_ = ctx.Error(err)
@@ -230,7 +230,7 @@ func (ctrl *teamController) UpdateLastActiveTeam(ctx *gin.Context) {
 	cmd.TeamID = uuid.FromStringOrNil(id)
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to update last active team data")
 		_ = ctx.Error(err)
@@ -269,7 +269,7 @@ func (ctrl *teamController) DeleteTeamMember(ctx *gin.Context) {
 	cmd.MembershipID = uuid.FromStringOrNil(membershipID)
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to delete team member data")
 		_ = ctx.Error(err)
@@ -313,7 +313,7 @@ func (ctrl *teamController) ChangeMemberRole(ctx *gin.Context) {
 	cmd.MembershipID = uuid.FromStringOrNil(membershipID)
 	cmd.User = currentUser
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to change team member role")
 		_ = ctx.Error(err)
@@ -353,7 +353,7 @@ func (ctrl *teamController) SendInvitation(ctx *gin.Context) {
 
 	log.Debug().Caller().Any("Invitees data", cmd.Invitees).Msg("Send invitation to join team")
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to send invitation to join team")
 		_ = ctx.Error(err)
@@ -405,7 +405,7 @@ func (ctrl *teamController) ResendInvitation(ctx *gin.Context) {
 	cmd.TeamID = uuid.FromStringOrNil(id)
 	cmd.Sender = currentUser
 
-	err = bus.Handle(&cmd)
+	err = bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to resend invitation to join team")
 		_ = ctx.Error(err)
@@ -442,7 +442,7 @@ func (ctrl *teamController) UpdateTeamAvatar(ctx *gin.Context) {
 
 	cmd.TeamID = uuid.FromStringOrNil(id)
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to update team avatar")
 		_ = ctx.Error(err)
@@ -473,7 +473,7 @@ func (ctrl *teamController) DeleteTeamAvatar(ctx *gin.Context) {
 
 	cmd.TeamID = uuid.FromStringOrNil(id)
 
-	err := bus.Handle(&cmd)
+	err := bus.Handle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to delete team avatar")
 		_ = ctx.Error(err)
