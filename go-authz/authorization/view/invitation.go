@@ -5,14 +5,15 @@ import (
 	"authorization/domain"
 	"authorization/domain/dto"
 	"authorization/service"
+	"context"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/oklog/ulid/v2"
 )
 
-func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreivalSchema, error) {
-	invitation, err := uow.Invitation.Get(id)
+func Invitation(ctx context.Context, id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreivalSchema, error) {
+	invitation, err := uow.Invitation.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
@@ -20,7 +21,7 @@ func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreival
 		return nil, err
 	}
 
-	team, err := uow.Team.Get(invitation.TeamID)
+	team, err := uow.Team.Get(ctx, invitation.TeamID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
@@ -35,12 +36,12 @@ func Invitation(id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreival
 		Limit:        3,
 	}
 
-	memberships, err := uow.Membership.List(membershipOpts)
+	memberships, err := uow.Membership.List(ctx, membershipOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	totalMemberships, err := uow.Membership.Count(membershipOpts)
+	totalMemberships, err := uow.Membership.Count(ctx, membershipOpts)
 	if err != nil {
 		return nil, err
 	}

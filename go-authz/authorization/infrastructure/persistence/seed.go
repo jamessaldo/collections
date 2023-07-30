@@ -137,7 +137,7 @@ func userSeedBatchRoutine(pool *pgxpool.Pool, user_list domain.Users, counter, w
 	// 		log.Error().Caller().Err(err).Msg("Failed to insert users")
 	// 	}
 	// }
-	userErr := uow.User.AddBatch(user_list, tx)
+	userErr := uow.User.AddBatch(ctx, user_list, tx)
 	if userErr != nil {
 		log.Error().Caller().Err(err).Msg("Failed to insert users")
 	}
@@ -162,7 +162,7 @@ func _(pool *pgxpool.Pool, user_data domain.User, counter, workerIndex int) {
 		tx.Rollback(ctx)
 	}()
 
-	_, userErr := uow.User.Add(user_data, tx)
+	_, userErr := uow.User.Add(ctx, user_data, tx)
 	if userErr != nil {
 		log.Error().Caller().Err(err).Msg("Failed to insert user")
 		tx.Rollback(ctx)

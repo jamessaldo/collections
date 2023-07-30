@@ -19,16 +19,16 @@ type teamRepository struct {
 
 // teamRepository implements the TeamRepository interface
 type TeamRepository interface {
-	Add(domain.Team, pgx.Tx) (domain.Team, error)
-	Update(domain.Team, pgx.Tx) (domain.Team, error)
-	Get(uuid.UUID) (domain.Team, error)
+	Add(context.Context, domain.Team, pgx.Tx) (domain.Team, error)
+	Update(context.Context, domain.Team, pgx.Tx) (domain.Team, error)
+	Get(context.Context, uuid.UUID) (domain.Team, error)
 }
 
 func NewTeamRepository(pool *pgxpool.Pool) TeamRepository {
 	return &teamRepository{pool: pool}
 }
 
-func (repo *teamRepository) Add(team domain.Team, tx pgx.Tx) (domain.Team, error) {
+func (repo *teamRepository) Add(ctx context.Context, team domain.Team, tx pgx.Tx) (domain.Team, error) {
 	query := `
 		INSERT INTO teams (id, name, description, is_personal, avatar_url, creator_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -36,7 +36,7 @@ func (repo *teamRepository) Add(team domain.Team, tx pgx.Tx) (domain.Team, error
 	`
 
 	_, err := tx.Exec(
-		context.Background(),
+		ctx,
 		query,
 		team.ID,
 		team.Name,
@@ -59,7 +59,7 @@ func (repo *teamRepository) Add(team domain.Team, tx pgx.Tx) (domain.Team, error
 	`
 
 	_, err = tx.Exec(
-		context.Background(),
+		ctx,
 		query,
 		team.Memberships[0].ID,
 		team.ID,
@@ -77,7 +77,7 @@ func (repo *teamRepository) Add(team domain.Team, tx pgx.Tx) (domain.Team, error
 	return team, nil
 }
 
-func (repo *teamRepository) Update(team domain.Team, tx pgx.Tx) (domain.Team, error) {
+func (repo *teamRepository) Update(ctx context.Context, team domain.Team, tx pgx.Tx) (domain.Team, error) {
 
 	query := `
 		UPDATE teams
@@ -86,7 +86,7 @@ func (repo *teamRepository) Update(team domain.Team, tx pgx.Tx) (domain.Team, er
 	`
 
 	_, err := tx.Exec(
-		context.Background(),
+		ctx,
 		query,
 		team.ID,
 		team.Name,
@@ -109,7 +109,7 @@ func (repo *teamRepository) Update(team domain.Team, tx pgx.Tx) (domain.Team, er
 		`
 
 		_, err = tx.Exec(
-			context.Background(),
+			ctx,
 			q,
 			membership.ID,
 			team.ID,
@@ -128,7 +128,7 @@ func (repo *teamRepository) Update(team domain.Team, tx pgx.Tx) (domain.Team, er
 	return team, nil
 }
 
-func (repo *teamRepository) Get(id uuid.UUID) (domain.Team, error) {
+func (repo *teamRepository) Get(ctx context.Context, id uuid.UUID) (domain.Team, error) {
 	query := `
 		SELECT id, name, description, is_personal, avatar_url, creator_id, created_at, updated_at
 		FROM teams
@@ -138,7 +138,7 @@ func (repo *teamRepository) Get(id uuid.UUID) (domain.Team, error) {
 	var team domain.Team
 
 	err := repo.pool.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		id,
 	).Scan(

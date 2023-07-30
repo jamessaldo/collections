@@ -67,7 +67,7 @@ func (ctrl *teamController) GetTeamById(ctx *gin.Context) {
 	log.Debug().Caller().Str("id", id).Msg("Get team data by ID")
 
 	// Get team data from database
-	team, err := view.Team(uuid.FromStringOrNil(id), currentUser, uow)
+	team, err := view.Team(ctx.Request.Context(), uuid.FromStringOrNil(id), currentUser, uow)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to get team data by ID")
 		_ = ctx.Error(err)
@@ -118,7 +118,7 @@ func (ctrl *teamController) GetTeams(ctx *gin.Context) {
 	}
 
 	// Get team data from database
-	teams, err := view.Teams(uow, currentUser, name, page, pageSize)
+	teams, err := view.Teams(ctx.Request.Context(), uow, currentUser, name, page, pageSize)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("failed to get all team data")
 		_ = ctx.Error(err)

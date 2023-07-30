@@ -16,9 +16,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, error) {
-	ctx := context.TODO()
-
+func RefreshAccessToken(ctx context.Context, refreshToken string, uow *service.UnitOfWork) (string, error) {
 	tokenClaims, err := util.ValidateToken(refreshToken, config.AppConfig.RefreshTokenPublicKey)
 	if err != nil {
 		return "", err
@@ -29,7 +27,7 @@ func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, e
 		return "", err
 	}
 
-	user, err := uow.User.Get(uuid.FromStringOrNil(userId))
+	user, err := uow.User.Get(ctx, uuid.FromStringOrNil(userId))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", exception.NewNotFoundException(err.Error())
@@ -52,8 +50,8 @@ func RefreshAccessToken(refreshToken string, uow *service.UnitOfWork) (string, e
 	return *accessToken.Token, nil
 }
 
-func User(id uuid.UUID, uow *service.UnitOfWork) (*dto.PublicUser, error) {
-	user, err := uow.User.Get(id)
+func User(ctx context.Context, id uuid.UUID, uow *service.UnitOfWork) (*dto.PublicUser, error) {
+	user, err := uow.User.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
@@ -64,13 +62,13 @@ func User(id uuid.UUID, uow *service.UnitOfWork) (*dto.PublicUser, error) {
 	return user.PublicUser(), nil
 }
 
-func Users(uow *service.UnitOfWork, page, pageSize int) (dto.Pagination, error) {
-	users, err := uow.User.List(page, pageSize)
+func Users(ctx context.Context, uow *service.UnitOfWork, page, pageSize int) (dto.Pagination, error) {
+	users, err := uow.User.List(ctx, page, pageSize)
 	if err != nil {
 		return dto.Pagination{}, err
 	}
 
-	totalData, err := uow.User.Count()
+	totalData, err := uow.User.Count(ctx)
 	if err != nil {
 		return dto.Pagination{}, err
 	}

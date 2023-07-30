@@ -30,7 +30,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailer worker.Wo
 	}()
 
 	// get team
-	team, err := uow.Team.Get(cmd.TeamID)
+	team, err := uow.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	} else if team.IsPersonal {
@@ -42,7 +42,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailer worker.Wo
 		IsSelectUser: true,
 		IsSelectRole: true,
 	}
-	memberships, err := uow.Membership.List(membershipOpts)
+	memberships, err := uow.Membership.List(ctx, membershipOpts)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailer worker.Wo
 			Statuses: []domain.InvitationStatus{domain.InvitationStatusPending, domain.InvitationStatusSent},
 		}
 
-		activeInvitees, err := uow.Invitation.List(inviteesOpts)
+		activeInvitees, err := uow.Invitation.List(ctx, inviteesOpts)
 		if err != nil {
 			return err
 		}
@@ -80,7 +80,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailer worker.Wo
 		}
 
 		invitation := domain.NewInvitation(invitee.Email, domain.InvitationStatusPending, cmd.TeamID, cmd.Sender.ID, role.ID)
-		_, err = uow.Invitation.Add(invitation, tx)
+		_, err = uow.Invitation.Add(ctx, invitation, tx)
 		if err != nil {
 			return err
 		}
@@ -128,7 +128,7 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailer worke
 	}()
 
 	// get team
-	team, err := uow.Team.Get(cmd.TeamID)
+	team, err := uow.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	} else if team.IsPersonal {
@@ -136,7 +136,7 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailer worke
 	}
 
 	// get invitation
-	invitation, err := uow.Invitation.Get(cmd.InvitationID)
+	invitation, err := uow.Invitation.Get(ctx, cmd.InvitationID)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailer worke
 		return errSendMail
 	}
 
-	err = uow.Invitation.Update(invitation, tx)
+	err = uow.Invitation.Update(ctx, invitation, tx)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func DeleteInvitation(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	}()
 
 	// get invitation
-	invitation, err := uow.Invitation.Get(cmd.InvitationID)
+	invitation, err := uow.Invitation.Get(ctx, cmd.InvitationID)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func DeleteInvitation(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	}
 
 	// delete invitation
-	err = uow.Invitation.Delete(invitation.ID, tx)
+	err = uow.Invitation.Delete(ctx, invitation.ID, tx)
 	if err != nil {
 		return err
 	}
@@ -238,12 +238,12 @@ func UpdateInvitationStatus(ctx context.Context, uow *service.UnitOfWork, cmd *c
 	}()
 
 	// get invitation
-	invitation, err := uow.Invitation.Get(cmd.InvitationID)
+	invitation, err := uow.Invitation.Get(ctx, cmd.InvitationID)
 	if err != nil {
 		return err
 	}
 
-	team, err := uow.Team.Get(invitation.TeamID)
+	team, err := uow.Team.Get(ctx, invitation.TeamID)
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func UpdateInvitationStatus(ctx context.Context, uow *service.UnitOfWork, cmd *c
 	// update invitation
 	invitation.Status = domain.InvitationStatus(cmd.Status)
 	invitation.IsActive = false
-	err = uow.Invitation.Update(invitation, tx)
+	err = uow.Invitation.Update(ctx, invitation, tx)
 	if err != nil {
 		return err
 	}
@@ -273,7 +273,7 @@ func UpdateInvitationStatus(ctx context.Context, uow *service.UnitOfWork, cmd *c
 		}
 
 		team.AddMembership(invitation.TeamID, cmd.User.ID, role.ID)
-		_, err = uow.Team.Update(team, tx)
+		_, err = uow.Team.Update(ctx, team, tx)
 		if err != nil {
 			return err
 		}

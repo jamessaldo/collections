@@ -49,17 +49,17 @@ func LoginByGoogle(ctx context.Context, uow *service.UnitOfWork, mailer worker.W
 	}
 
 	email := strings.ToLower(googleUser.Email)
-	user, userErr := uow.User.GetByEmail(email)
+	user, userErr := uow.User.GetByEmail(ctx, email)
 	if userErr != nil {
 		user = domain.NewUser(googleUser.GivenName, googleUser.FamilyName, googleUser.Email, googleUser.Picture, GoogleProvider, googleUser.VerifiedEmail)
 
-		existUser, userErr := uow.User.GetByUsername(user.Username)
+		existUser, userErr := uow.User.GetByUsername(ctx, user.Username)
 		if userErr == nil {
 			log.Info().Caller().Msg(fmt.Sprintf("username %s already exist, generating random username", user.Username))
 			existUser.RegenerateUsername()
 		}
 
-		_, userErr = uow.User.Add(user, tx)
+		_, userErr = uow.User.Add(ctx, user, tx)
 		if userErr != nil {
 			return userErr
 		}
@@ -70,7 +70,7 @@ func LoginByGoogle(ctx context.Context, uow *service.UnitOfWork, mailer worker.W
 		}
 
 		team := domain.NewTeam(user, ownerRole.ID, "", "", true)
-		_, err := uow.Team.Add(team, tx)
+		_, err := uow.Team.Add(ctx, team, tx)
 		if err != nil {
 			return err
 		}

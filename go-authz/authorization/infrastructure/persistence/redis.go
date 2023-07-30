@@ -10,11 +10,10 @@ import (
 
 var (
 	RedisClient *redis.Client
-	ctx         context.Context
 )
 
 func ConnectRedis() {
-	ctx = context.TODO()
+	ctx := context.Background()
 
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr: config.StorageConfig.RedisHost + ":" + config.StorageConfig.RedisPort,

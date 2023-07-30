@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"authorization/domain"
-	"context"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -49,8 +48,7 @@ func DeserializeUser() gin.HandlerFunc {
 			return
 		}
 
-		_ctx := context.TODO()
-		userId, err := persistence.RedisClient.Get(_ctx, token).Result()
+		userId, err := persistence.RedisClient.Get(ctx.Request.Context(), token).Result()
 		if err == redis.Nil {
 			_ = ctx.Error(exception.NewUnauthorizedException("Token is invalid or session has expired: " + err.Error()))
 			ctx.Abort()
@@ -66,7 +64,7 @@ func DeserializeUser() gin.HandlerFunc {
 
 		var user domain.User
 
-		userBytes, err := persistence.RedisClient.Get(_ctx, util.UserCachePrefix+userId).Bytes()
+		userBytes, err := persistence.RedisClient.Get(ctx.Request.Context(), util.UserCachePrefix+userId).Bytes()
 		if err == nil {
 			err = json.Unmarshal(userBytes, &user)
 			if err != nil {
@@ -76,7 +74,7 @@ func DeserializeUser() gin.HandlerFunc {
 			}
 		} else if err == redis.Nil {
 			userId, _ := uuid.FromString(userId)
-			user, err = uow.User.Get(userId)
+			user, err = uow.User.Get(ctx.Request.Context(), userId)
 			if err != nil {
 				if errors.Is(err, pgx.ErrNoRows) {
 					_ = ctx.Error(exception.NewNotFoundException("the user belonging to this token no logger exists"))

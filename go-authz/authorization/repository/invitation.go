@@ -15,12 +15,12 @@ type invitationRepository struct {
 }
 
 type InvitationRepository interface {
-	Add(domain.Invitation, pgx.Tx) (domain.Invitation, error)
-	AddBatch([]domain.Invitation) error
-	Update(domain.Invitation, pgx.Tx) error
-	Get(ulid.ULID) (domain.Invitation, error)
-	List(opts domain.InvitationOptions) ([]domain.Invitation, error)
-	Delete(ulid.ULID, pgx.Tx) error
+	Add(context.Context, domain.Invitation, pgx.Tx) (domain.Invitation, error)
+	AddBatch(context.Context, []domain.Invitation) error
+	Update(context.Context, domain.Invitation, pgx.Tx) error
+	Get(context.Context, ulid.ULID) (domain.Invitation, error)
+	List(context.Context, domain.InvitationOptions) ([]domain.Invitation, error)
+	Delete(context.Context, ulid.ULID, pgx.Tx) error
 }
 
 // invitationRepository implements the InvitationRepository interface
@@ -28,13 +28,13 @@ func NewInvitationRepository(pool *pgxpool.Pool) InvitationRepository {
 	return &invitationRepository{pool: pool}
 }
 
-func (repo *invitationRepository) Add(invitation domain.Invitation, tx pgx.Tx) (domain.Invitation, error) {
+func (repo *invitationRepository) Add(ctx context.Context, invitation domain.Invitation, tx pgx.Tx) (domain.Invitation, error) {
 	query := `
 		INSERT INTO invitations (id, email, expires_at, status, team_id, role_id, sender_id, is_active, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id
 	`
-	_, err := tx.Exec(context.Background(), query,
+	_, err := tx.Exec(ctx, query,
 		invitation.ID, invitation.Email, invitation.ExpiresAt, invitation.Status,
 		invitation.TeamID, invitation.RoleID, invitation.SenderID, invitation.IsActive,
 		invitation.CreatedAt, invitation.UpdatedAt,
@@ -46,21 +46,21 @@ func (repo *invitationRepository) Add(invitation domain.Invitation, tx pgx.Tx) (
 }
 
 // add batch pgx
-func (repo *invitationRepository) AddBatch(invitations []domain.Invitation) error {
+func (repo *invitationRepository) AddBatch(ctx context.Context, invitations []domain.Invitation) error {
 	query := `
 		INSERT INTO invitations (id, email, expires_at, status, team_id, role_id, sender_id, is_active)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (id) DO NOTHING
 	`
 
-	tx, err := repo.pool.Begin(context.Background())
+	tx, err := repo.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(context.Background())
+	defer tx.Rollback(ctx)
 
 	for _, invitation := range invitations {
-		_, err := tx.Exec(context.Background(), query,
+		_, err := tx.Exec(ctx, query,
 			invitation.ID, invitation.Email, invitation.ExpiresAt, invitation.Status,
 			invitation.TeamID, invitation.RoleID, invitation.SenderID, invitation.IsActive,
 		)
@@ -69,20 +69,20 @@ func (repo *invitationRepository) AddBatch(invitations []domain.Invitation) erro
 		}
 	}
 
-	err = tx.Commit(context.Background())
+	err = tx.Commit(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (repo *invitationRepository) Update(invitation domain.Invitation, tx pgx.Tx) error {
+func (repo *invitationRepository) Update(ctx context.Context, invitation domain.Invitation, tx pgx.Tx) error {
 	query := `
 		UPDATE invitations
 		SET email = $1, expires_at = $2, status = $3, team_id = $4, role_id = $5, sender_id = $6, is_active = $7
 		WHERE id = $8
 	`
-	_, err := tx.Exec(context.Background(), query,
+	_, err := tx.Exec(ctx, query,
 		invitation.Email, invitation.ExpiresAt, invitation.Status,
 		invitation.TeamID, invitation.RoleID, invitation.SenderID, invitation.IsActive,
 		invitation.ID,
@@ -94,14 +94,14 @@ func (repo *invitationRepository) Update(invitation domain.Invitation, tx pgx.Tx
 	return nil
 }
 
-func (repo *invitationRepository) Get(id ulid.ULID) (domain.Invitation, error) {
+func (repo *invitationRepository) Get(ctx context.Context, id ulid.ULID) (domain.Invitation, error) {
 	var invitation domain.Invitation
 	query := `
 		SELECT i.id, i.email, i.expires_at, i.status, i.team_id, i.role_id, i.sender_id, i.is_active
 		FROM invitations i
 		WHERE i.id = $1
 	`
-	err := repo.pool.QueryRow(context.Background(), query, id).
+	err := repo.pool.QueryRow(ctx, query, id).
 		Scan(&invitation.ID, &invitation.Email, &invitation.ExpiresAt, &invitation.Status,
 			&invitation.TeamID, &invitation.RoleID, &invitation.SenderID, &invitation.IsActive,
 		)
@@ -114,13 +114,13 @@ func (repo *invitationRepository) Get(id ulid.ULID) (domain.Invitation, error) {
 	return invitation, nil
 }
 
-func (repo *invitationRepository) List(opts domain.InvitationOptions) ([]domain.Invitation, error) {
+func (repo *invitationRepository) List(ctx context.Context, opts domain.InvitationOptions) ([]domain.Invitation, error) {
 	query := `
 		SELECT id, email, expires_at, status, team_id, role_id, sender_id, is_active
 		FROM invitations
 		WHERE status = ANY($1) AND email = $2 AND team_id = $3 AND role_id = $4	
 	`
-	rows, err := repo.pool.Query(context.Background(), query, opts.Statuses, opts.Email, opts.TeamID, opts.RoleID)
+	rows, err := repo.pool.Query(ctx, query, opts.Statuses, opts.Email, opts.TeamID, opts.RoleID)
 	if err != nil {
 		return nil, err
 	}
@@ -139,12 +139,12 @@ func (repo *invitationRepository) List(opts domain.InvitationOptions) ([]domain.
 	return invitations, nil
 }
 
-func (repo *invitationRepository) Delete(id ulid.ULID, tx pgx.Tx) error {
+func (repo *invitationRepository) Delete(ctx context.Context, id ulid.ULID, tx pgx.Tx) error {
 	query := `
 		DELETE FROM invitations
 		WHERE id = $1
 	`
-	_, err := tx.Exec(context.Background(), query, id)
+	_, err := tx.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}

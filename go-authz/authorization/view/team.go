@@ -5,6 +5,7 @@ import (
 	"authorization/domain"
 	"authorization/domain/dto"
 	"authorization/service"
+	"context"
 	"errors"
 	"time"
 
@@ -12,8 +13,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func Team(id uuid.UUID, user domain.User, uow *service.UnitOfWork) (*dto.TeamRetrievalSchema, error) {
-	team, err := uow.Team.Get(id)
+func Team(ctx context.Context, id uuid.UUID, user domain.User, uow *service.UnitOfWork) (*dto.TeamRetrievalSchema, error) {
+	team, err := uow.Team.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
@@ -25,11 +26,11 @@ func Team(id uuid.UUID, user domain.User, uow *service.UnitOfWork) (*dto.TeamRet
 		IsSelectUser: true,
 		IsSelectRole: true,
 	}
-	memberships, err := uow.Membership.List(opts)
+	memberships, err := uow.Membership.List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	totalMemberships, err := uow.Membership.Count(opts)
+	totalMemberships, err := uow.Membership.Count(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,7 @@ func Team(id uuid.UUID, user domain.User, uow *service.UnitOfWork) (*dto.TeamRet
 	}, nil
 }
 
-func Teams(uow *service.UnitOfWork, user domain.User, name string, page, pageSize int) (dto.Pagination, error) {
+func Teams(ctx context.Context, uow *service.UnitOfWork, user domain.User, name string, page, pageSize int) (dto.Pagination, error) {
 	var teams []interface{}
 	var totalMemberships int64
 
@@ -69,12 +70,12 @@ func Teams(uow *service.UnitOfWork, user domain.User, name string, page, pageSiz
 		Skip:         page,
 		Name:         name,
 	}
-	memberships, err := uow.Membership.List(membershipOpts)
+	memberships, err := uow.Membership.List(ctx, membershipOpts)
 	if err != nil {
 		return dto.Pagination{}, err
 	}
 
-	totalMemberships, err = uow.Membership.Count(membershipOpts)
+	totalMemberships, err = uow.Membership.Count(ctx, membershipOpts)
 	if err != nil {
 		return dto.Pagination{}, err
 	}
@@ -85,11 +86,11 @@ func Teams(uow *service.UnitOfWork, user domain.User, name string, page, pageSiz
 			IsSelectUser: true,
 			IsSelectRole: true,
 		}
-		members, err := uow.Membership.List(opts)
+		members, err := uow.Membership.List(ctx, opts)
 		if err != nil {
 			return dto.Pagination{}, err
 		}
-		totalMembers, err := uow.Membership.Count(opts)
+		totalMembers, err := uow.Membership.Count(ctx, opts)
 		if err != nil {
 			return dto.Pagination{}, err
 		}

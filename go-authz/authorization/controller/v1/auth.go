@@ -82,7 +82,7 @@ func (ctrl *authController) RefreshAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := view.RefreshAccessToken(refresh_token, uow)
+	accessToken, err := view.RefreshAccessToken(ctx.Request.Context(), refresh_token, uow)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not refresh access token")
 		_ = ctx.Error(exception.NewUnauthorizedException(message))

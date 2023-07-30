@@ -32,7 +32,7 @@ func (a *AuthorizationServer) Check(ctx context.Context, req *auth.CheckRequest)
 
 	log.Printf("authorization for user_id: %s to path %s and method %s", userID, path, method)
 
-	isAuthorized, err := view.Authorization(userID, method, path, bus.UoW, endpoints)
+	isAuthorized, err := view.Authorization(ctx, userID, method, path, bus.UoW, endpoints)
 	if err != nil {
 		log.Printf("Error while authorizing: %v", err)
 		return nil, grpc.Errorf(codes.Internal, "Error while authorizing: %v", err)

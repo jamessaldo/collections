@@ -16,8 +16,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func createUser(user domain.User, uow *service.UnitOfWork) error {
-	ctx := context.Background()
+func createUser(ctx context.Context, user domain.User, uow *service.UnitOfWork) error {
 	tx, txErr := uow.Begin(ctx)
 	Ω(txErr).To(Succeed())
 
@@ -25,7 +24,7 @@ func createUser(user domain.User, uow *service.UnitOfWork) error {
 		tx.Rollback(ctx)
 	}()
 
-	_, err := uow.User.Add(user, tx)
+	_, err := uow.User.Add(ctx, user, tx)
 	if err != nil {
 		return err
 	}
@@ -41,7 +40,7 @@ func createUser(user domain.User, uow *service.UnitOfWork) error {
 
 	team := domain.NewTeam(user, ownerRole.ID, "", "", true)
 
-	_, err = uow.Team.Add(team, tx)
+	_, err = uow.Team.Add(ctx, team, tx)
 	if err != nil {
 		return err
 	}
@@ -57,18 +56,19 @@ var _ = Describe("User Testing", func() {
 	var (
 		johnUserId uuid.UUID
 	)
+	ctx := context.Background()
 	BeforeEach(func() {
 		uow := Bus.UoW
 
 		john := domain.NewUser("John", "Doe", "johndoe@example.com", "", "Google", true)
-		err := createUser(john, uow)
+		err := createUser(ctx, john, uow)
 		Ω(err).To(Succeed())
 		johnUserId = john.ID
 
 	})
 	Context("Load", func() {
 		It("Found", func() {
-			user, err := view.User(johnUserId, Bus.UoW)
+			user, err := view.User(ctx, johnUserId, Bus.UoW)
 			Ω(err).To(Succeed())
 			Ω(user.FirstName).To(Equal("John"))
 			Ω(user.LastName).To(Equal("Doe"))
@@ -76,12 +76,12 @@ var _ = Describe("User Testing", func() {
 			Ω(user).To(BeAssignableToTypeOf(&dto.PublicUser{}))
 		})
 		It("Not Found", func() {
-			_, err := view.User(uuid.NewV4(), Bus.UoW)
+			_, err := view.User(ctx, uuid.NewV4(), Bus.UoW)
 			Ω(err).To(HaveOccurred())
 		})
 	})
 	It("List", func() {
-		respPaginated, err := view.Users(Bus.UoW, 1, 10)
+		respPaginated, err := view.Users(ctx, Bus.UoW, 1, 10)
 		Ω(err).To(Succeed())
 		Ω(respPaginated.Data).To(HaveLen(1))
 		Ω(respPaginated.Page).To(Equal(1))
@@ -96,16 +96,15 @@ var _ = Describe("User Testing", func() {
 			uow := Bus.UoW
 
 			jane := domain.NewUser("Jane", "Doe", "janedoe@example.com", "", "Google", true)
-			err := createUser(jane, uow)
+			err := createUser(ctx, jane, uow)
 			Ω(err).To(Succeed())
 
-			respPaginated, err := view.Users(Bus.UoW, 1, 10)
+			respPaginated, err := view.Users(ctx, Bus.UoW, 1, 10)
 			Ω(err).To(Succeed())
 			Ω(respPaginated.Data).To(HaveLen(2))
 		})
 		It("Update", func() {
-			ctx := context.Background()
-			user, err := Bus.UoW.User.Get(johnUserId)
+			user, err := Bus.UoW.User.Get(ctx, johnUserId)
 			Ω(err).To(Succeed())
 			Ω(user.FirstName).To(Equal("John"))
 			Ω(user.PhoneNumber).To(Equal(""))
@@ -119,21 +118,20 @@ var _ = Describe("User Testing", func() {
 			err = Bus.Handle(ctx, &cmd)
 			Ω(err).To(Succeed())
 
-			user, _ = Bus.UoW.User.Get(johnUserId)
+			user, _ = Bus.UoW.User.Get(ctx, johnUserId)
 			Ω(user.FirstName).To(Equal("Johnny"))
 			Ω(user.PhoneNumber).To(Equal("08123456789"))
 		})
 	})
 	It("Delete", func() {
-		ctx := context.Background()
-		user, err := Bus.UoW.User.Get(johnUserId)
+		user, err := Bus.UoW.User.Get(ctx, johnUserId)
 		Ω(err).To(Succeed())
 		cmd := command.DeleteUser{
 			User: user,
 		}
 		err = Bus.Handle(ctx, &cmd)
 		Ω(err).To(Succeed())
-		_, err = view.User(johnUserId, Bus.UoW)
+		_, err = view.User(ctx, johnUserId, Bus.UoW)
 		Ω(err).To(HaveOccurred())
 	})
 })

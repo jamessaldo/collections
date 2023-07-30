@@ -9,7 +9,6 @@ import (
 	"authorization/service"
 	"authorization/util"
 	"authorization/view"
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -78,8 +77,7 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 
 	var user *dto.PublicUser = &dto.PublicUser{}
 
-	_ctx := context.TODO()
-	userBytes, err := persistence.RedisClient.Get(_ctx, util.UserCachePrefix+id).Bytes()
+	userBytes, err := persistence.RedisClient.Get(ctx.Request.Context(), util.UserCachePrefix+id).Bytes()
 	if err == nil {
 		var userCache domain.User = domain.User{}
 		err = json.Unmarshal(userBytes, &userCache)
@@ -90,7 +88,7 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 
 	if err != nil {
 		// Get user data from database
-		user, err = view.User(uuid.FromStringOrNil(id), uow)
+		user, err = view.User(ctx.Request.Context(), uuid.FromStringOrNil(id), uow)
 		if err != nil {
 			log.Error().Caller().Err(err).Msg("Failed to get user data")
 			_ = ctx.Error(err)
@@ -136,7 +134,7 @@ func (ctrl *userController) GetUsers(ctx *gin.Context) {
 	}
 
 	// Get user data from database
-	users, err := view.Users(uow, page, pageSize)
+	users, err := view.Users(ctx.Request.Context(), uow, page, pageSize)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to get users data")
 		_ = ctx.Error(err)
@@ -176,8 +174,7 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	_ctx := context.TODO()
-	persistence.RedisClient.Del(_ctx, util.UserCachePrefix+currentUser.ID.String())
+	persistence.RedisClient.Del(ctx.Request.Context(), util.UserCachePrefix+currentUser.ID.String())
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "OK"})
 }
 
@@ -236,8 +233,7 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 		return
 	}
 
-	_ctx := context.TODO()
-	persistence.RedisClient.Del(_ctx, util.UserCachePrefix+currentUser.ID.String())
+	persistence.RedisClient.Del(ctx.Request.Context(), util.UserCachePrefix+currentUser.ID.String())
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
 }
 
@@ -264,7 +260,6 @@ func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
 		return
 	}
 
-	_ctx := context.TODO()
-	persistence.RedisClient.Del(_ctx, util.UserCachePrefix+currentUser.ID.String())
+	persistence.RedisClient.Del(ctx.Request.Context(), util.UserCachePrefix+currentUser.ID.String())
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"message": "OK"}})
 }

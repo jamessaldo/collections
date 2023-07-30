@@ -95,7 +95,7 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 	}
 
 	// Get invitation data from database
-	invitation, err := view.Invitation(idParsed, uow)
+	invitation, err := view.Invitation(ctx.Request.Context(), idParsed, uow)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not get invitation")
 		_ = ctx.Error(err)

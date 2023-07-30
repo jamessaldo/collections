@@ -12,12 +12,11 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func createTeam(cmd *command.CreateTeam, user domain.User) {
-	ctx := context.Background()
+func createTeam(ctx context.Context, cmd *command.CreateTeam, user domain.User) {
 	err := Bus.Handle(ctx, cmd)
 	Ω(err).To(Succeed())
 
-	team, err := view.Team(cmd.TeamID, user, Bus.UoW)
+	team, err := view.Team(ctx, cmd.TeamID, user, Bus.UoW)
 	Ω(err).To(Succeed())
 	Ω(team.Name).To(Equal(cmd.Name))
 	Ω(team.Description).To(Equal(cmd.Description))
@@ -26,6 +25,7 @@ func createTeam(cmd *command.CreateTeam, user domain.User) {
 
 var _ = Describe("Team Testing", Ordered, func() {
 	format.MaxLength = 0
+	ctx := context.Background()
 	var (
 		john domain.User
 		jane domain.User
@@ -37,11 +37,11 @@ var _ = Describe("Team Testing", Ordered, func() {
 		uow := Bus.UoW
 
 		john = domain.NewUser("John", "Doe", "johndoe@example.com", "", "Google", true)
-		err := createUser(john, uow)
+		err := createUser(ctx, john, uow)
 		Ω(err).To(Succeed())
 
 		jane = domain.NewUser("Jane", "Doe", "janedoe@example.com", "", "Google", true)
-		err = createUser(jane, uow)
+		err = createUser(ctx, jane, uow)
 		Ω(err).To(Succeed())
 
 		cmdA = &command.CreateTeam{
@@ -49,29 +49,28 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Description: "Team A Description",
 			User:        john,
 		}
-		createTeam(cmdA, john)
+		createTeam(ctx, cmdA, john)
 
 		cmdB = &command.CreateTeam{
 			Name:        "Team B",
 			Description: "Team B Description",
 			User:        john,
 		}
-		createTeam(cmdB, john)
+		createTeam(ctx, cmdB, john)
 	})
 	Context("Find a team by ID", func() {
 		It("Found", func() {
-			team, err := view.Team(cmdA.TeamID, john, Bus.UoW)
+			team, err := view.Team(ctx, cmdA.TeamID, john, Bus.UoW)
 			Ω(err).To(Succeed())
 			Ω(team.IsPersonal).To(BeFalse())
 			Ω(team.Memberships).To(HaveLen(1))
 		})
 		It("Not Found", func() {
-			_, err := view.Team(uuid.NewV4(), john, Bus.UoW)
+			_, err := view.Team(ctx, uuid.NewV4(), john, Bus.UoW)
 			Ω(err).To(HaveOccurred())
 		})
 	})
 	It("Update", func() {
-		ctx := context.Background()
 		cmdUpdate := command.UpdateTeam{
 			TeamID:      cmdA.TeamID,
 			Name:        "Team C",
@@ -81,14 +80,14 @@ var _ = Describe("Team Testing", Ordered, func() {
 		err := Bus.Handle(ctx, &cmdUpdate)
 		Ω(err).To(Succeed())
 
-		team, err := view.Team(cmdA.TeamID, john, Bus.UoW)
+		team, err := view.Team(ctx, cmdA.TeamID, john, Bus.UoW)
 		Ω(err).To(Succeed())
 		Ω(team.Name).To(Equal("Team C"))
 		Ω(team.Description).To(Equal("Team C Description"))
 	})
 	Context("Get list of teams", func() {
 		It("List", func() {
-			respPaginated, err := view.Teams(Bus.UoW, john, "", 1, 10)
+			respPaginated, err := view.Teams(ctx, Bus.UoW, john, "", 1, 10)
 			Ω(err).To(Succeed())
 			Ω(respPaginated.Data).To(HaveLen(3))
 			Ω(respPaginated.Page).To(Equal(1))
@@ -108,10 +107,9 @@ var _ = Describe("Team Testing", Ordered, func() {
 				Description: "Team Jane Description",
 				User:        jane,
 			}
-			createTeam(janeTeam, jane)
+			createTeam(ctx, janeTeam, jane)
 		})
 		It("Invite member", func() {
-			ctx := context.Background()
 			cmd := command.InviteMember{
 				TeamID: janeTeam.TeamID,
 				Invitees: []command.Invitee{
@@ -148,7 +146,6 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(invitation.Email).To(Equal("james@mail.com"))
 		})
 		It("Verify invitation", func() {
-			ctx := context.Background()
 			cmd := command.InviteMember{
 				TeamID: janeTeam.TeamID,
 				Invitees: []command.Invitee{
@@ -190,7 +187,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			tx, err := Bus.UoW.Begin(ctx)
 			Ω(err).To(Succeed())
 
-			err = Bus.UoW.Invitation.Update(invitation, tx)
+			err = Bus.UoW.Invitation.Update(ctx, invitation, tx)
 			Ω(err).To(Succeed())
 			tx.Commit(ctx)
 
@@ -217,7 +214,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 			Ω(invitation.Status).To(Equal(domain.InvitationStatusSent))
 
 			james := domain.NewUser("James", "Doe", "james@mail.com", "", "Google", true)
-			err = createUser(james, Bus.UoW)
+			err = createUser(ctx, james, Bus.UoW)
 			Ω(err).To(Succeed())
 
 			cmdVerify := command.UpdateInvitationStatus{

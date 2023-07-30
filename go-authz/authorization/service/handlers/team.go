@@ -39,7 +39,7 @@ func CreateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Creat
 	}
 
 	team := domain.NewTeam(cmd.User, ownerRole.ID, cmd.Name, cmd.Description, false)
-	_, err = uow.Team.Add(team, tx)
+	_, err = uow.Team.Add(ctx, team, tx)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func UpdateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 		tx.Rollback(ctx)
 	}()
 
-	team, err := uow.Team.Get(cmd.TeamID)
+	team, err := uow.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func UpdateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 		"description": cmd.Description,
 	})
 
-	_, err = uow.Team.Update(team, tx)
+	_, err = uow.Team.Update(ctx, team, tx)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func UpdateLastActiveTeam(ctx context.Context, uow *service.UnitOfWork, cmd *com
 		Limit:        1,
 		IsSelectTeam: true,
 	}
-	memberships, err := uow.Membership.List(opts)
+	memberships, err := uow.Membership.List(ctx, opts)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func UpdateLastActiveTeam(ctx context.Context, uow *service.UnitOfWork, cmd *com
 	membership := memberships[0]
 	membership.LastActiveAt = lastActiveAt
 
-	_, err = uow.Membership.Update(membership, tx)
+	_, err = uow.Membership.Update(ctx, membership, tx)
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func DeleteTeamMember(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		tx.Rollback(ctx)
 	}()
 
-	membership, err := uow.Membership.Get(cmd.MembershipID)
+	membership, err := uow.Membership.Get(ctx, cmd.MembershipID)
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func DeleteTeamMember(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		return err
 	}
 
-	err = uow.Membership.Delete(cmd.MembershipID, tx)
+	err = uow.Membership.Delete(ctx, cmd.MembershipID, tx)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func ChangeMemberRole(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		tx.Rollback(ctx)
 	}()
 
-	membership, err := uow.Membership.Get(cmd.MembershipID)
+	membership, err := uow.Membership.Get(ctx, cmd.MembershipID)
 	if err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func ChangeMemberRole(ctx context.Context, uow *service.UnitOfWork, cmd *command
 
 	membership.RoleID = role.ID
 
-	_, err = uow.Membership.Update(membership, tx)
+	_, err = uow.Membership.Update(ctx, membership, tx)
 	if err != nil {
 		return err
 	}
@@ -246,7 +246,7 @@ func UpdateTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		tx.Rollback(ctx)
 	}()
 
-	team, err := uow.Team.Get(cmd.TeamID)
+	team, err := uow.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func UpdateTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	}
 
 	team.Update(payload)
-	_, err = uow.Team.Update(team, tx)
+	_, err = uow.Team.Update(ctx, team, tx)
 	if err != nil {
 		return err
 	}
@@ -311,7 +311,7 @@ func DeleteTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		tx.Rollback(ctx)
 	}()
 
-	team, err := uow.Team.Get(cmd.TeamID)
+	team, err := uow.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	}
@@ -324,7 +324,7 @@ func DeleteTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		}
 
 		team.AvatarURL = ""
-		_, err = uow.Team.Update(team, tx)
+		_, err = uow.Team.Update(ctx, team, tx)
 		if err != nil {
 			return err
 		}
