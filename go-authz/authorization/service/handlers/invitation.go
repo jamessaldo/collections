@@ -7,11 +7,11 @@ import (
 	"authorization/controller/exception"
 	"authorization/domain"
 	"authorization/domain/command"
-	"authorization/infrastructure/worker"
+	"authorization/infrastructure/mailer"
 	"authorization/service"
 )
 
-func InviteMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func InviteMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.InviteMember); ok {
 		return InviteMember(ctx, uow, mailer, c)
 	}
@@ -19,7 +19,7 @@ func InviteMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer wo
 }
 
 // create inviteMember function
-func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.InviteMember) error {
+func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface mailer.MailerInterface, cmd *command.InviteMember) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -93,10 +93,10 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailer worker.Wo
 			"InvitationID":   invitation.ID,
 		}
 
-		emailPayload := mailer.CreatePayload(worker.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
+		emailPayload := mailerInterface.CreatePayload(mailer.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
 
 		// send email
-		errSendMail := mailer.SendEmail(emailPayload)
+		errSendMail := mailerInterface.SendEmail(emailPayload)
 		if errSendMail != nil {
 			return errSendMail
 		}
@@ -109,7 +109,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailer worker.Wo
 	return nil
 }
 
-func ResendInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func ResendInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.ResendInvitation); ok {
 		return ResendInvitation(ctx, uow, mailer, c)
 	}
@@ -117,7 +117,7 @@ func ResendInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, maile
 }
 
 // create ResendInvitation function
-func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.ResendInvitation) error {
+func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailerInterface mailer.MailerInterface, cmd *command.ResendInvitation) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -154,10 +154,10 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailer worke
 		"InvitationID":   invitation.ID,
 	}
 
-	emailPayload := mailer.CreatePayload(worker.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
+	emailPayload := mailerInterface.CreatePayload(mailer.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
 
 	// send email
-	errSendMail := mailer.SendEmail(emailPayload)
+	errSendMail := mailerInterface.SendEmail(emailPayload)
 	if errSendMail != nil {
 		return errSendMail
 	}
@@ -174,7 +174,7 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailer worke
 	return nil
 }
 
-func DeleteInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteInvitation); ok {
 		return DeleteInvitation(ctx, uow, c)
 	}
@@ -219,7 +219,7 @@ func DeleteInvitation(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func UpdateInvitationStatusWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateInvitationStatusWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateInvitationStatus); ok {
 		return UpdateInvitationStatus(ctx, uow, c)
 	}

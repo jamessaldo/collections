@@ -2,8 +2,8 @@ package infrastructure
 
 import (
 	"authorization/domain"
+	"authorization/infrastructure/mailer"
 	"authorization/infrastructure/persistence"
-	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/service/handlers"
 
@@ -14,7 +14,7 @@ import (
 
 type Bootstraps struct {
 	Bus       *service.MessageBus
-	mailer    worker.WorkerInterface
+	mailer    mailer.MailerInterface
 	Endpoints map[string]domain.Endpoint
 }
 
@@ -33,9 +33,9 @@ func NewBootstraps() (*asynq.Client, *Bootstraps) {
 		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
 	}
 
-	asynqClient := worker.CreateAsynqClient()
+	asynqClient := mailer.CreateAsynqClient()
 
-	mailer := worker.NewMailer(asynqClient)
+	mailer := mailer.NewMailer(asynqClient)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to create mailer")
 	}

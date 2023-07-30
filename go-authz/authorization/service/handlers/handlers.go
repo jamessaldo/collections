@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"authorization/domain/command"
-	"authorization/infrastructure/worker"
+	"authorization/infrastructure/mailer"
 	"authorization/service"
 	"context"
 	"reflect"
 )
 
-var COMMAND_HANDLERS = map[reflect.Type]func(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error{
+var COMMAND_HANDLERS = map[reflect.Type]func(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error{
 	reflect.TypeOf(&command.CreateTeam{}):             CreateTeamWrapper,
 	reflect.TypeOf(&command.UpdateTeam{}):             UpdateTeamWrapper,
 	reflect.TypeOf(&command.UpdateLastActiveTeam{}):   UpdateLastActiveTeamWrapper,

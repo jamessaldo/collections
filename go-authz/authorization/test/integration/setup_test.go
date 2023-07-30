@@ -2,8 +2,8 @@ package integration
 
 import (
 	"authorization/config"
+	"authorization/infrastructure/mailer"
 	"authorization/infrastructure/persistence"
-	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/service/handlers"
 	"context"
@@ -67,9 +67,9 @@ var _ = BeforeEach(func() {
 		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
 	}
 
-	asynqClient := worker.CreateAsynqClientMock()
+	asynqClient := mailer.CreateAsynqClientMock()
 
-	mailer := worker.NewMailerMock(asynqClient)
+	mailer := mailer.NewMailerMock(asynqClient)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to create mailer")
 	}

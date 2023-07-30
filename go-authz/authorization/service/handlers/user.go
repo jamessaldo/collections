@@ -4,7 +4,7 @@ import (
 	"authorization/config"
 	"authorization/controller/exception"
 	"authorization/domain/command"
-	"authorization/infrastructure/worker"
+	"authorization/infrastructure/mailer"
 	"authorization/service"
 	"authorization/util"
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-func UpdateUserWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateUserWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateUser); ok {
 		return UpdateUser(ctx, uow, c)
 	}
@@ -53,7 +53,7 @@ func UpdateUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 	return nil
 }
 
-func DeleteUserWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteUserWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteUser); ok {
 		return DeleteUser(ctx, uow, c)
 	}
@@ -85,7 +85,7 @@ func DeleteUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.Delet
 	return nil
 }
 
-func UpdateUserAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateUserAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateUserAvatar); ok {
 		return UpdateUserAvatar(ctx, uow, c)
 	}
@@ -147,7 +147,7 @@ func UpdateUserAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func DeleteUserAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteUserAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteUserAvatar); ok {
 		return DeleteUserAvatar(ctx, uow, c)
 	}

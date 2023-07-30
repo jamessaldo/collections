@@ -9,8 +9,8 @@ import (
 	"authorization/config"
 	"authorization/controller/exception"
 	"authorization/domain/command"
+	"authorization/infrastructure/mailer"
 	"authorization/infrastructure/persistence"
-	"authorization/infrastructure/worker"
 	"authorization/service"
 	"authorization/util"
 
@@ -24,14 +24,14 @@ const (
 	FacebookProvider = "Facebook"
 )
 
-func LoginByGoogleWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func LoginByGoogleWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.LoginByGoogle); ok {
 		return LoginByGoogle(ctx, uow, mailer, c)
 	}
 	return fmt.Errorf("invalid command type, expected *command.LoginByGoogle, got %T", cmd)
 }
 
-func LoginByGoogle(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd *command.LoginByGoogle) error {
+func LoginByGoogle(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd *command.LoginByGoogle) error {
 	tx, txErr := uow.Begin(ctx)
 	if txErr != nil {
 		return txErr
@@ -109,10 +109,10 @@ func LoginByGoogle(ctx context.Context, uow *service.UnitOfWork, mailer worker.W
 	return nil
 }
 
-func sendWelcomeEmail(mailer worker.WorkerInterface, user domain.User) error {
+func sendWelcomeEmail(mailerInterface mailer.MailerInterface, user domain.User) error {
 	data := map[string]interface{}{
 		"FullName": user.FullName(),
 	}
-	payload := mailer.CreatePayload(worker.WelcomingTemplate, user.Email, fmt.Sprintf("Selamat Datang di %s!", config.AppConfig.AppName), data)
-	return mailer.SendEmail(payload)
+	payload := mailerInterface.CreatePayload(mailer.WelcomingTemplate, user.Email, fmt.Sprintf("Selamat Datang di %s!", config.AppConfig.AppName), data)
+	return mailerInterface.SendEmail(payload)
 }

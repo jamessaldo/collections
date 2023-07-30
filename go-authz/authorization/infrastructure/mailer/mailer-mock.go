@@ -1,4 +1,4 @@
-package worker
+package mailer
 
 type ClientMock struct {
 	// pool *pgxpool.Pool
@@ -8,7 +8,7 @@ type AsynqClientMock struct {
 	client *ClientMock
 }
 
-var _ WorkerInterface = &AsynqClientMock{}
+var _ MailerInterface = &AsynqClientMock{}
 
 func NewMailerMock(client *ClientMock) *AsynqClientMock {
 	return &AsynqClientMock{client: client}

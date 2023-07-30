@@ -5,7 +5,7 @@ import (
 	"authorization/controller/exception"
 	"authorization/domain"
 	"authorization/domain/command"
-	"authorization/infrastructure/worker"
+	"authorization/infrastructure/mailer"
 	"authorization/service"
 	"authorization/util"
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-func CreateTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func CreateTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.CreateTeam); ok {
 		return CreateTeam(ctx, uow, c)
 	}
@@ -53,7 +53,7 @@ func CreateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Creat
 	return nil
 }
 
-func UpdateTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateTeam); ok {
 		return UpdateTeam(ctx, uow, c)
 	}
@@ -93,7 +93,7 @@ func UpdateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 	return nil
 }
 
-func UpdateLastActiveTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateLastActiveTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateLastActiveTeam); ok {
 		return UpdateLastActiveTeam(ctx, uow, c)
 	}
@@ -142,7 +142,7 @@ func UpdateLastActiveTeam(ctx context.Context, uow *service.UnitOfWork, cmd *com
 	return nil
 }
 
-func DeleteTeamMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteTeamMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteTeamMember); ok {
 		return DeleteTeamMember(ctx, uow, c)
 	}
@@ -182,7 +182,7 @@ func DeleteTeamMember(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func ChangeMemberRoleWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func ChangeMemberRoleWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.ChangeMemberRole); ok {
 		return ChangeMemberRole(ctx, uow, c)
 	}
@@ -229,7 +229,7 @@ func ChangeMemberRole(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func UpdateTeamAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func UpdateTeamAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.UpdateTeamAvatar); ok {
 		return UpdateTeamAvatar(ctx, uow, c)
 	}
@@ -294,7 +294,7 @@ func UpdateTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func DeleteTeamAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error {
+func DeleteTeamAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
 	if c, ok := cmd.(*command.DeleteTeamAvatar); ok {
 		return DeleteTeamAvatar(ctx, uow, c)
 	}

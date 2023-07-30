@@ -1,7 +1,7 @@
 package service
 
 import (
-	"authorization/infrastructure/worker"
+	"authorization/infrastructure/mailer"
 	"context"
 	"fmt"
 	"reflect"
@@ -10,12 +10,12 @@ import (
 type Message interface{}
 
 type MessageBus struct {
-	commandHandlers map[reflect.Type]func(ctx context.Context, uow *UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error
+	commandHandlers map[reflect.Type]func(ctx context.Context, uow *UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error
 	UoW             *UnitOfWork
-	mailer          worker.WorkerInterface
+	mailer          mailer.MailerInterface
 }
 
-func NewMessageBus(commandHandlers map[reflect.Type]func(ctx context.Context, uow *UnitOfWork, mailer worker.WorkerInterface, cmd interface{}) error, uow *UnitOfWork, mailer worker.WorkerInterface) *MessageBus {
+func NewMessageBus(commandHandlers map[reflect.Type]func(ctx context.Context, uow *UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error, uow *UnitOfWork, mailer mailer.MailerInterface) *MessageBus {
 	return &MessageBus{
 		commandHandlers: commandHandlers,
 		UoW:             uow,

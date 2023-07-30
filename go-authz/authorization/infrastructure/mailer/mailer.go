@@ -1,4 +1,4 @@
-package worker
+package mailer
 
 import (
 	"authorization/config"
@@ -9,7 +9,7 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-type WorkerInterface interface {
+type MailerInterface interface {
 	SendEmail(payload *Payload) error
 	CreatePayload(templateName EmailTemplate, to, subject string, data map[string]interface{}) *Payload
 }
@@ -18,7 +18,7 @@ type AsynqClient struct {
 	client *asynq.Client
 }
 
-var _ WorkerInterface = &AsynqClient{}
+var _ MailerInterface = &AsynqClient{}
 
 func NewMailer(client *asynq.Client) *AsynqClient {
 	return &AsynqClient{client: client}

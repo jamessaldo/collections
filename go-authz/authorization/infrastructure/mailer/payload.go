@@ -1,4 +1,4 @@
-package worker
+package mailer
 
 import (
 	"encoding/json"
