@@ -7,7 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type InviteMember struct {
+type SendInvitation struct {
 	TeamID   uuid.UUID `json:"team_id"`
 	Invitees []Invitee `json:"invitees"`
 	Sender   domain.User

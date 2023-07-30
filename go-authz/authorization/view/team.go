@@ -4,7 +4,7 @@ import (
 	"authorization/controller/exception"
 	"authorization/domain"
 	"authorization/domain/dto"
-	"authorization/service"
+	"authorization/repository"
 	"context"
 	"errors"
 	"time"
@@ -13,8 +13,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func Team(ctx context.Context, id uuid.UUID, user domain.User, uow *service.UnitOfWork) (*dto.TeamRetrievalSchema, error) {
-	team, err := uow.Team.Get(ctx, id)
+func Team(ctx context.Context, id uuid.UUID, user domain.User) (*dto.TeamRetrievalSchema, error) {
+	team, err := repository.Team.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
@@ -26,11 +26,11 @@ func Team(ctx context.Context, id uuid.UUID, user domain.User, uow *service.Unit
 		IsSelectUser: true,
 		IsSelectRole: true,
 	}
-	memberships, err := uow.Membership.List(ctx, opts)
+	memberships, err := repository.Membership.List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	totalMemberships, err := uow.Membership.Count(ctx, opts)
+	totalMemberships, err := repository.Membership.Count(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func Team(ctx context.Context, id uuid.UUID, user domain.User, uow *service.Unit
 	}, nil
 }
 
-func Teams(ctx context.Context, uow *service.UnitOfWork, user domain.User, name string, page, pageSize int) (dto.Pagination, error) {
+func Teams(ctx context.Context, user domain.User, name string, page, pageSize int) (dto.Pagination, error) {
 	var teams []interface{}
 	var totalMemberships int64
 
@@ -70,12 +70,12 @@ func Teams(ctx context.Context, uow *service.UnitOfWork, user domain.User, name 
 		Skip:         page,
 		Name:         name,
 	}
-	memberships, err := uow.Membership.List(ctx, membershipOpts)
+	memberships, err := repository.Membership.List(ctx, membershipOpts)
 	if err != nil {
 		return dto.Pagination{}, err
 	}
 
-	totalMemberships, err = uow.Membership.Count(ctx, membershipOpts)
+	totalMemberships, err = repository.Membership.Count(ctx, membershipOpts)
 	if err != nil {
 		return dto.Pagination{}, err
 	}
@@ -86,11 +86,11 @@ func Teams(ctx context.Context, uow *service.UnitOfWork, user domain.User, name 
 			IsSelectUser: true,
 			IsSelectRole: true,
 		}
-		members, err := uow.Membership.List(ctx, opts)
+		members, err := repository.Membership.List(ctx, opts)
 		if err != nil {
 			return dto.Pagination{}, err
 		}
-		totalMembers, err := uow.Membership.Count(ctx, opts)
+		totalMembers, err := repository.Membership.Count(ctx, opts)
 		if err != nil {
 			return dto.Pagination{}, err
 		}

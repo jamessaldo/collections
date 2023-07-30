@@ -6,7 +6,7 @@ import (
 	"authorization/domain/dto"
 	"authorization/infrastructure/persistence"
 	"authorization/middleware"
-	"authorization/service"
+	"authorization/service/handlers"
 	"authorization/util"
 	"authorization/view"
 	"encoding/json"
@@ -68,9 +68,6 @@ func (ctrl *userController) GetMe(ctx *gin.Context) {
 // @Success 200 {object} dto.PublicUser
 // @Router /users/{id} [get]
 func (ctrl *userController) GetUserById(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
-	uow := bus.UoW
-
 	// Get user ID from request parameter
 	id := ctx.Param("id")
 	log.Debug().Caller().Str("id", id).Msg("Get user data by ID")
@@ -88,7 +85,7 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 
 	if err != nil {
 		// Get user data from database
-		user, err = view.User(ctx.Request.Context(), uuid.FromStringOrNil(id), uow)
+		user, err = view.User(ctx.Request.Context(), uuid.FromStringOrNil(id))
 		if err != nil {
 			log.Error().Caller().Err(err).Msg("Failed to get user data")
 			_ = ctx.Error(err)
@@ -110,9 +107,6 @@ func (ctrl *userController) GetUserById(ctx *gin.Context) {
 // @Success 200 {object} dto.PublicUser
 // @Router /users [get]
 func (ctrl *userController) GetUsers(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
-	uow := bus.UoW
-
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to get page number")
@@ -134,7 +128,7 @@ func (ctrl *userController) GetUsers(ctx *gin.Context) {
 	}
 
 	// Get user data from database
-	users, err := view.Users(ctx.Request.Context(), uow, page, pageSize)
+	users, err := view.Users(ctx.Request.Context(), page, pageSize)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to get users data")
 		_ = ctx.Error(err)
@@ -156,7 +150,6 @@ func (ctrl *userController) GetUsers(ctx *gin.Context) {
 // @Router /users [put]
 func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(domain.User)
-	bus := ctx.MustGet("bus").(*service.MessageBus)
 
 	// Parse the request body into a User struct
 	var cmd command.UpdateUser
@@ -167,7 +160,7 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	err := bus.Handle(ctx.Request.Context(), &cmd)
+	err := handlers.UpdateUser(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to update user data")
 		_ = ctx.Error(err)
@@ -187,14 +180,13 @@ func (ctrl *userController) UpdateUser(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /users [delete]
 func (ctrl *userController) DeleteUser(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	cmd := command.DeleteUser{
 		User: currentUser,
 	}
 
-	err := bus.Handle(ctx.Request.Context(), &cmd)
+	err := handlers.DeleteUser(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to delete user data")
 		_ = ctx.Error(err)
@@ -214,7 +206,6 @@ func (ctrl *userController) DeleteUser(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /users/avatar [put]
 func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Parse the request body into a User struct
@@ -226,7 +217,7 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	err := bus.Handle(ctx.Request.Context(), &cmd)
+	err := handlers.UpdateUserAvatar(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to update user avatar")
 		_ = ctx.Error(err)
@@ -246,14 +237,13 @@ func (ctrl *userController) UpdateUserAvatar(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /users/avatar [delete]
 func (ctrl *userController) DeleteUserAvatar(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	cmd := command.DeleteUserAvatar{
 		User: currentUser,
 	}
 
-	err := bus.Handle(ctx.Request.Context(), &cmd)
+	err := handlers.DeleteUserAvatar(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("Failed to delete user avatar")
 		_ = ctx.Error(err)

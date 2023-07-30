@@ -16,9 +16,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-type Server struct{}
-
-func (server *Server) InitializeApp(bootstrap gin.HandlerFunc) {
+func CreateRouter() {
 	userControllerV1 := v1.NewUserController()
 	authControllerV1 := v1.NewAuthController()
 	teamControllerV1 := v1.NewTeamController()
@@ -30,8 +28,7 @@ func (server *Server) InitializeApp(bootstrap gin.HandlerFunc) {
 	router.MaxMultipartMemory = config.StorageConfig.StaticMaxAvatarSize
 	router.Use(middleware.CORSMiddleware()) //For CORS
 	router.Use(middleware.HandleCustomError())
-	router.Use(bootstrap)
-	router.NoRoute(NoRoute)
+	router.NoRoute(noRouteHandler)
 	router.StaticFS("/static", http.Dir("./static"))
 
 	routerApi := router.Group("/api")
@@ -55,6 +52,6 @@ func (server *Server) InitializeApp(bootstrap gin.HandlerFunc) {
 	log.Fatal().Caller().Err(router.Run(config.AppConfig.AppHost + ":" + config.AppConfig.AppPort)).Msg("Cannot start the server")
 }
 
-func NoRoute(ctx *gin.Context) {
+func noRouteHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "Route Not Found"})
 }

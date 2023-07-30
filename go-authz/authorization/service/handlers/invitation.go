@@ -1,26 +1,19 @@
 package handlers
 
 import (
-	"context"
-	"fmt"
-
 	"authorization/controller/exception"
 	"authorization/domain"
 	"authorization/domain/command"
-	"authorization/infrastructure/mailer"
-	"authorization/service"
+	"authorization/infrastructure/persistence"
+	"authorization/infrastructure/worker"
+	"authorization/repository"
+	"context"
+	"fmt"
 )
 
-func InviteMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.InviteMember); ok {
-		return InviteMember(ctx, uow, mailer, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.InviteMember, got %T", cmd)
-}
-
-// create inviteMember function
-func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface mailer.MailerInterface, cmd *command.InviteMember) error {
-	tx, txErr := uow.Begin(ctx)
+// create inviteSendInvitationMember function
+func SendInvitation(ctx context.Context, cmd *command.SendInvitation) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -30,7 +23,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface 
 	}()
 
 	// get team
-	team, err := uow.Team.Get(ctx, cmd.TeamID)
+	team, err := repository.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	} else if team.IsPersonal {
@@ -42,7 +35,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface 
 		IsSelectUser: true,
 		IsSelectRole: true,
 	}
-	memberships, err := uow.Membership.List(ctx, membershipOpts)
+	memberships, err := repository.Membership.List(ctx, membershipOpts)
 	if err != nil {
 		return err
 	}
@@ -58,7 +51,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface 
 			continue
 		}
 
-		role, err := uow.Role.GetByName(ctx, invitee.Role)
+		role, err := repository.Role.GetByName(ctx, invitee.Role)
 		if err != nil {
 			return err
 		}
@@ -70,7 +63,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface 
 			Statuses: []domain.InvitationStatus{domain.InvitationStatusPending, domain.InvitationStatusSent},
 		}
 
-		activeInvitees, err := uow.Invitation.List(ctx, inviteesOpts)
+		activeInvitees, err := repository.Invitation.List(ctx, inviteesOpts)
 		if err != nil {
 			return err
 		}
@@ -80,7 +73,7 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface 
 		}
 
 		invitation := domain.NewInvitation(invitee.Email, domain.InvitationStatusPending, cmd.TeamID, cmd.Sender.ID, role.ID)
-		_, err = uow.Invitation.Add(ctx, invitation, tx)
+		_, err = repository.Invitation.Add(ctx, invitation, tx)
 		if err != nil {
 			return err
 		}
@@ -93,10 +86,10 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface 
 			"InvitationID":   invitation.ID,
 		}
 
-		emailPayload := mailerInterface.CreatePayload(mailer.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
+		emailPayload := worker.Mailer.CreateEmailPayload(worker.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
 
 		// send email
-		errSendMail := mailerInterface.SendEmail(emailPayload)
+		errSendMail := worker.Mailer.SendEmail(emailPayload)
 		if errSendMail != nil {
 			return errSendMail
 		}
@@ -109,16 +102,9 @@ func InviteMember(ctx context.Context, uow *service.UnitOfWork, mailerInterface 
 	return nil
 }
 
-func ResendInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.ResendInvitation); ok {
-		return ResendInvitation(ctx, uow, mailer, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.ResendInvitation, got %T", cmd)
-}
-
 // create ResendInvitation function
-func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailerInterface mailer.MailerInterface, cmd *command.ResendInvitation) error {
-	tx, txErr := uow.Begin(ctx)
+func ResendInvitation(ctx context.Context, cmd *command.ResendInvitation) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -128,7 +114,7 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailerInterf
 	}()
 
 	// get team
-	team, err := uow.Team.Get(ctx, cmd.TeamID)
+	team, err := repository.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	} else if team.IsPersonal {
@@ -136,7 +122,7 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailerInterf
 	}
 
 	// get invitation
-	invitation, err := uow.Invitation.Get(ctx, cmd.InvitationID)
+	invitation, err := repository.Invitation.Get(ctx, cmd.InvitationID)
 	if err != nil {
 		return err
 	}
@@ -154,15 +140,15 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailerInterf
 		"InvitationID":   invitation.ID,
 	}
 
-	emailPayload := mailerInterface.CreatePayload(mailer.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
+	emailPayload := worker.Mailer.CreateEmailPayload(worker.InvitationTemplate, invitation.Email, fmt.Sprintf("Invitation to join %s team", team.Name), data)
 
 	// send email
-	errSendMail := mailerInterface.SendEmail(emailPayload)
+	errSendMail := worker.Mailer.SendEmail(emailPayload)
 	if errSendMail != nil {
 		return errSendMail
 	}
 
-	err = uow.Invitation.Update(ctx, invitation, tx)
+	err = repository.Invitation.Update(ctx, invitation, tx)
 	if err != nil {
 		return err
 	}
@@ -174,16 +160,9 @@ func ResendInvitation(ctx context.Context, uow *service.UnitOfWork, mailerInterf
 	return nil
 }
 
-func DeleteInvitationWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.DeleteInvitation); ok {
-		return DeleteInvitation(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.DeleteInvitation, got %T", cmd)
-}
-
 // create DeleteInvitation function
-func DeleteInvitation(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteInvitation) error {
-	tx, txErr := uow.Begin(ctx)
+func DeleteInvitation(ctx context.Context, cmd *command.DeleteInvitation) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -193,7 +172,7 @@ func DeleteInvitation(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	}()
 
 	// get invitation
-	invitation, err := uow.Invitation.Get(ctx, cmd.InvitationID)
+	invitation, err := repository.Invitation.Get(ctx, cmd.InvitationID)
 	if err != nil {
 		return err
 	}
@@ -207,7 +186,7 @@ func DeleteInvitation(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	}
 
 	// delete invitation
-	err = uow.Invitation.Delete(ctx, invitation.ID, tx)
+	err = repository.Invitation.Delete(ctx, invitation.ID, tx)
 	if err != nil {
 		return err
 	}
@@ -219,16 +198,9 @@ func DeleteInvitation(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func UpdateInvitationStatusWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.UpdateInvitationStatus); ok {
-		return UpdateInvitationStatus(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.UpdateInvitationStatus, got %T", cmd)
-}
-
 // create UpdateInvitationStatus function
-func UpdateInvitationStatus(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateInvitationStatus) error {
-	tx, txErr := uow.Begin(ctx)
+func UpdateInvitationStatus(ctx context.Context, cmd *command.UpdateInvitationStatus) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -238,12 +210,12 @@ func UpdateInvitationStatus(ctx context.Context, uow *service.UnitOfWork, cmd *c
 	}()
 
 	// get invitation
-	invitation, err := uow.Invitation.Get(ctx, cmd.InvitationID)
+	invitation, err := repository.Invitation.Get(ctx, cmd.InvitationID)
 	if err != nil {
 		return err
 	}
 
-	team, err := uow.Team.Get(ctx, invitation.TeamID)
+	team, err := repository.Team.Get(ctx, invitation.TeamID)
 	if err != nil {
 		return err
 	}
@@ -260,20 +232,20 @@ func UpdateInvitationStatus(ctx context.Context, uow *service.UnitOfWork, cmd *c
 	// update invitation
 	invitation.Status = domain.InvitationStatus(cmd.Status)
 	invitation.IsActive = false
-	err = uow.Invitation.Update(ctx, invitation, tx)
+	err = repository.Invitation.Update(ctx, invitation, tx)
 	if err != nil {
 		return err
 	}
 
 	// add team member
 	if cmd.Status == string(domain.InvitationStatusAccepted) {
-		role, err := uow.Role.Get(ctx, invitation.RoleID)
+		role, err := repository.Role.Get(ctx, invitation.RoleID)
 		if err != nil {
 			return err
 		}
 
 		team.AddMembership(invitation.TeamID, cmd.User.ID, role.ID)
-		_, err = uow.Team.Update(ctx, team, tx)
+		_, err = repository.Team.Update(ctx, team, tx)
 		if err != nil {
 			return err
 		}

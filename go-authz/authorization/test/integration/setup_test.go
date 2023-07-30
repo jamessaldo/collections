@@ -2,10 +2,9 @@ package integration
 
 import (
 	"authorization/config"
-	"authorization/infrastructure/mailer"
 	"authorization/infrastructure/persistence"
-	"authorization/service"
-	"authorization/service/handlers"
+	"authorization/infrastructure/seeder"
+	"authorization/repository"
 	"context"
 	"fmt"
 	"os"
@@ -31,7 +30,6 @@ func TestDocker(t *testing.T) {
 var (
 	Pool          *pgxpool.Pool
 	cleanupDocker func()
-	Bus           *service.MessageBus
 )
 
 var _ = BeforeSuite(func() {
@@ -61,24 +59,8 @@ var _ = BeforeEach(func() {
 	}
 
 	persistence.Migration(Pool)
-
-	uow, err := service.NewUnitOfWork(Pool)
-	if err != nil {
-		log.Fatal().Caller().Err(err).Msg("Failed to create unit of work")
-	}
-
-	asynqClient := mailer.CreateAsynqClientMock()
-
-	mailer := mailer.NewMailerMock(asynqClient)
-	if err != nil {
-		log.Fatal().Caller().Err(err).Msg("Failed to create mailer")
-	}
-
-	Ω(err).To(Succeed())
-
-	Bus = service.NewMessageBus(handlers.COMMAND_HANDLERS, uow, mailer)
-
-	persistence.Execute(Pool, "AccessSeed")
+	repository.CreateRepositories()
+	seeder.Execute(Pool, "AccessSeed")
 })
 
 func setupPoolWithDocker() (*pgxpool.Pool, func()) {

@@ -1,4 +1,4 @@
-package mailer
+package worker
 
 import (
 	"authorization/config"
@@ -9,9 +9,13 @@ import (
 	"github.com/hibiken/asynq"
 )
 
+var (
+	Mailer MailerInterface
+)
+
 type MailerInterface interface {
-	SendEmail(payload *Payload) error
-	CreatePayload(templateName EmailTemplate, to, subject string, data map[string]interface{}) *Payload
+	SendEmail(payload *EmailPayload) error
+	CreateEmailPayload(templateName EmailTemplate, to, subject string, data map[string]interface{}) *EmailPayload
 }
 
 type AsynqClient struct {
@@ -20,12 +24,12 @@ type AsynqClient struct {
 
 var _ MailerInterface = &AsynqClient{}
 
-func NewMailer(client *asynq.Client) *AsynqClient {
-	return &AsynqClient{client: client}
+func CreateMailer(client *asynq.Client) {
+	Mailer = &AsynqClient{client: client}
 }
 
 // Enqueue task to send email
-func (ac *AsynqClient) SendEmail(payload *Payload) error {
+func (ac *AsynqClient) SendEmail(payload *EmailPayload) error {
 	// Define tasks.
 	task := newEmailTask(payload)
 
@@ -44,8 +48,8 @@ func (ac *AsynqClient) SendEmail(payload *Payload) error {
 	return nil
 }
 
-func (ac *AsynqClient) CreatePayload(templateName EmailTemplate, to, subject string, data map[string]interface{}) *Payload {
-	return &Payload{
+func (ac *AsynqClient) CreateEmailPayload(templateName EmailTemplate, to, subject string, data map[string]interface{}) *EmailPayload {
+	return &EmailPayload{
 		TemplateName: templateName,
 		To:           to,
 		Subject:      subject,
@@ -53,7 +57,7 @@ func (ac *AsynqClient) CreatePayload(templateName EmailTemplate, to, subject str
 	}
 }
 
-func CreateAsynqClient() *asynq.Client {
+func CreateMailerClient() *asynq.Client {
 	// Create a new Redis connection for the client.
 	redisConnection := asynq.RedisClientOpt{
 		Addr: config.StorageConfig.RedisHost + ":" + config.StorageConfig.RedisPort, // Redis server address

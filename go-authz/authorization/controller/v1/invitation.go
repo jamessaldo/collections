@@ -5,7 +5,7 @@ import (
 	"authorization/domain"
 	"authorization/domain/command"
 	"authorization/middleware"
-	"authorization/service"
+	"authorization/service/handlers"
 	"authorization/view"
 	"net/http"
 
@@ -47,7 +47,6 @@ func (ctrl *invitationController) Routes(route *gin.RouterGroup) {
 // @Success 200 {string} string "OK"
 // @Router /invitations/verify [post]
 func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Parse the request body into a User struct
@@ -59,7 +58,7 @@ func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 
 	cmd.User = currentUser
 
-	err := bus.Handle(ctx.Request.Context(), &cmd)
+	err := handlers.UpdateInvitationStatus(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not verify invitation")
 		_ = ctx.Error(err)
@@ -80,9 +79,6 @@ func (ctrl *invitationController) VerifyInvitation(ctx *gin.Context) {
 // @Success 200 {object} dto.InvitationRetreivalSchema
 // @Router /invitations/{id}/check [get]
 func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
-	uow := bus.UoW
-
 	// Get invitation ID from request parameter
 	id := ctx.Param("id")
 	log.Debug().Caller().Str("id", id).Msg("Get invitation data by ID")
@@ -95,7 +91,7 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 	}
 
 	// Get invitation data from database
-	invitation, err := view.Invitation(ctx.Request.Context(), idParsed, uow)
+	invitation, err := view.Invitation(ctx.Request.Context(), idParsed)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not get invitation")
 		_ = ctx.Error(err)
@@ -116,7 +112,6 @@ func (ctrl *invitationController) GetInvitationByID(ctx *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Router /invitations/{id} [delete]
 func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
 	currentUser := ctx.MustGet("currentUser").(domain.User)
 
 	// Get invitation ID from request parameter
@@ -135,7 +130,7 @@ func (ctrl *invitationController) DeleteInvitation(ctx *gin.Context) {
 	cmd.InvitationID = invitationID
 	cmd.User = currentUser
 
-	err = bus.Handle(ctx.Request.Context(), &cmd)
+	err = handlers.DeleteInvitation(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not delete invitation")
 		_ = ctx.Error(err)

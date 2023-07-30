@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"authorization/domain"
+	"authorization/repository"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"authorization/config"
 	"authorization/controller/exception"
 	"authorization/infrastructure/persistence"
-	"authorization/service"
 	"authorization/util"
 
 	"github.com/gin-gonic/gin"
@@ -22,9 +22,6 @@ import (
 
 func DeserializeUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		bus := ctx.MustGet("bus").(*service.MessageBus)
-		uow := bus.UoW
-
 		var token string
 
 		authorizationHeader := ctx.Request.Header.Get("Authorization")
@@ -74,7 +71,7 @@ func DeserializeUser() gin.HandlerFunc {
 			}
 		} else if err == redis.Nil {
 			userId, _ := uuid.FromString(userId)
-			user, err = uow.User.Get(ctx.Request.Context(), userId)
+			user, err = repository.User.Get(ctx.Request.Context(), userId)
 			if err != nil {
 				if errors.Is(err, pgx.ErrNoRows) {
 					_ = ctx.Error(exception.NewNotFoundException("the user belonging to this token no logger exists"))

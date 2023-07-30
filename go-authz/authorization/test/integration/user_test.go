@@ -4,7 +4,9 @@ import (
 	"authorization/domain"
 	"authorization/domain/command"
 	"authorization/domain/dto"
-	"authorization/service"
+	"authorization/infrastructure/persistence"
+	"authorization/repository"
+	"authorization/service/handlers"
 	"authorization/view"
 	"context"
 	"errors"
@@ -16,20 +18,20 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func createUser(ctx context.Context, user domain.User, uow *service.UnitOfWork) error {
-	tx, txErr := uow.Begin(ctx)
+func createUser(ctx context.Context, user domain.User) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	Ω(txErr).To(Succeed())
 
 	defer func() {
 		tx.Rollback(ctx)
 	}()
 
-	_, err := uow.User.Add(ctx, user, tx)
+	_, err := repository.User.Add(ctx, user, tx)
 	if err != nil {
 		return err
 	}
 
-	ownerRole, err := uow.Role.GetByName(ctx, domain.Owner)
+	ownerRole, err := repository.Role.GetByName(ctx, domain.Owner)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			log.Fatal().Err(err).Msgf("Role with name %s is not exist! Detail: %s", domain.Owner, err.Error())
@@ -40,7 +42,7 @@ func createUser(ctx context.Context, user domain.User, uow *service.UnitOfWork) 
 
 	team := domain.NewTeam(user, ownerRole.ID, "", "", true)
 
-	_, err = uow.Team.Add(ctx, team, tx)
+	_, err = repository.Team.Add(ctx, team, tx)
 	if err != nil {
 		return err
 	}
@@ -58,17 +60,15 @@ var _ = Describe("User Testing", func() {
 	)
 	ctx := context.Background()
 	BeforeEach(func() {
-		uow := Bus.UoW
-
 		john := domain.NewUser("John", "Doe", "johndoe@example.com", "", "Google", true)
-		err := createUser(ctx, john, uow)
+		err := createUser(ctx, john)
 		Ω(err).To(Succeed())
 		johnUserId = john.ID
 
 	})
 	Context("Load", func() {
 		It("Found", func() {
-			user, err := view.User(ctx, johnUserId, Bus.UoW)
+			user, err := view.User(ctx, johnUserId)
 			Ω(err).To(Succeed())
 			Ω(user.FirstName).To(Equal("John"))
 			Ω(user.LastName).To(Equal("Doe"))
@@ -76,12 +76,12 @@ var _ = Describe("User Testing", func() {
 			Ω(user).To(BeAssignableToTypeOf(&dto.PublicUser{}))
 		})
 		It("Not Found", func() {
-			_, err := view.User(ctx, uuid.NewV4(), Bus.UoW)
+			_, err := view.User(ctx, uuid.NewV4())
 			Ω(err).To(HaveOccurred())
 		})
 	})
 	It("List", func() {
-		respPaginated, err := view.Users(ctx, Bus.UoW, 1, 10)
+		respPaginated, err := view.Users(ctx, 1, 10)
 		Ω(err).To(Succeed())
 		Ω(respPaginated.Data).To(HaveLen(1))
 		Ω(respPaginated.Page).To(Equal(1))
@@ -93,18 +93,17 @@ var _ = Describe("User Testing", func() {
 	})
 	Context("Save", func() {
 		It("Create", func() {
-			uow := Bus.UoW
 
 			jane := domain.NewUser("Jane", "Doe", "janedoe@example.com", "", "Google", true)
-			err := createUser(ctx, jane, uow)
+			err := createUser(ctx, jane)
 			Ω(err).To(Succeed())
 
-			respPaginated, err := view.Users(ctx, Bus.UoW, 1, 10)
+			respPaginated, err := view.Users(ctx, 1, 10)
 			Ω(err).To(Succeed())
 			Ω(respPaginated.Data).To(HaveLen(2))
 		})
 		It("Update", func() {
-			user, err := Bus.UoW.User.Get(ctx, johnUserId)
+			user, err := repository.User.Get(ctx, johnUserId)
 			Ω(err).To(Succeed())
 			Ω(user.FirstName).To(Equal("John"))
 			Ω(user.PhoneNumber).To(Equal(""))
@@ -115,23 +114,23 @@ var _ = Describe("User Testing", func() {
 				PhoneNumber: "08123456789",
 				User:        user,
 			}
-			err = Bus.Handle(ctx, &cmd)
+			err = handlers.UpdateUser(ctx, &cmd)
 			Ω(err).To(Succeed())
 
-			user, _ = Bus.UoW.User.Get(ctx, johnUserId)
+			user, _ = repository.User.Get(ctx, johnUserId)
 			Ω(user.FirstName).To(Equal("Johnny"))
 			Ω(user.PhoneNumber).To(Equal("08123456789"))
 		})
 	})
 	It("Delete", func() {
-		user, err := Bus.UoW.User.Get(ctx, johnUserId)
+		user, err := repository.User.Get(ctx, johnUserId)
 		Ω(err).To(Succeed())
 		cmd := command.DeleteUser{
 			User: user,
 		}
-		err = Bus.Handle(ctx, &cmd)
+		err = handlers.DeleteUser(ctx, &cmd)
 		Ω(err).To(Succeed())
-		_, err = view.User(ctx, johnUserId, Bus.UoW)
+		_, err = view.User(ctx, johnUserId)
 		Ω(err).To(HaveOccurred())
 	})
 })

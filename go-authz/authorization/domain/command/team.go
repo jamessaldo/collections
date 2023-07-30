@@ -29,13 +29,6 @@ type UpdateLastActiveTeam struct {
 	Command
 }
 
-type SendInvitation struct {
-	Members []Invitee `json:"members"`
-	TeamID  uuid.UUID
-	User    domain.User
-	Command
-}
-
 type DeleteTeamMember struct {
 	TeamID       uuid.UUID
 	MembershipID uuid.UUID `json:"membership_id"`

@@ -5,7 +5,7 @@ import (
 	"authorization/controller/exception"
 	"authorization/domain/dto"
 	"authorization/infrastructure/persistence"
-	"authorization/service"
+	"authorization/repository"
 	"authorization/util"
 	"context"
 	"errors"
@@ -16,7 +16,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func RefreshAccessToken(ctx context.Context, refreshToken string, uow *service.UnitOfWork) (string, error) {
+func RefreshAccessToken(ctx context.Context, refreshToken string) (string, error) {
 	tokenClaims, err := util.ValidateToken(refreshToken, config.AppConfig.RefreshTokenPublicKey)
 	if err != nil {
 		return "", err
@@ -27,7 +27,7 @@ func RefreshAccessToken(ctx context.Context, refreshToken string, uow *service.U
 		return "", err
 	}
 
-	user, err := uow.User.Get(ctx, uuid.FromStringOrNil(userId))
+	user, err := repository.User.Get(ctx, uuid.FromStringOrNil(userId))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", exception.NewNotFoundException(err.Error())
@@ -50,8 +50,8 @@ func RefreshAccessToken(ctx context.Context, refreshToken string, uow *service.U
 	return *accessToken.Token, nil
 }
 
-func User(ctx context.Context, id uuid.UUID, uow *service.UnitOfWork) (*dto.PublicUser, error) {
-	user, err := uow.User.Get(ctx, id)
+func User(ctx context.Context, id uuid.UUID) (*dto.PublicUser, error) {
+	user, err := repository.User.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
@@ -62,13 +62,13 @@ func User(ctx context.Context, id uuid.UUID, uow *service.UnitOfWork) (*dto.Publ
 	return user.PublicUser(), nil
 }
 
-func Users(ctx context.Context, uow *service.UnitOfWork, page, pageSize int) (dto.Pagination, error) {
-	users, err := uow.User.List(ctx, page, pageSize)
+func Users(ctx context.Context, page, pageSize int) (dto.Pagination, error) {
+	users, err := repository.User.List(ctx, page, pageSize)
 	if err != nil {
 		return dto.Pagination{}, err
 	}
 
-	totalData, err := uow.User.Count(ctx)
+	totalData, err := repository.User.Count(ctx)
 	if err != nil {
 		return dto.Pagination{}, err
 	}

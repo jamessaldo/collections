@@ -5,7 +5,7 @@ import (
 	"authorization/controller/exception"
 	"authorization/domain/command"
 	"authorization/middleware"
-	"authorization/service"
+	"authorization/service/handlers"
 	"authorization/view"
 	"fmt"
 	"net/http"
@@ -35,7 +35,6 @@ func (ctrl *authController) Routes(route *gin.RouterGroup) {
 }
 
 func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
 	code := ctx.Query("code")
 	var pathUrl string = "/"
 
@@ -55,7 +54,8 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 		PathURL: pathUrl,
 	}
 
-	err := bus.Handle(ctx.Request.Context(), &cmd)
+	// err := bus.Handle(ctx.Request.Context(), &cmd)
+	err := handlers.LoginByGoogle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not login by google")
 		_ = ctx.Error(err)
@@ -69,9 +69,6 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 }
 
 func (ctrl *authController) RefreshAccessToken(ctx *gin.Context) {
-	bus := ctx.MustGet("bus").(*service.MessageBus)
-	uow := bus.UoW
-
 	message := "could not refresh access token"
 
 	refresh_token, err := ctx.Cookie("refresh_token")
@@ -82,7 +79,7 @@ func (ctrl *authController) RefreshAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := view.RefreshAccessToken(ctx.Request.Context(), refresh_token, uow)
+	accessToken, err := view.RefreshAccessToken(ctx.Request.Context(), refresh_token)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not refresh access token")
 		_ = ctx.Error(exception.NewUnauthorizedException(message))

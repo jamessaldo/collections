@@ -2,7 +2,8 @@ package main
 
 import (
 	"authorization/config"
-	"authorization/infrastructure"
+	"authorization/domain"
+	"authorization/infrastructure/worker"
 	"authorization/view"
 	"context"
 	"log"
@@ -15,16 +16,14 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	_status "google.golang.org/grpc/status"
 )
 
 type AuthorizationServer struct {
-	bootstrap *infrastructure.Bootstraps
 }
 
 // inject a header that can be used for future rate limiting
 func (a *AuthorizationServer) Check(ctx context.Context, req *auth.CheckRequest) (*auth.CheckResponse, error) {
-	bus := a.bootstrap.Bus
-	endpoints := a.bootstrap.Endpoints
 	userID := req.Attributes.Request.Http.Headers["user-id"]
 	method := req.Attributes.Request.Http.Method
 	rawPath := req.Attributes.Request.Http.Path
@@ -32,10 +31,11 @@ func (a *AuthorizationServer) Check(ctx context.Context, req *auth.CheckRequest)
 
 	log.Printf("authorization for user_id: %s to path %s and method %s", userID, path, method)
 
-	isAuthorized, err := view.Authorization(ctx, userID, method, path, bus.UoW, endpoints)
+	endpoints := make(map[string]domain.Endpoint)
+	isAuthorized, err := view.Authorization(ctx, userID, method, path, endpoints)
 	if err != nil {
 		log.Printf("Error while authorizing: %v", err)
-		return nil, grpc.Errorf(codes.Internal, "Error while authorizing: %v", err)
+		return nil, _status.Errorf(codes.Internal, "Error while authorizing: %v", err)
 	}
 
 	if isAuthorized {
@@ -66,13 +66,12 @@ func main() {
 	}
 	log.Printf("listening on %s", lis.Addr())
 
-	asynqClient, bootstrap := infrastructure.NewBootstraps()
-	defer asynqClient.Close()
+	mailerClient := worker.CreateMailerClient()
+	worker.CreateMailer(mailerClient)
+	defer mailerClient.Close()
 
 	grpcServer := grpc.NewServer()
-	authServer := &AuthorizationServer{
-		bootstrap: bootstrap,
-	}
+	authServer := &AuthorizationServer{}
 	auth.RegisterAuthorizationServer(grpcServer, authServer)
 
 	if err := grpcServer.Serve(lis); err != nil {

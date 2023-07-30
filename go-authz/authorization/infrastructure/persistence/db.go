@@ -19,20 +19,19 @@ var (
 	Pool *pgxpool.Pool
 )
 
-func CreateDBConnection() error {
+func ConnectDB() error {
 	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/%s", config.StorageConfig.DBDriver, config.StorageConfig.DBUser, config.StorageConfig.DBPassword, config.StorageConfig.DBHost, config.StorageConfig.DBPort, config.StorageConfig.DBName)
 	ctx := context.Background()
 	var err error
 
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return err
+		log.Fatal().Caller().Err(err).Msg("Failed to parse database config")
 	}
 
 	Pool, err = pgxpool.NewWithConfig(ctx, config)
-
 	if err != nil {
-		return err
+		log.Fatal().Caller().Err(err).Msg("Failed to connect to database")
 	}
 
 	return nil

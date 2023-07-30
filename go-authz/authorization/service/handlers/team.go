@@ -5,8 +5,8 @@ import (
 	"authorization/controller/exception"
 	"authorization/domain"
 	"authorization/domain/command"
-	"authorization/infrastructure/mailer"
-	"authorization/service"
+	"authorization/infrastructure/persistence"
+	"authorization/repository"
 	"authorization/util"
 	"context"
 	"fmt"
@@ -16,15 +16,8 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-func CreateTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.CreateTeam); ok {
-		return CreateTeam(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.CreateTeam, got %T", cmd)
-}
-
-func CreateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.CreateTeam) error {
-	tx, txErr := uow.Begin(ctx)
+func CreateTeam(ctx context.Context, cmd *command.CreateTeam) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -33,13 +26,13 @@ func CreateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Creat
 		tx.Rollback(ctx)
 	}()
 
-	ownerRole, err := uow.Role.GetByName(ctx, domain.Owner)
+	ownerRole, err := repository.Role.GetByName(ctx, domain.Owner)
 	if err != nil {
 		return err
 	}
 
 	team := domain.NewTeam(cmd.User, ownerRole.ID, cmd.Name, cmd.Description, false)
-	_, err = uow.Team.Add(ctx, team, tx)
+	_, err = repository.Team.Add(ctx, team, tx)
 	if err != nil {
 		return err
 	}
@@ -53,15 +46,8 @@ func CreateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Creat
 	return nil
 }
 
-func UpdateTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.UpdateTeam); ok {
-		return UpdateTeam(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.UpdateTeam, got %T", cmd)
-}
-
-func UpdateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateTeam) error {
-	tx, txErr := uow.Begin(ctx)
+func UpdateTeam(ctx context.Context, cmd *command.UpdateTeam) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -70,7 +56,7 @@ func UpdateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 		tx.Rollback(ctx)
 	}()
 
-	team, err := uow.Team.Get(ctx, cmd.TeamID)
+	team, err := repository.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	}
@@ -80,7 +66,7 @@ func UpdateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 		"description": cmd.Description,
 	})
 
-	_, err = uow.Team.Update(ctx, team, tx)
+	_, err = repository.Team.Update(ctx, team, tx)
 	if err != nil {
 		return err
 	}
@@ -93,15 +79,8 @@ func UpdateTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 	return nil
 }
 
-func UpdateLastActiveTeamWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.UpdateLastActiveTeam); ok {
-		return UpdateLastActiveTeam(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.UpdateLastActiveTeam, got %T", cmd)
-}
-
-func UpdateLastActiveTeam(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateLastActiveTeam) error {
-	tx, txErr := uow.Begin(ctx)
+func UpdateLastActiveTeam(ctx context.Context, cmd *command.UpdateLastActiveTeam) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -116,7 +95,7 @@ func UpdateLastActiveTeam(ctx context.Context, uow *service.UnitOfWork, cmd *com
 		Limit:        1,
 		IsSelectTeam: true,
 	}
-	memberships, err := uow.Membership.List(ctx, opts)
+	memberships, err := repository.Membership.List(ctx, opts)
 	if err != nil {
 		return err
 	}
@@ -129,7 +108,7 @@ func UpdateLastActiveTeam(ctx context.Context, uow *service.UnitOfWork, cmd *com
 	membership := memberships[0]
 	membership.LastActiveAt = lastActiveAt
 
-	_, err = uow.Membership.Update(ctx, membership, tx)
+	_, err = repository.Membership.Update(ctx, membership, tx)
 	if err != nil {
 		return err
 	}
@@ -142,15 +121,8 @@ func UpdateLastActiveTeam(ctx context.Context, uow *service.UnitOfWork, cmd *com
 	return nil
 }
 
-func DeleteTeamMemberWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.DeleteTeamMember); ok {
-		return DeleteTeamMember(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.DeleteTeamMember, got %T", cmd)
-}
-
-func DeleteTeamMember(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteTeamMember) error {
-	tx, txErr := uow.Begin(ctx)
+func DeleteTeamMember(ctx context.Context, cmd *command.DeleteTeamMember) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -159,7 +131,7 @@ func DeleteTeamMember(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		tx.Rollback(ctx)
 	}()
 
-	membership, err := uow.Membership.Get(ctx, cmd.MembershipID)
+	membership, err := repository.Membership.Get(ctx, cmd.MembershipID)
 	if err != nil {
 		return err
 	}
@@ -169,7 +141,7 @@ func DeleteTeamMember(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		return err
 	}
 
-	err = uow.Membership.Delete(ctx, cmd.MembershipID, tx)
+	err = repository.Membership.Delete(ctx, cmd.MembershipID, tx)
 	if err != nil {
 		return err
 	}
@@ -182,15 +154,8 @@ func DeleteTeamMember(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func ChangeMemberRoleWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.ChangeMemberRole); ok {
-		return ChangeMemberRole(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.ChangeMemberRole, got %T", cmd)
-}
-
-func ChangeMemberRole(ctx context.Context, uow *service.UnitOfWork, cmd *command.ChangeMemberRole) error {
-	tx, txErr := uow.Begin(ctx)
+func ChangeMemberRole(ctx context.Context, cmd *command.ChangeMemberRole) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -199,7 +164,7 @@ func ChangeMemberRole(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		tx.Rollback(ctx)
 	}()
 
-	membership, err := uow.Membership.Get(ctx, cmd.MembershipID)
+	membership, err := repository.Membership.Get(ctx, cmd.MembershipID)
 	if err != nil {
 		return err
 	}
@@ -209,14 +174,14 @@ func ChangeMemberRole(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		return err
 	}
 
-	role, err := uow.Role.GetByName(ctx, cmd.Role)
+	role, err := repository.Role.GetByName(ctx, cmd.Role)
 	if err != nil {
 		return err
 	}
 
 	membership.RoleID = role.ID
 
-	_, err = uow.Membership.Update(ctx, membership, tx)
+	_, err = repository.Membership.Update(ctx, membership, tx)
 	if err != nil {
 		return err
 	}
@@ -229,15 +194,8 @@ func ChangeMemberRole(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func UpdateTeamAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.UpdateTeamAvatar); ok {
-		return UpdateTeamAvatar(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.UpdateTeamAvatar, got %T", cmd)
-}
-
-func UpdateTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateTeamAvatar) error {
-	tx, txErr := uow.Begin(ctx)
+func UpdateTeamAvatar(ctx context.Context, cmd *command.UpdateTeamAvatar) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -246,7 +204,7 @@ func UpdateTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		tx.Rollback(ctx)
 	}()
 
-	team, err := uow.Team.Get(ctx, cmd.TeamID)
+	team, err := repository.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	}
@@ -282,7 +240,7 @@ func UpdateTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	}
 
 	team.Update(payload)
-	_, err = uow.Team.Update(ctx, team, tx)
+	_, err = repository.Team.Update(ctx, team, tx)
 	if err != nil {
 		return err
 	}
@@ -294,15 +252,8 @@ func UpdateTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func DeleteTeamAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.DeleteTeamAvatar); ok {
-		return DeleteTeamAvatar(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.DeleteTeamAvatar, got %T", cmd)
-}
-
-func DeleteTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteTeamAvatar) error {
-	tx, txErr := uow.Begin(ctx)
+func DeleteTeamAvatar(ctx context.Context, cmd *command.DeleteTeamAvatar) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -311,7 +262,7 @@ func DeleteTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		tx.Rollback(ctx)
 	}()
 
-	team, err := uow.Team.Get(ctx, cmd.TeamID)
+	team, err := repository.Team.Get(ctx, cmd.TeamID)
 	if err != nil {
 		return err
 	}
@@ -324,7 +275,7 @@ func DeleteTeamAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 		}
 
 		team.AvatarURL = ""
-		_, err = uow.Team.Update(ctx, team, tx)
+		_, err = repository.Team.Update(ctx, team, tx)
 		if err != nil {
 			return err
 		}

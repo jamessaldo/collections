@@ -1,4 +1,4 @@
-package mailer
+package worker
 
 import (
 	"encoding/json"
@@ -6,6 +6,8 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog/log"
 )
+
+type EmailTemplate string
 
 const (
 	// TypeEmailTask is a name of the task type
@@ -15,16 +17,13 @@ const (
 	// TypeDelayedEmail is a name of the task type
 	// for sending a delayed email.
 	TypeDelayedEmail = "email:delayed"
-)
 
-type EmailTemplate string
-
-const (
+	// Email templates
 	InvitationTemplate EmailTemplate = "invitation-message.html"
 	WelcomingTemplate  EmailTemplate = "welcoming-message.html"
 )
 
-type Payload struct {
+type EmailPayload struct {
 	UserName     string
 	TemplateName EmailTemplate
 	To           string
@@ -33,9 +32,8 @@ type Payload struct {
 }
 
 // newEmailTask task payload for a new email.
-func newEmailTask(data *Payload) *asynq.Task {
+func newEmailTask(data *EmailPayload) *asynq.Task {
 	// Specify task payload.
-
 	b, err := json.Marshal(data)
 	if err != nil {
 		log.Error().Caller().Err(err).Any("data", data).Msg("Failed to marshal payload data for email task")

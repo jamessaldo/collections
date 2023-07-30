@@ -4,8 +4,8 @@ import (
 	"authorization/config"
 	"authorization/controller/exception"
 	"authorization/domain/command"
-	"authorization/infrastructure/mailer"
-	"authorization/service"
+	"authorization/infrastructure/persistence"
+	"authorization/repository"
 	"authorization/util"
 	"context"
 	"fmt"
@@ -15,15 +15,8 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-func UpdateUserWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.UpdateUser); ok {
-		return UpdateUser(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.UpdateUser, got %T", cmd)
-}
-
-func UpdateUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateUser) error {
-	tx, txErr := uow.Begin(ctx)
+func UpdateUser(ctx context.Context, cmd *command.UpdateUser) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -40,7 +33,7 @@ func UpdateUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 
 	cmd.User.Update(payload)
 
-	_, err := uow.User.Update(ctx, cmd.User, tx)
+	_, err := repository.User.Update(ctx, cmd.User, tx)
 	if err != nil {
 		return err
 	}
@@ -53,15 +46,8 @@ func UpdateUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.Updat
 	return nil
 }
 
-func DeleteUserWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.DeleteUser); ok {
-		return DeleteUser(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.DeleteUser, got %T", cmd)
-}
-
-func DeleteUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteUser) error {
-	tx, txErr := uow.Begin(ctx)
+func DeleteUser(ctx context.Context, cmd *command.DeleteUser) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -72,7 +58,7 @@ func DeleteUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.Delet
 
 	cmd.User.IsActive = false
 
-	_, err := uow.User.Update(ctx, cmd.User, tx)
+	_, err := repository.User.Update(ctx, cmd.User, tx)
 	if err != nil {
 		return err
 	}
@@ -85,15 +71,8 @@ func DeleteUser(ctx context.Context, uow *service.UnitOfWork, cmd *command.Delet
 	return nil
 }
 
-func UpdateUserAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.UpdateUserAvatar); ok {
-		return UpdateUserAvatar(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.UpdateUserAvatar, got %T", cmd)
-}
-
-func UpdateUserAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command.UpdateUserAvatar) error {
-	tx, txErr := uow.Begin(ctx)
+func UpdateUserAvatar(ctx context.Context, cmd *command.UpdateUserAvatar) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -134,7 +113,7 @@ func UpdateUserAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	}
 
 	cmd.User.Update(payload)
-	_, err := uow.User.Update(ctx, cmd.User, tx)
+	_, err := repository.User.Update(ctx, cmd.User, tx)
 	if err != nil {
 		return err
 	}
@@ -147,15 +126,8 @@ func UpdateUserAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 	return nil
 }
 
-func DeleteUserAvatarWrapper(ctx context.Context, uow *service.UnitOfWork, mailer mailer.MailerInterface, cmd interface{}) error {
-	if c, ok := cmd.(*command.DeleteUserAvatar); ok {
-		return DeleteUserAvatar(ctx, uow, c)
-	}
-	return fmt.Errorf("invalid command type, expected *command.DeleteUserAvatar, got %T", cmd)
-}
-
-func DeleteUserAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command.DeleteUserAvatar) error {
-	tx, txErr := uow.Begin(ctx)
+func DeleteUserAvatar(ctx context.Context, cmd *command.DeleteUserAvatar) error {
+	tx, txErr := persistence.Pool.Begin(ctx)
 	if txErr != nil {
 		return txErr
 	}
@@ -172,7 +144,7 @@ func DeleteUserAvatar(ctx context.Context, uow *service.UnitOfWork, cmd *command
 			return err
 		}
 		cmd.User.AvatarURL = ""
-		_, err := uow.User.Update(ctx, cmd.User, tx)
+		_, err := repository.User.Update(ctx, cmd.User, tx)
 		if err != nil {
 			return err
 		}

@@ -13,13 +13,12 @@ require (
 	github.com/swaggo/files v1.0.0
 	github.com/swaggo/gin-swagger v1.5.3
 	github.com/swaggo/swag v1.8.10
-	gopkg.in/yaml.v3 v3.0.1
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golang-migrate/migrate/v4 v4.16.2
-	github.com/jackc/pgx-zerolog v0.0.0-20230315001418-f978528409eb
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.4
 	github.com/ory/dockertest/v3 v3.10.0
@@ -27,6 +26,7 @@ require (
 	github.com/rs/zerolog v1.29.1
 	golang.org/x/oauth2 v0.8.0
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -69,7 +69,6 @@ require (
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (

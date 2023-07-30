@@ -4,7 +4,7 @@ import (
 	"authorization/controller/exception"
 	"authorization/domain"
 	"authorization/domain/dto"
-	"authorization/service"
+	"authorization/repository"
 	"context"
 	"errors"
 
@@ -12,8 +12,8 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-func Invitation(ctx context.Context, id ulid.ULID, uow *service.UnitOfWork) (*dto.InvitationRetreivalSchema, error) {
-	invitation, err := uow.Invitation.Get(ctx, id)
+func Invitation(ctx context.Context, id ulid.ULID) (*dto.InvitationRetreivalSchema, error) {
+	invitation, err := repository.Invitation.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
@@ -21,7 +21,7 @@ func Invitation(ctx context.Context, id ulid.ULID, uow *service.UnitOfWork) (*dt
 		return nil, err
 	}
 
-	team, err := uow.Team.Get(ctx, invitation.TeamID)
+	team, err := repository.Team.Get(ctx, invitation.TeamID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, exception.NewNotFoundException(err.Error())
@@ -36,12 +36,12 @@ func Invitation(ctx context.Context, id ulid.ULID, uow *service.UnitOfWork) (*dt
 		Limit:        3,
 	}
 
-	memberships, err := uow.Membership.List(ctx, membershipOpts)
+	memberships, err := repository.Membership.List(ctx, membershipOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	totalMemberships, err := uow.Membership.Count(ctx, membershipOpts)
+	totalMemberships, err := repository.Membership.Count(ctx, membershipOpts)
 	if err != nil {
 		return nil, err
 	}

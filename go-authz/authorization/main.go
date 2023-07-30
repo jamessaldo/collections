@@ -3,8 +3,10 @@ package main
 import (
 	"authorization/config"
 	"authorization/controller"
-	"authorization/infrastructure"
 	"authorization/infrastructure/persistence"
+	"authorization/infrastructure/seeder"
+	"authorization/infrastructure/worker"
+	"authorization/repository"
 	"flag"
 	"os"
 
@@ -48,14 +50,18 @@ func main() {
 		}
 	}
 
-	asynqClient, bootstrap := infrastructure.NewBootstraps()
-	defer asynqClient.Close()
+	persistence.ConnectDB()
+	persistence.ConnectRedis()
+	persistence.Migration(nil)
 	defer persistence.Pool.Close()
 
-	handleArgs(bootstrap.Bus.UoW.GetDB())
+	mailerClient := worker.CreateMailerClient()
+	worker.CreateMailer(mailerClient)
+	defer mailerClient.Close()
 
-	server := controller.Server{}
-	server.InitializeApp(bootstrap.BootstrapMiddleware())
+	repository.CreateRepositories()
+	handleArgs(persistence.Pool)
+	controller.CreateRouter()
 }
 
 func handleArgs(pool *pgxpool.Pool) {
@@ -65,7 +71,7 @@ func handleArgs(pool *pgxpool.Pool) {
 	if len(args) >= 1 {
 		switch args[0] {
 		case "seed":
-			persistence.Execute(pool, args[1:]...)
+			seeder.Execute(pool, args[1:]...)
 			os.Exit(0)
 		}
 	}

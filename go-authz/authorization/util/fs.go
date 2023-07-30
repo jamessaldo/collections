@@ -2,10 +2,13 @@ package util
 
 import (
 	"authorization/config"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"github.com/rs/zerolog/log"
 )
 
 func SaveFileToLocal(fileName string, file multipart.FileHeader) error {
@@ -40,4 +43,13 @@ func DeleteFileInLocal(path string) error {
 		}
 	}
 	return nil
+}
+
+func ReadYAML(filename string) []byte {
+	filePath := filepath.Join("data", filename)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Fatal().Caller().Err(err).Msg(fmt.Sprintf("Failed to read role data %s", filename))
+	}
+	return data
 }
