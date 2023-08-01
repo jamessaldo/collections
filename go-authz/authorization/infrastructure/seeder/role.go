@@ -11,21 +11,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type EndpointYAML struct {
-	Endpoints []struct {
-		Name   string `yaml:"name"`
-		Path   string `yaml:"path"`
-		Method string `yaml:"method"`
-	} `yaml:"endpoints"`
-}
-
-type RoleYAML struct {
-	Name      domain.RoleType `yaml:"name"`
-	Endpoints []struct {
-		Name string `yaml:"name"`
-	} `yaml:"endpoints"`
-}
-
 func (s Seed) AccessSeed() {
 	ctx := context.Background()
 	tx, err := s.pool.Begin(ctx)
@@ -40,14 +25,14 @@ func (s Seed) AccessSeed() {
 	roleRepo := repository.NewRoleRepository(s.pool)
 
 	endpointDatas := util.ReadYAML("endpoints.yml")
-	var endpointYAML EndpointYAML
+	var endpointYAML domain.EndpointYAML
 	err = yaml.Unmarshal(endpointDatas, &endpointYAML)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to unmarshal endpoint data")
 	}
 
 	roleDatas := util.ReadYAML("roles.yml")
-	var roleYAML []RoleYAML
+	var roleYAML []domain.RoleYAML
 	err = yaml.Unmarshal(roleDatas, &roleYAML)
 	if err != nil {
 		log.Fatal().Caller().Err(err).Msg("Failed to unmarshal role data")

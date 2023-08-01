@@ -18,6 +18,21 @@ var (
 	Finance RoleType = "finance"
 )
 
+type EndpointYAML struct {
+	Endpoints []struct {
+		Name   string `yaml:"name"`
+		Path   string `yaml:"path"`
+		Method string `yaml:"method"`
+	} `yaml:"endpoints"`
+}
+
+type RoleYAML struct {
+	Name      RoleType `yaml:"name"`
+	Endpoints []struct {
+		Name string `yaml:"name"`
+	} `yaml:"endpoints"`
+}
+
 type Endpoint struct {
 	Name   string
 	Path   string
