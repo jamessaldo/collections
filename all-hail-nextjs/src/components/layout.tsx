@@ -1,4 +1,5 @@
 import React, { type ReactNode } from "react";
+import { ThemeProvider } from "next-themes";
 
 interface LayoutProps {
   children: ReactNode;
@@ -6,9 +7,9 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   return (
-    <div>
+    <ThemeProvider>
       <main>{children}</main>
-    </div>
+    </ThemeProvider>
   );
 };
 
