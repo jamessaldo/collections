@@ -25,24 +25,24 @@ require (
 	github.com/redis/go-redis/v9 v9.0.4
 	github.com/rs/zerolog v1.29.1
 	golang.org/x/oauth2 v0.8.0
-	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
-	cloud.google.com/go/compute v1.14.0 // indirect
+	cloud.google.com/go/compute v1.19.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
-	github.com/cncf/xds/go v0.0.0-20230105202645-06c439db220b // indirect
+	github.com/cncf/xds/go v0.0.0-20230607035331-e9ce68804cb4 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/docker/cli v20.10.17+incompatible // indirect
 	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/envoyproxy/protoc-gen-validate v0.9.1 // indirect
+	github.com/envoyproxy/protoc-gen-validate v0.10.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
@@ -78,7 +78,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/envoyproxy/go-control-plane v0.10.3
+	github.com/envoyproxy/go-control-plane v0.11.1-0.20230524094728-9239064ad72f
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
@@ -122,7 +122,7 @@ require (
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect
-	google.golang.org/grpc v1.52.0-dev
+	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
