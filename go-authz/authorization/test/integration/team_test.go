@@ -227,7 +227,7 @@ var _ = Describe("Team Testing", Ordered, func() {
 				Status:       "accepted",
 				User:         james,
 			}
-			// err = Bus.Handle(ctx, &cmdVerify)
+
 			err = handlers.UpdateInvitationStatus(ctx, &cmdVerify)
 			Ω(err).To(Succeed())
 

@@ -54,7 +54,6 @@ func (ctrl *authController) LoginByGoogle(ctx *gin.Context) {
 		PathURL: pathUrl,
 	}
 
-	// err := bus.Handle(ctx.Request.Context(), &cmd)
 	err := handlers.LoginByGoogle(ctx.Request.Context(), &cmd)
 	if err != nil {
 		log.Error().Caller().Err(err).Msg("could not login by google")
